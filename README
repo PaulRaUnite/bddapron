@@ -1,0 +1,39 @@
+About
+=====
+Two libraries:
+
+- formula: for manipulating formula and expressions involving
+  Boolean, enumerated, bounded integer variables, and numerical expressions,
+  using BDDs and MTBDDs.
+
+- bddDomain: abstract domains combining Boolean and Numerical 
+  variables using APRON library
+
+Required
+========
+C  libraries: 
+  GMP (http://gmplib.org)
+  MPFR (http://www.mpfr.org/)
+  CUDD (http://vlsi.colorado.edu/~fabio/CUDD/)
+  cuddaux (http://gforge.inria.fr/projects/mlxxxidl/)
+  APRON (http://apron.cri.ensmp.fr/library/)
+	(optional, if you do not use some modules)
+C/OCaml libraries
+  mlgmpidl, mlcuddidl (http://gforge.inria.fr/projects/mlxxxidl/)
+OCaml libraries
+  camllib (http://gforge.inria.fr/projects/bjeannet/)
+
+To configure
+============
+- copy Makefile.config.model into Makefile.config
+- set properly the flags (mainly directories).
+
+To compile the library:
+=======================
+make all # for bytecode and nativecode compilation of formula
+make formula # idem
+make bddDomain # for bytecode and nativecode compilation of bddDomain
+
+To install the library:
+=======================
+make install
