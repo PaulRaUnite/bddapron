@@ -15,16 +15,6 @@ HAS_MPFR=1
 # Where to INSTALL BDDAPRON ($(BDDAPRON_PREFIX)/lib)
 BDDAPRON_PREFIX = 
 
-# Where to find FORMULA ($(FORMULA_PREFIX)/lib)
-FORMULA_PREFIX = 
-
-# Where to find CAMLLIB ($(CAMLLIB_PREFIX)/lib)
-#
-CAMLLIB_PREFIX = /usr/local
-# Where to find MLGMPIDL ($(MLGMPIDL_PREFIX)/lib)
-#
-MLGMPIDL_PREFIX = /usr/local
-
 # Where to find GMP ($(GMP_PREFIX)/include, ($GMP_PREFIX)/lib)
 #
 GMP_PREFIX = /usr
@@ -33,21 +23,31 @@ GMP_PREFIX = /usr
 # (needed if HAS_MPFR=1)
 MPFR_PREFIX = /usr
 
-# Where to find MLCUDDIDL ($(MLCUDDIDL_PREFIX)/lib)
-#
-MLCUDDIDL_PREFIX = /usr/local
-
-# Where to find CUDD and CUDDAUX ($(CUDD_PREFIX)/include, $(CUDDAUX_PREFIX)/lib)
+# Where to find CUDD an ($(CUDD_PREFIX)/include, $(CUDD_PREFIX)/lib)
 #
 CUDD_PREFIX = /usr
-CUDDAUX_PREFIX = /usr/local
-
-# Where to find APRON ($(APRON_PREFIX)/include, $(APRON_PREFIX)/lib)
-APRON_PREFIX = /usr/local
 
 # Where to find OCAML ($(CAML_PREFIX)/bin, $(CAML_PREFIX)/lib/ocaml, ...)
 #
 CAML_PREFIX = /usr
+
+# Where to find FORMULA ($(FORMULA_PREFIX)/lib)
+FORMULA_PREFIX = 
+
+# Where to find CAMLLIB ($(CAMLLIB_PREFIX)/lib)
+#
+CAMLLIB_PREFIX = 
+# Where to find MLGMPIDL ($(MLGMPIDL_PREFIX)/lib)
+#
+MLGMPIDL_PREFIX = 
+
+# Where to find CUDDAUX and MLCUDDIDL ($(MLCUDDIDL_PREFIX)/lib)
+#
+CUDDAUX_PREFIX = 
+MLCUDDIDL_PREFIX = 
+
+# Where to find APRON ($(APRON_PREFIX)/include, $(APRON_PREFIX)/lib)
+APRON_PREFIX = 
 
 ######################################################################
 # Tools and Flags

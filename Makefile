@@ -26,8 +26,8 @@ DOCLATEX =\
 OCAMLINC = -I $(MLCUDDIDL_PREFIX)/lib -I $(MLGMPIDL_PREFIX)/lib -I $(CAMLLIB_PREFIX)/lib -I $(FORMULA_PREFIX)/lib -I $(APRON_PREFIX)/lib
 
 MLMOD = \
-apronexpr apronexprDD bddapronexpr bddapronexprE apronDD \
-bddaprondomain bddaprondomainE
+apronexpr apronexprDD apronDD \
+bddapronexpr bddaprondomain bddapronexprE bddaprondomainE
 
 MLSRC = $(MLMOD:%=%.mli) $(MLMOD:%=%.ml)
 MLINT = $(MLMOD:%=%.cmi)
@@ -78,6 +78,9 @@ bddapron.cmxa: $(MLOBJx)
 # TEX rules
 .PHONY: bddapron.dvi bddapron.pdf html depend
 
+bddapron.pdf: bddapron.dvi
+	$(DVIPDF) bddapron.dvi bddapron.pdf
+
 bddapron.dvi: $(INT) $(MLMOD:%=%.mli)
 	$(OCAMLDOC) -latextitle 1,chapter -latextitle 2,section -latextitle 3,subsection -latextitle 4,subsubsection -latextitle 5,paragraph -noheader -notrailer -latex -o ocamldoc.tex $(OCAMLINC) $(MLMOD:%=%.mli)
 	$(LATEX) bddapron
@@ -106,7 +109,6 @@ bddaprontop: bddapron.cma
 
 essai: essai.ml bddapron.cma bddapronrun
 	$(OCAMLC) -g $(OCAMLFLAGS) $(OCAMLINC) -o $@ -use-runtime bddapronrun bigarray.cma cudd.cma gmp.cma camllib.cma apron.cma box.cma polka.cma formula.cma bddapron.cma essai.ml
-
 
 essai.opt: essai.ml bddapron.cmxa
 	$(OCAMLOPT) -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ bigarray.cmxa cudd.cmxa gmp.cmxa camllib.cmxa apron.cmxa box.cmxa polka.cmxa formula.cmxa bddapron.cmxa essai.ml -cc "$(CC)" -cclib "-lboxMPQ -lpolkaMPQ"

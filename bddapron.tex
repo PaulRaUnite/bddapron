@@ -31,7 +31,7 @@
 
 \makeindex
 
-\title{Formula}
+\title{Bddapron}
 
 
 \begin{document}
@@ -41,26 +41,31 @@
 
 \chapter{Introduction}
 
-This group of modules are ``frontend'' modules for manipulating BDDs and
-MTBDDs.  It offers a higher level interface to the MLCUDDIDL interface to the
-C library CUDD, namely
+\texttt{Bddapron} is a companion library to \texttt{Formula}
+(manipulation of finite-type fromula using BDDs) and
+\texttt{Apron} (numerical abstract domain library). It extends
+\texttt{Formula} with formula of numerical type, and by allowing
+decisions on numerical constraints in decision diagrams.
+
+It can be seen more simply as an extension of the APRON abstract domain for
+dealing with Boolean and finite-type variables, in addition to numerical
+variables.
+
+This library offers the following modules:
 \begin{itemize}
-\item Functions for manipulating arrays of BDDs as CPU register, including
-  most ALU (Arithmetic and Logical Unit) operations: [Bddredg].
-\item An interface for signed/unsigned integers encoded with BDDs, with
-  features like autoresizing: [Bddint].
-\item An interface for enumerated types, with management of labels and types: [Bddenum];
-\item A module for BDD/MTBDD output to file: [Bddoutput].
-\item A module for BDD/MTBDD variables management: [Bddenv].
+\item \texttt{Apronexpr} and \texttt{ApronexprDD} are internal
+  modules for numerical expressions; \texttt{apronDD} is an
+  internal module for abstract values;
+\item \texttt{Bddapronexpr}: formula of finite or numerical types,
+  with Boolean or numerical decisions;
+\item \texttt{Bddaprondomain}: combined Boolean/numerical abstract
+  domain, in which an abstract value is a decision diagram on
+  finite type variables, with leafs of type \texttt{'a
+    Apron.Abstract1.t}.
 \end{itemize}
-Next modules allows to manipulate formula and expressions mixing
-discrete types.
-\begin{itemize}
-\item General finite-type expressions: [Bddexpr].
-\item Boolean formula seen as an (abstract) domain: [Bdddomain].
-\end{itemize}
-In addition, two modules extend resp. [Bddexpr] and [Bdddomain]
-by incorporating normalized environments.
+In addition, two modules (\texttt{BddapronexprE} and
+\texttt{BddaprondomainE}) extend resp. \texttt{Bddapronexpr} and
+\texttt{Bdddapronomain} by incorporating normalized environments.
 
 \input{ocamldoc.tex}
 
