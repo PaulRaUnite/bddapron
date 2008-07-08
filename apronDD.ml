@@ -25,21 +25,20 @@ let make_manager (apron:'a Apron.Manager.t) =
 *)
 let make_manager (apron:'a Apron.Manager.t) =
   Mtbdd2.make_manager
-    ~background:(Apron.Abstract1.bottom apron (Apron.Environment.make [||] [||]))
+    ~background:(Apron.Abstract1.bottom apron (Apron.Environment.make [||] [|Apron.Var.of_string "%d%u%m%m%y%"|]))
     ~hash:Hashtbl.hash
     ~equal:(fun x y -> Pervasives.compare x y = 0)
 
 let print_manager fmt x = Mtbdd2.print_manager Apron.Abstract1.print fmt x
 
 let print print_bdd fmt t =
-(*
-  printf "ApronDD.t=%a@.man=%a@.t.leaves=%a@.iddleaves=%a@."
-    (Idd.print string_of_int string_of_int) t.idd
-    print_manager t.man
-    (Print.array Apron.Abstract1.print) t.leaves
-    (Print.array pp_print_int) (Idd.leaves t.idd)
+  if false then
+    printf "ApronDD.t=%a@.man=%a@.t.leaves=%a@.iddleaves=%a@."
+      (Idd.print_minterm string_of_int string_of_int) t.idd
+      print_manager t.man
+      (Print.array Apron.Abstract1.print) (leaves t)
+      (Print.array pp_print_int) (Idd.leaves t.idd)
   ;
-*)
   if Mtbdd2.is_cst t then
     Apron.Abstract1.print fmt (dval t)
   else

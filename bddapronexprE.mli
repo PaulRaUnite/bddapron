@@ -127,6 +127,7 @@ module Bint : sig
   val pred : 'a t -> 'a t
   val add : 'a t -> 'a t -> 'a t
   val sub : 'a t -> 'a t -> 'a t
+  val mul : 'a t -> 'a t -> 'a t
   val shift_left : int -> 'a t -> 'a t
   val shift_right : int -> 'a t -> 'a t
   val scale : int -> 'a t -> 'a t
@@ -403,6 +404,7 @@ module Bint : sig
   val pred : t -> t
   val add : t -> t -> t
   val sub : t -> t -> t
+  val mul : t -> t -> t
   val shift_left : int -> t -> t
   val shift_right : int -> t -> t
   val scale : int -> t -> t

@@ -155,7 +155,7 @@ let remove_vars env x = fst (Internal.remove_vars env x)
 let check_typ2 env e2 e3 =
   let t2 = typ_of_expr e2 in
   let t3 = typ_of_expr e3 in
-  if t2 != t3 then
+  if t2 <> t3 then
     failwith
       (Print.sprintf "Expr.ite: 2 branches have different types %a and %a"
 	print_typ t2 print_typ t3)

@@ -96,6 +96,7 @@ module Bint : sig
   val pred : ('a,'b,'c) #env -> t -> t
   val add : ('a,'b,'c) #env -> t -> t -> t
   val sub : ('a,'b,'c) #env -> t -> t -> t
+  val mul : ('a,'b,'c) #env -> t -> t -> t
   val shift_left : ('a,'b,'c) #env -> int -> t -> t
   val shift_right : ('a,'b,'c) #env -> int -> t -> t
   val scale : ('a,'b,'c) #env -> int -> t -> t
@@ -307,6 +308,7 @@ module Bint : sig
   val pred : env -> t -> t
   val add : env -> t -> t -> t
   val sub : env -> t -> t -> t
+  val mul : env -> t -> t -> t
   val shift_left : env -> int -> t -> t
   val shift_right : env -> int -> t -> t
   val scale : env -> int -> t -> t
