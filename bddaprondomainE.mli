@@ -8,7 +8,7 @@
 (*  ********************************************************************** *)
 
 type env = Bddapronexpr.env
-val make_env : ?boolfirst:bool -> Manager.t -> env
+val make_env : ?boolfirst:bool -> ?relational:bool -> Manager.t -> env
 val print_env : Format.formatter -> env -> unit
 
 val add_typ : env -> string -> Bddapronexpr.typdef -> env
@@ -19,6 +19,8 @@ val remove_vars : env -> string list -> env
     (** Remove variables *)
 val rename_vars : env -> (string*string) list -> env
     (** Rename variables *)
+val unify_env : env -> env -> env
+    (** Unify environments (non-disjoint union of environments) *)
 
 (*  ********************************************************************** *)
 (** {2 Abstract domain} *)
@@ -42,6 +44,8 @@ val meet : 'a manager -> 'a t -> 'a t -> 'a t
 val join : 'a manager -> 'a t -> 'a t -> 'a t
 val meet_cond : 'a manager -> 'a t -> BddapronexprE.Bool.t -> 'a t
 val assign_list :
+  ?relational:bool ->
+  ?nodependency:bool ->
   'a manager -> 'a t ->
   (string * BddapronexprE.expr) list ->
   'a t option ->
@@ -95,6 +99,8 @@ val meet_cond :
   ('a,'b) t
 
 val assign_list :
+  ?relational:bool ->
+  ?nodependency:bool ->
   'b manager ->
   (('c,'d,Bddapronexpr.cond) #Bddapronexpr.O.env as 'a,'b) t ->
   (string * ('c, 'd, Bddapronexpr.cond) #Bddapronexpr.O.env  BddapronexprE.O.expr) list ->

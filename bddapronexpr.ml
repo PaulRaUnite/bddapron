@@ -89,16 +89,23 @@ let print_env fmt (env:('a,'b,'c) env) =
     (Bddenv.print print_typ print_typdef) (env:>('a,'b,'c) Bddenv.t)
     (fun fmt x -> Apron.Environment.print fmt x) env#apron_env
 
-class ['a,'b] make_env ?(boolfirst=true) man : ['a,'b,cond] env = object(self)
-  inherit ['a,'b,cond] Bddenv.make ~boolfirst man ~compare_cond ~negate_cond ~print_cond
+class ['a,'b] make_env ?boolfirst ?relational man : ['a,'b,cond] env = object(self)
+  inherit ['a,'b,cond] Bddenv.make ?boolfirst ?relational man ~compare_cond ~negate_cond ~print_cond
   val v_apronexprdd = ApronexprDD.make_manager()
   method apronexprdd = v_apronexprdd
   val mutable v_apron_env = Apron.Environment.make [||] [||]
   method apron_env = v_apron_env
   method set_apron_env apron_env = v_apron_env <- apron_env
+  method vars : SetteS.t =
+    let vars = MappeS.maptoset v_varinfo in
+    let (ivar,qvar) = Apron.Environment.vars v_apron_env in
+    let add ap_var set = SetteS.add (Apron.Var.to_string ap_var) set in
+    let vars = Array.fold_right add ivar vars in
+    let vars = Array.fold_right add qvar vars in
+    vars
 end
 
-let make_env ?(boolfirst=true) man = new make_env ~boolfirst man
+let make_env ?boolfirst ?relational man = new make_env ?boolfirst ?relational man
 
 module Internal = struct
   let add_vars (env:('a,'b,'c) #env) lvartyp =
@@ -147,12 +154,17 @@ end
 let add_typ = Bddenv.add_typ
 let add_vars env x = fst (Internal.add_vars env x)
 let remove_vars env x = fst (Internal.remove_vars env x)
+let unify_env env1 env2 =
+  let nenv = Bddenv.lce env1 env2 in
+  if nenv!=env1 && nenv!=env2 then 
+    nenv#set_apron_env (Apron.Environment.lce env1#apron_env env2#apron_env);
+  nenv 
 
 (*  ====================================================================== *)
 (** {3 General expressions} *)
 (*  ====================================================================== *)
 
-let check_typ2 env e2 e3 =
+let check_typ2 e2 e3 =
   let t2 = typ_of_expr e2 in
   let t3 = typ_of_expr e3 in
   if t2 <> t3 then
@@ -343,7 +355,7 @@ end
 
 let eq (env:('a,'b,'c) #env) (e1:expr) (e2:expr) : Bool.t
   =
-  let t = check_typ2 env e1 e2 in
+  let t = check_typ2 e1 e2 in
   match t with
   | `Bool ->
       Bool.eq env (Bool.of_expr e1) (Bool.of_expr e2)
@@ -361,7 +373,7 @@ let eq (env:('a,'b,'c) #env) (e1:expr) (e2:expr) : Bool.t
 
 let ite env (cond:Bool.t) (e1:expr) (e2:expr) : expr
   =
-  let t = check_typ2 env e1 e2 in
+  let t = check_typ2 e1 e2 in
   match t with
   | `Bool ->
       `Bool (Bool.ite env cond (Bool.of_expr e1) (Bool.of_expr e2))
@@ -565,6 +577,7 @@ let make_env = O.make_env
 let add_typ = O.add_typ
 let add_vars = O.add_vars
 let remove_vars = O.remove_vars
+let unify_env = O.unify_env
 let typ_of_expr= O.typ_of_expr
 let var = O.var
 let ite = O.ite

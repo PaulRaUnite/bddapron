@@ -21,7 +21,6 @@ C  libraries:
   CUDD (http://vlsi.colorado.edu/~fabio/CUDD/)
   cuddaux (http://gforge.inria.fr/projects/mlxxxidl/)
   APRON (http://apron.cri.ensmp.fr/library/)
-	(optional, if you do not use some modules)
 C/OCaml libraries
   mlgmpidl, mlcuddidl (http://gforge.inria.fr/projects/mlxxxidl/)
 OCaml libraries

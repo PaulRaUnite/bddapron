@@ -24,23 +24,29 @@ val top :
   Apron.Environment.t -> 'a Apron.Abstract1.t t
 val is_bottom : 'a Apron.Manager.t -> 'a Apron.Abstract1.t t -> bool
 val is_top : 'a Apron.Manager.t -> 'a Apron.Abstract1.t t -> bool
-val is_leq : 'a Apron.Manager.t -> 'a Apron.Abstract1.t t -> 'a Apron.Abstract1.t t -> bool
+val is_leq :  
+  ?bottom:'a Apron.Abstract1.t ->
+  'a Apron.Manager.t -> 'a Apron.Abstract1.t t -> 'a Apron.Abstract1.t t -> bool
 val is_eq : 'a Apron.Manager.t -> 'a Apron.Abstract1.t t -> 'a Apron.Abstract1.t t -> bool
 val join : 
+  ?bottom:'a Apron.Abstract1.t ->
   'a Apron.Manager.t -> 'a Apron.Abstract1.t t -> 'a Apron.Abstract1.t t -> 
   'a Apron.Abstract1.t t
 val meet :
+  ?bottom:'a Apron.Abstract1.t ->
   'a Apron.Manager.t -> 'a Apron.Abstract1.t t -> 'a Apron.Abstract1.t t -> 
   'a Apron.Abstract1.t t
 val meet_tcons_array :
   'a Apron.Manager.t -> 'a Apron.Abstract1.t t -> Apron.Tcons1.earray -> 
   'a Apron.Abstract1.t t
 val assign_texpr_array :
+  ?bottom:'a Apron.Abstract1.t ->
   'a Apron.Manager.t -> 'a Apron.Abstract1.t t -> 
   Apron.Var.t array -> Apron.Texpr1.t array ->
   'a Apron.Abstract1.t t option ->
   'a Apron.Abstract1.t t
 val substitute_texpr_array :
+  ?bottom:'a Apron.Abstract1.t ->
   'a Apron.Manager.t -> 'a Apron.Abstract1.t t -> 
   Apron.Var.t array -> Apron.Texpr1.t array ->
   'a Apron.Abstract1.t t option ->
@@ -56,6 +62,7 @@ val rename_array :
   Apron.Var.t array -> Apron.Var.t array  -> 
   'a Apron.Abstract1.t t
 val widening :
+  ?bottom:'a Apron.Abstract1.t ->
   'a Apron.Manager.t -> 'a Apron.Abstract1.t t -> 'a Apron.Abstract1.t t -> 
   'a Apron.Abstract1.t t
 
@@ -121,7 +128,24 @@ val mapleaf1 : 'b manager -> (Bdd.t -> 'a -> 'b) -> 'a t -> 'b t
 val mapleaf2 : 'c manager -> (Bdd.t -> 'a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
 val mapunop : 'b manager -> ('a -> 'b) -> 'a t -> 'b t
 val mapbinop :
-  commutative:bool ->
+  ?commutative:bool ->
+  ?idempotent:bool ->
+  ?absorbant:('a * 'b * 'c * 'c) ->
+  ?neutral:('a * 'b) ->
   'c manager -> ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
 val mapterop :
   'd manager -> ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
+val mapcmpop :
+  ?bottom:'a -> 
+  ?top:'b ->
+  ('a -> 'b -> bool) -> 'a t -> 'b t -> bool
+val mapexistop : 
+  absorbant:'a -> 
+  ('a -> 'a -> 'a) -> Bdd.t -> 'a t -> 'a t
+val mapexistandop :
+  absorbant:'a -> 
+  ('a -> 'a -> 'a) -> Bdd.t -> Bdd.t -> 'a t -> 'a t
+val mapexistandapplyop :
+  absorbant:'a -> 
+  ('a -> 'a) -> ('a -> 'a -> 'a) -> Bdd.t -> Bdd.t -> 'a t -> 'a t
+

@@ -27,8 +27,13 @@ let make_manager (apron:'a Apron.Manager.t) =
   Mtbdd2.make_manager
     ~background:(Apron.Abstract1.bottom apron (Apron.Environment.make [||] [|Apron.Var.of_string "%d%u%m%m%y%"|]))
     ~hash:Hashtbl.hash
-    ~equal:(fun x y -> Pervasives.compare x y = 0)
-
+    ~equal:(fun x y ->
+      x==y || 
+      (Apron.Abstract1.canonicalize apron x;
+      Apron.Abstract1.canonicalize apron y;
+      Apron.Environment.equal x.Apron.Abstract1.env y.Apron.Abstract1.env && 
+      Apron.Abstract1.is_eq apron x y))
+    
 let print_manager fmt x = Mtbdd2.print_manager Apron.Abstract1.print fmt x
 
 let print print_bdd fmt t =
@@ -49,54 +54,52 @@ let print print_bdd fmt t =
     else begin
       let leaves = Mtbdd2.leaves t in
       assert((Array.length leaves) >= 2);
-      let index_bottom = ref (-1) and first = ref true in
+      let first = ref true in
       fprintf fmt "{ @[<v>";
       for i=Array.length leaves - 1 downto 0 do
 	let leaf = leaves.(i) in
-	if Apron.Abstract1.is_bottom (Apron.Abstract1.manager leaf) leaf then
-	  index_bottom := i
-	else begin
-	  if !first then first := false else fprintf fmt ",@ ";
+	if not (Apron.Abstract1.is_bottom (Apron.Abstract1.manager leaf) leaf) then begin
+	  if !first then first := false else fprintf fmt " or@,";
 	  let bdd = Mtbdd2.guard_of_leaf t leaf in
-	  fprintf fmt "%a IF %a"
-	    Apron.Abstract1.print leaf print_bdd bdd;
+	  fprintf fmt "@[<hv>(%a) and@ %a@]"
+	    print_bdd bdd Apron.Abstract1.print leaf;
 	end
       done;
-      if !index_bottom >= 0 then begin
-	assert (not !first);
-	fprintf fmt ",@ %a OTHERWISE"
-	  Apron.Abstract1.print leaves.(!index_bottom)
-      end;
       fprintf fmt "@] }"
     end
 
-let join (apron:'a Apron.Manager.t) (x:'a Apron.Abstract1.t t) (y:'a Apron.Abstract1.t t) :'a Apron.Abstract1.t t =
+let join ?bottom (apron:'a Apron.Manager.t) (x:'a Apron.Abstract1.t t) (y:'a Apron.Abstract1.t t) :'a Apron.Abstract1.t t =
   assert(x.man==y.man);
-  Mtbdd2.mapbinopid ~commutative:true
+  Mtbdd2.mapbinop ~commutative:true ~idempotent:true
+    ?neutral:(begin match bottom with
+    | Some abs -> Some(abs,abs)
+    | None -> None
+    end)
     x.man
-    (fun idx x idy y ->
-      if idx=idy then x
-      else if Apron.Abstract1.is_bottom apron x then y
-      else if Apron.Abstract1.is_bottom apron y then x
-      else Apron.Abstract1.join apron x y)
+    (fun x y -> Apron.Abstract1.join apron x y)
     x y
 
-let meet (apron:'a Apron.Manager.t) (x:'a Apron.Abstract1.t t) (y:'a Apron.Abstract1.t t) :'a Apron.Abstract1.t t =
+let meet ?bottom (apron:'a Apron.Manager.t) (x:'a Apron.Abstract1.t t) (y:'a Apron.Abstract1.t t) :'a Apron.Abstract1.t t =
   assert(x.man==y.man);
-  Mtbdd2.mapbinopid ~commutative:true
+  Mtbdd2.mapbinop ~commutative:true ~idempotent:true
+    ?absorbant:(begin match bottom with
+    | Some abs -> Some(abs,abs,abs,abs)
+    | None -> None
+    end)
     x.man
-    (fun idx x idy y ->
-      if idx=idy then x
-      else Apron.Abstract1.meet apron x y)
+    (Apron.Abstract1.meet apron)
     x y
 
-let widening (apron:'a Apron.Manager.t) (x:'a Apron.Abstract1.t t) (y:'a Apron.Abstract1.t t) :'a Apron.Abstract1.t t =
+let widening ?bottom (apron:'a Apron.Manager.t) (x:'a Apron.Abstract1.t t) (y:'a Apron.Abstract1.t t) :'a Apron.Abstract1.t t =
   assert(x.man==y.man);
-  Mtbdd2.mapbinop ~commutative:false
+  Mtbdd2.mapbinop ~commutative:false ~idempotent:true
+    ?neutral:(begin match bottom with
+    | Some abs -> Some(abs,background_of_manager x.man)
+    | None -> None
+    end)
     x.man
     (Apron.Abstract1.widening apron)
     x y
-
 
 let meet_tcons_array apron x tcons =
 (*
@@ -124,23 +127,12 @@ let rename_array (apron:'a Apron.Manager.t) (x:'a Apron.Abstract1.t t) tvar1 tva
     (fun x -> Apron.Abstract1.rename_array apron x tvar1 tvar2)
     x
 
-let is_leq (apron:'a Apron.Manager.t) t1 t2 =
+let is_leq ?bottom (apron:'a Apron.Manager.t) t1 t2 =
   assert(t1.man==t2.man);
-  let res =
-    Idd.mapbinop ~commutative:false
-      (begin fun id1 id2 ->
-	if
-	  id1=id2 ||
-	  Apron.Abstract1.is_leq apron
-	  (leaf_of_id t1.man id1) (leaf_of_id t2.man id2)
-	then
-	  1
-	else
-	  0
-      end)
-      t1.idd t2.idd
-  in
-  Idd.is_cst res && Idd.dval res = 1
+  mapcmpop 
+    ?bottom
+    (fun x y -> Apron.Abstract1.is_leq apron x y)
+    t1 t2
 
 let is_eq (apron:'a Apron.Manager.t) =
   Mtbdd2.is_equal
@@ -200,6 +192,7 @@ let mapguardleaf2 apron f t1 t2 background
   !res
 
 let assign_texpr_array
+  ?bottom
   (apron:'a Apron.Manager.t)
   (x:'a Apron.Abstract1.t t) (tvar:Apron.Var.t array) (texpr:Apron.Texpr1.t array)
   (odest:'a Apron.Abstract1.t t option)
@@ -215,17 +208,21 @@ let assign_texpr_array
     | Some y ->
 	if is_bottom apron y then x else begin
 	  assert(x.man==y.man);
-	  mapbinop ~commutative:false x.man
+	  mapbinop ~commutative:false ~idempotent:false
+	    ?absorbant:(begin match bottom with
+	    | Some abs -> Some(abs,abs,abs,abs)
+	    | None -> None
+	    end)
+	    x.man
 	    (fun x y ->
-	      if Apron.Abstract1.is_bottom apron x then x
-	      else if Apron.Abstract1.is_bottom apron y then y
-	      else
-		Apron.Abstract1.assign_texpr_array apron x tvar texpr (Some y))
+	      Apron.Abstract1.assign_texpr_array apron x tvar texpr (Some y)
+	    )
 	    x y
 	end
   end
 
 let substitute_texpr_array
+  ?bottom
   (apron:'a Apron.Manager.t)
   (x:'a Apron.Abstract1.t t) (tvar:Apron.Var.t array) (texpr:Apron.Texpr1.t array)
   (odest:'a Apron.Abstract1.t t option)
@@ -241,7 +238,12 @@ let substitute_texpr_array
     | Some y ->
 	if is_bottom apron y then x else begin
 	  assert(x.man==y.man);
-	  mapbinop ~commutative:false x.man
+	  mapbinop ~commutative:false  ~idempotent:false
+	    ?absorbant:(begin match bottom with
+	    | Some abs -> Some(abs,abs,abs,abs)
+	    | None -> None
+	    end)
+	    x.man
 	    (fun x y ->
 	      if Apron.Abstract1.is_bottom apron x then x
 	      else if Apron.Abstract1.is_bottom apron y then y

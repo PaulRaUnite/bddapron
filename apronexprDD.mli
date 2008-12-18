@@ -89,6 +89,7 @@ module Condition :
         typ_of_var : string -> [> Apronexpr.typ ]; .. > ->
       Apronexpr.Condition.t -> [> `Apron of expr ] MappeS.t -> Bdd.t
   end
+
 (*  ********************************************************************** *)
 (** {2 Standard Mtbdd2 functions} *)
 (*  ********************************************************************** *)
@@ -140,8 +141,26 @@ val mapleaf2 :
   'a manager -> (Bdd.t -> 'b -> 'c -> 'a) -> 'b t -> 'c t -> 'a t
 val mapunop : 'a manager -> ('b -> 'a) -> 'b t -> 'a t
 val mapbinop :
-  commutative:bool -> 'a manager -> ('b -> 'c -> 'a) -> 'b t -> 'c t -> 'a t
+  ?commutative:bool ->
+  ?idempotent:bool ->
+  ?absorbant:('a * 'b * 'c * 'c) ->
+  ?neutral:('a * 'b) ->
+  'c manager -> ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
 val mapterop :
   'a manager -> ('b -> 'c -> 'd -> 'a) -> 'b t -> 'c t -> 'd t -> 'a t
+val mapcmpop :
+  ?bottom:'a -> 
+  ?top:'b ->
+  ('a -> 'b -> bool) -> 'a t -> 'b t -> bool
+val mapexistop : 
+  absorbant:'a -> 
+  ('a -> 'a -> 'a) -> Bdd.t -> 'a t -> 'a t
+val mapexistandop :
+  absorbant:'a -> 
+  ('a -> 'a -> 'a) -> Bdd.t -> Bdd.t -> 'a t -> 'a t
+val mapexistandapplyop :
+  absorbant:'a -> 
+  ('a -> 'a) -> ('a -> 'a -> 'a) -> Bdd.t -> Bdd.t -> 'a t -> 'a t
+
 val wrapunop : (Idd.t -> Idd.t) -> 'a t -> 'a t
 val wrapbinop : (Idd.t -> Idd.t -> Idd.t) -> 'a t -> 'a t -> 'a t

@@ -32,6 +32,8 @@ module Lin :
     val compare_lterm : term list -> term list -> int
     val compare : expr -> expr -> int
     val var : string -> expr
+    val zero : expr
+    val one : expr
     val cst : Mpqf.t -> expr
     val add : expr -> expr -> expr
     val sub : expr -> expr -> expr
@@ -125,6 +127,8 @@ type expr =
   | Tree of Tree.expr
 
 val var : 'a #db -> string -> expr
+val zero : expr
+val one : expr
 val cst : Apron.Coeff.t -> expr
 val add : ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> expr -> expr -> expr
 val sub : ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> expr -> expr -> expr

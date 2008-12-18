@@ -30,7 +30,8 @@ module O = struct
 (** {3 Interface to ApronDD} *)
 (*  ====================================================================== *)
 
-let print env = ApronDD.print (Bddexpr.O.print_bdd env)
+let print env =
+  ApronDD.print (Bddexpr.O.print_bdd env)
 
 let bottom man env =
   ApronDD.bottom env#manager man.aprondd man.apron env#apron_env
@@ -41,12 +42,19 @@ let is_bottom man =
 let is_top man =
   ApronDD.is_top man.apron
 
-let is_leq man = ApronDD.is_leq man.apron
+let bottom_of_abs man (mtbdd:'a t) : 'a Apron.Abstract1.t =
+  let oabs = Mtbdd2.pick_leaf mtbdd in
+  match oabs with
+  | Some abs -> 
+    Apron.Abstract1.bottom man.apron (abs.Apron.Abstract1.env)
+  | None -> failwith "" 
+
+let is_leq (man:'a manager) (x:'a t) (y:'a t) = ApronDD.is_leq ~bottom:(bottom_of_abs man x) man.apron x y
 let is_eq man = ApronDD.is_eq man.apron
 
-let meet man = ApronDD.meet man.apron
-let join man = ApronDD.join man.apron
-let widening man = ApronDD.widening man.apron
+let meet man x y = ApronDD.meet ~bottom:(bottom_of_abs man x) man.apron x y
+let join man x y = ApronDD.join ~bottom:(bottom_of_abs man x) man.apron x y
+let widening man x y = ApronDD.widening ~bottom:(bottom_of_abs man x) man.apron x y
 
 (*  ====================================================================== *)
 (** {3 Meet with an elementary condition, cofactors} *)
@@ -278,7 +286,6 @@ module Descend = struct
     (f:'a t -> Bddapronexpr.Bool.t -> 'a t)
     (t:'a t)
     (bexpr:Bddapronexpr.Bool.t)
-
     =
     if Bdd.is_false bexpr then bottom man env
     else if is_bottom man t then t
@@ -350,6 +357,7 @@ module Asssub = struct
 end
 
 let assign_list
+  ?relational ?nodependency
   (man:'a manager)
   (env:('b,'c,Bddapronexpr.cond) #Bddapronexpr.O.env) (t:'a t)
   (sub:(string * Bddapronexpr.expr) list)
@@ -376,28 +384,44 @@ let assign_list
       if bsub<>[] then
 	match odest with
 	| None ->
-	    ApronDD.mapguardleaf man.apron
-	    (begin fun (guard,abs) ->
-	      if Apron.Abstract1.is_bottom man.apron abs then
-		(Bdd.dfalse cudd, bottom)
-	      else
-		let nguard = Bdddomain.O.assign_list env guard bsub in
-		let nabs =
-		  if tavar=[||] then abs
-		  else
-		    Apron.Abstract1.assign_texpr_array man.apron
-		      abs tavar taexpr None
+	    begin match bsub with
+	    | [varexpr] when false && tavar=[||] && env#bddincr=2 ->
+		let (relation,supp,tbdd) = 
+		  Bdddomain.O.relation_supp_compose_of_lvarexpr
+		    env bsub
 		in
-		(nguard,nabs)
-	    end)
-	    t
-	    bottom
+		let image = 
+		  ApronDD.mapexistandop 
+		    ~absorbant:(bottom_of_abs man t)
+		    (Apron.Abstract1.join man.apron)
+		    supp relation t
+		in
+		let image = ApronDD.vectorcompose tbdd image in
+		image
+	    | _ ->
+		ApronDD.mapguardleaf man.apron
+		(begin fun (guard,abs) ->
+		  if Apron.Abstract1.is_bottom man.apron abs then
+		    (Bdd.dfalse cudd, bottom)
+		  else
+		    let nguard = Bdddomain.O.assign_list ?relational ?nodependency env guard bsub in
+		    let nabs =
+		      if tavar=[||] then abs
+		      else
+			Apron.Abstract1.assign_texpr_array man.apron
+			  abs tavar taexpr None
+		    in
+		    (nguard,nabs)
+		end)
+		t
+		bottom
+	    end
 	| Some dest ->
 	    let res = ref bottomdd in
 	    Array.iter
 	      (begin fun (guard,abs) ->
 		if not (Apron.Abstract1.is_bottom man.apron abs) then begin
-		  let nguard = Bdddomain.O.assign_list env guard bsub in
+		  let nguard = Bdddomain.O.assign_list ?relational ?nodependency env guard bsub in
 		  let dest = ApronDD.ite nguard dest bottomdd in
 		  if not (is_bottom man dest) then begin
 		    let nabs =

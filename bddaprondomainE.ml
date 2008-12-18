@@ -102,6 +102,7 @@ let meet_cond
   make_value nenv (Bddaprondomain.O.meet_cond man nenv t cond)
 
 let assign_list
+  ?relational ?nodependency
   man
   (t:(('c,'d,Bddapronexpr.cond) #Bddapronexpr.O.env as 'a,'b) t)
   (sub:(string * ('c,'d,Bddapronexpr.cond) #Bddapronexpr.O.env BddapronexprE.O.expr) list)
@@ -111,7 +112,7 @@ let assign_list
     check_lvarexprodest Bddapronexpr.permute t sub odest
   in
   make_value nenv
-    (Bddaprondomain.O.assign_list man nenv t sub odest)
+    (Bddaprondomain.O.assign_list ?relational ?nodependency man nenv t sub odest)
 
 let substitute_list
   man
@@ -197,8 +198,7 @@ let change_environment man (t:('a,'b) t) (nenv:'a) =
 
 let unify man (t1:('a,'b) t) (t2:('a,'b) t) : ('a,'b) t
   =
-  let nenv = Bddenv.lce t1.env t2.env in
-  nenv#set_apron_env (Apron.Environment.lce t1.env#apron_env t2.env#apron_env);
+  let nenv = Bddapronexpr.O.unify_env t1.env t2.env in
   let nt1 = change_environment man t1 nenv in
   let nt2 = change_environment man t2 nenv in
   let res = meet man nt1 nt2 in
@@ -275,6 +275,7 @@ let make_env = Bddapronexpr.make_env
 let add_typ = Bddapronexpr.add_typ
 let add_vars = Bddapronexpr.add_vars
 let remove_vars = Bddapronexpr.remove_vars
+let unify_env = Bddapronexpr.unify_env
 let rename_vars = Bddaprondomain.rename_vars
 
 let make_manager = Bddaprondomain.make_manager

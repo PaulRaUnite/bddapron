@@ -25,6 +25,8 @@ val join : 'a manager -> 'a t -> 'a t -> 'a t
 val meet_cond : 'a manager -> env  -> 'a t -> Bddapronexpr.Bool.t -> 'a t
 
 val assign_list :
+  ?relational:bool ->
+  ?nodependency:bool ->
   'a manager -> env ->
   'a t -> (string * Bddapronexpr.expr) list -> 'a t option -> 'a t
 val substitute_list :
@@ -66,6 +68,8 @@ val join : 'a manager -> 'a t -> 'a t -> 'a t
 val meet_cond : 'a manager -> ('b,'c,Bddapronexpr.cond) #Bddapronexpr.O.env  -> 'a t -> Bddapronexpr.Bool.t -> 'a t
 
 val assign_list :
+  ?relational:bool ->
+  ?nodependency:bool ->
   'a manager ->
   ('b,'c,Bddapronexpr.cond) #Bddapronexpr.O.env ->
   'a t -> (string * Bddapronexpr.expr) list -> 'a t option -> 'a t

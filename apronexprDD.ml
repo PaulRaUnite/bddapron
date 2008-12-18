@@ -30,17 +30,34 @@ let print print_bdd fmt (expr:expr) =
 let print_manager fmt x = Mtbdd2.print_manager Apronexpr.print fmt x
 
 let var cudd man env v = Mtbdd2.cst cudd man (Apronexpr.var env v)
+
 let add ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
   assert(e1.man==e2.man);
-  Mtbdd2.mapbinop ~commutative:true
+  let neutral = 
+    if typ=Apron.Texpr1.Real || typ=Apron.Texpr1.Int 
+    then Some(Apronexpr.zero,Apronexpr.zero)
+    else None
+  in
+  Mtbdd2.mapbinop ~commutative:true ?neutral
     e1.man (Apronexpr.add ~typ ~round) e1 e2
+    
 let sub ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
   assert(e1.man==e2.man);
-  Mtbdd2.mapbinop ~commutative:false
+  let neutral = 
+    if typ=Apron.Texpr1.Real || typ=Apron.Texpr1.Int 
+    then Some(background_of_manager e1.man, Apronexpr.zero)
+    else None
+  in
+  Mtbdd2.mapbinop ~commutative:false ?neutral
     e1.man (Apronexpr.sub ~typ ~round) e1 e2
 let mul ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
   assert(e1.man==e2.man);
-  Mtbdd2.mapbinop ~commutative:true
+  let neutral = 
+    if typ=Apron.Texpr1.Real || typ=Apron.Texpr1.Int 
+    then Some(Apronexpr.one,Apronexpr.one)
+    else None
+  in
+  Mtbdd2.mapbinop ~commutative:true ?neutral
     e1.man (Apronexpr.mul ~typ ~round) e1 e2
 let div ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
   assert(e1.man==e2.man);

@@ -191,6 +191,9 @@ module Lin = struct
     lterm = [];
   }
 
+  let zero = cst (Mpqf.of_int 0)
+  let one = cst (Mpqf.of_int 1)
+
   let rec add_lterm l1 l2 = match (l1,l2) with
     | (l,[])
     | ([],l)
@@ -792,12 +795,16 @@ let var (db:'a #db) x =
       (Print.sprintf "Arith.var: reference %s undeclared or of wrong type in environment"
 	x)
 
+let zero = Lin(Lin.zero)
+let one = Lin(Lin.one)
+
 let cst (x:Apron.Coeff.t) = 
   match x with
   | Apron.Coeff.Scalar (Apron.Scalar.Mpqf x) ->
       Lin(Lin.cst x)
   | _ ->
       Tree(Tree.Cst x)
+
 
 let to_tree = function
   | Lin l -> tree_of_lin l

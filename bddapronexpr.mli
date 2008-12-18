@@ -32,14 +32,18 @@ class type ['a,'b,'c] env = object
   method set_apron_env : Apron.Environment.t -> unit
 end
 
-class ['a,'b] make_env : ?boolfirst:bool -> Manager.t -> ['a, 'b, cond] env
+class ['a,'b] make_env : ?boolfirst:bool -> ?relational:bool -> Manager.t -> ['a, 'b, cond] env
 
-val make_env : ?boolfirst:bool -> Manager.t -> (typ,typdef,cond) env
+val make_env : ?boolfirst:bool -> ?relational:bool -> Manager.t -> (typ,typdef,cond) env
   (** Create a new database *)
 
 val add_typ : (('a,'b,'c) #env as 'd) -> string -> 'b -> 'd
 val add_vars : (('a,'b,'c) #env as 'd) -> (string * 'a) list -> 'd
 val remove_vars : (('a,'b,'c) #env as 'd) -> string list -> 'd
+val unify_env : (('a,'b,'c) #env as 'd) -> 'd -> 'd
+
+val check_typ2 :
+  [< expr] -> [< expr] -> [> typ]
 
 module Bool : sig
   type t = Bdd.t
@@ -245,13 +249,14 @@ end
 (*  ********************************************************************** *)
 
 class type env = [typ,typdef,cond] O.env
-class make_env : ?boolfirst:bool -> Manager.t -> env
-val make_env : ?boolfirst:bool -> Manager.t -> env
+class make_env : ?boolfirst:bool -> ?relational:bool -> Manager.t -> env
+val make_env : ?boolfirst:bool -> ?relational:bool -> Manager.t -> env
   (** Create a new database *)
 
 val add_typ : env -> string -> typdef -> env
 val add_vars : env -> (string * typ) list -> env
 val remove_vars : env -> string list -> env
+val unify_env : env -> env -> env
 
 module Bool : sig
   type t = Bdd.t

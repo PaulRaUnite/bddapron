@@ -34,6 +34,7 @@ module O : sig
 val add_typ : (('a,'b,'c) #Bddapronexpr.O.env as 'd) -> string -> 'b -> 'd
 val add_vars : (('a,'b,'c) #Bddapronexpr.O.env as 'd) -> (string * 'a) list -> 'd
 val remove_vars : (('a,'b,'c) #Bddapronexpr.O.env as 'd) -> string list -> 'd
+val unify_env : (('a,'b,'c) #Bddapronexpr.O.env as 'd) -> 'd -> 'd
 
 val print_cond : ('a,'b,'c) #Bddapronexpr.O.env -> Format.formatter -> [<Bddapronexpr.cond] -> unit
 val print_env : Format.formatter -> (Bddapronexpr.typ,Bddapronexpr.typdef,Bddapronexpr.cond) Bddapronexpr.O.env -> unit
@@ -303,7 +304,7 @@ end
 
 type env = Bddapronexpr.env
 
-val make_env : ?boolfirst:bool -> Manager.t -> env
+val make_env : ?boolfirst:bool -> ?relational:bool -> Manager.t -> env
     (** Create an environment with a CUDD manager *)
 
 val add_typ : env -> string -> Bddapronexpr.typdef -> env
@@ -312,6 +313,8 @@ val add_vars : env -> (string * Bddapronexpr.typ) list -> env
     (** Add (typed) variables *)
 val remove_vars : env -> string list -> env
     (** Remove variables *)
+val unify_env : env -> env -> env
+    (** Unify environments (non-disjoint union of environments) *)
 
 val print_typ : Format.formatter -> [< Bddapronexpr.typ] -> unit
 val print_typdef : Format.formatter -> [< Bddapronexpr.typdef] -> unit

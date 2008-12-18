@@ -25,6 +25,7 @@ let make_env = Bddapronexpr.O.make_env
 let add_typ = Bddapronexpr.O.add_typ
 let add_vars = Bddapronexpr.O.add_vars
 let remove_vars = Bddapronexpr.O.remove_vars
+let unify_env = Bddapronexpr.O.unify_env
 let print_cond = Bddapronexpr.O.print_cond
 let print_env = Bddapronexpr.O.print_env
 
@@ -234,7 +235,8 @@ module Apron = struct
 
   let supeq expr = condition Apron.Tcons1.SUPEQ expr
   let sup expr = condition Apron.Tcons1.SUP expr
-  let eq expr = condition Apron.Tcons1.EQ expr
+  let eq expr = 
+    condition Apron.Tcons1.EQ expr
 
   let cofactor e1 e2 = BddexprE.O.mapbinop ApronexprDD.permute Bdd.permute ApronexprDD.cofactor e1 e2
   let restrict e1 e2 = BddexprE.O.mapbinop ApronexprDD.permute Bdd.permute ApronexprDD.restrict e1 e2
@@ -283,7 +285,21 @@ let restrict e1 e2 = BddexprE.O.mapbinop permute Bdd.permute Bddapronexpr.restri
 let tdrestrict e1 e2 = BddexprE.O.mapbinop permute Bdd.permute Bddapronexpr.tdrestrict e1 e2
 
 let eq e1 e2 =
-  BddexprE.O.mapbinope permute permute Bddapronexpr.O.eq e1 e2
+  let t = Bddapronexpr.O.check_typ2 e1.value e2.value in
+  match t with
+  | `Bool ->
+      Bool.eq (Bool.of_expr e1) (Bool.of_expr e2)
+  | `Bint _ ->
+      Bint.eq (Bint.of_expr e1) (Bint.of_expr e2)
+  | `Benum _ ->
+      Benum.eq (Benum.of_expr e1) (Benum.of_expr e2)
+  | `Real ->
+      let diff = Apron.sub
+	(Apron.of_expr e1)
+	(Apron.of_expr e2)
+      in
+      Apron.eq diff
+  | _ -> failwith ""
 
 let support (e:'a expr) = Bddapronexpr.O.support e.env e.value
 let support_cond (e:'a expr) = Bddapronexpr.O.support_cond e.env e.value
@@ -305,6 +321,7 @@ let make_env =  Bddapronexpr.make_env
 let add_typ = O.add_typ
 let add_vars = O.add_vars
 let remove_vars = O.remove_vars
+let unify_env = O.unify_env
 let print_cond = O.print_cond
 let print_env = O.print_env
 
