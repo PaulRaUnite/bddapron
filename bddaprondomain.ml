@@ -45,9 +45,9 @@ let is_top man =
 let bottom_of_abs man (mtbdd:'a t) : 'a Apron.Abstract1.t =
   let oabs = Mtbdd2.pick_leaf mtbdd in
   match oabs with
-  | Some abs -> 
+  | Some abs ->
     Apron.Abstract1.bottom man.apron (abs.Apron.Abstract1.env)
-  | None -> failwith "" 
+  | None -> failwith ""
 
 let is_leq (man:'a manager) (x:'a t) (y:'a t) = ApronDD.is_leq ~bottom:(bottom_of_abs man x) man.apron x y
 let is_eq man = ApronDD.is_eq man.apron
@@ -61,13 +61,13 @@ let widening man x y = ApronDD.widening ~bottom:(bottom_of_abs man x) man.apron 
 (*  ====================================================================== *)
 
 let meet_idcondb
-  (man:'a manager)
-  (env:('b,'c,Bddapronexpr.cond) #Bddapronexpr.O.env)
-  (t:'a t)
-  (idcondb:int*bool)
-  :
-  'a t
-  =
+    (man:'a manager)
+    (env:('b,'c,Bddapronexpr.cond) #Bddapronexpr.O.env)
+    (t:'a t)
+    (idcondb:int*bool)
+    :
+    'a t
+    =
   let (idcond,b) = idcondb in
   if MappeI.mem idcond env#idcondvar then begin
     let bdd = Bdd.ithvar env#manager idcond in
@@ -84,13 +84,13 @@ let meet_idcondb
 
 
 let cofactors
-  (man:'a manager)
-  (env:('b,'c,Bddapronexpr.cond) #Bddapronexpr.O.env)
-  (t:'a t)
-  (idcond:int)
-  :
-  ('a t * 'a t)
-  =
+    (man:'a manager)
+    (env:('b,'c,Bddapronexpr.cond) #Bddapronexpr.O.env)
+    (t:'a t)
+    (idcond:int)
+    :
+    ('a t * 'a t)
+    =
   if MappeI.mem idcond env#idcondvar then begin
     let bdd = Bdd.ithvar env#manager idcond in
     (ApronDD.cofactor t bdd,
@@ -132,11 +132,11 @@ module Descend = struct
   (** variant of {!Bddapronexpr.texpr_of_tbddidd}, where the IDDs are assumed
     to be constant *)
   let of_tbddidd
-    (oldtexpr:Bddapronexpr.expr array)
-    (tbdd:Bdd.t array) (tidd:Idd.t array)
-    :
-    Bddexpr.expr list * Apronexpr.expr array
-    =
+      (oldtexpr:Bddapronexpr.expr array)
+      (tbdd:Bdd.t array) (tidd:Idd.t array)
+      :
+      Bddexpr.expr list * Apronexpr.expr array
+      =
     let lbddexpr = ref [] in
     let tapronexpr = Array.make (Array.length tidd) (Obj.magic 0) in
     let indexb = ref (Array.length tbdd) in
@@ -151,7 +151,7 @@ module Descend = struct
 	  indexb := !indexb - (Array.length x.Bddint.reg);
 	  let res =
 	    { x with Bddint.reg =
-	      Array.mapi (fun i bdd -> tbdd.(!indexb + i)) x.Bddint.reg
+		Array.mapi (fun i bdd -> tbdd.(!indexb + i)) x.Bddint.reg
 	    }
 	  in
 	  lbddexpr := (`Bint res) :: !lbddexpr
@@ -159,7 +159,7 @@ module Descend = struct
 	  indexb := !indexb - (Array.length x.Bddenum.reg);
 	  let res =
 	    { x with Bddenum.reg =
-	      Array.mapi (fun i bdd -> tbdd.(!indexb + i)) x.Bddenum.reg
+		Array.mapi (fun i bdd -> tbdd.(!indexb + i)) x.Bddenum.reg
 	    }
 	  in
 	  lbddexpr := (`Benum res) :: !lbddexpr
@@ -178,13 +178,13 @@ module Descend = struct
     calls [f t tbdd tidd odest]. Returns [bottom] if [t] or [odest] is
     bottom. *)
   let rec descend_arith
-    (man:'a manager)
-    (env:('b,'c,Bddapronexpr.cond) #Bddapronexpr.O.env)
-    (f:'a t -> Bdd.t array -> Idd.t array -> 'a t option -> 'a t)
-    (t:'a t)
-    (tbdd:Bdd.t array) (tidd:Idd.t array)
-    (odest:'a t option)
-    =
+      (man:'a manager)
+      (env:('b,'c,Bddapronexpr.cond) #Bddapronexpr.O.env)
+      (f:'a t -> Bdd.t array -> Idd.t array -> 'a t option -> 'a t)
+      (t:'a t)
+      (tbdd:Bdd.t array) (tidd:Idd.t array)
+      (odest:'a t option)
+      =
     if is_bottom man t then t
     else if is_obottom man odest then extract_option odest
     else begin
@@ -218,13 +218,13 @@ module Descend = struct
     [odest], until there is no conditions in [tidd], in which case calls
     [f t tbdd tidd odest]. Returns [bottom] if [t] or [odest] is bottom. *)
   let rec descend_bool
-    (man:'a manager)
-    (env:('b,'c,Bddapronexpr.cond) #Bddapronexpr.O.env)
-    (f:'a t -> Bdd.t array -> Idd.t array -> 'a t option -> 'a t)
-    (t:'a t)
-    (tbdd:Bdd.t array) (tidd:Idd.t array)
-    (odest:'a t option)
-    =
+      (man:'a manager)
+      (env:('b,'c,Bddapronexpr.cond) #Bddapronexpr.O.env)
+      (f:'a t -> Bdd.t array -> Idd.t array -> 'a t option -> 'a t)
+      (t:'a t)
+      (tbdd:Bdd.t array) (tidd:Idd.t array)
+      (odest:'a t option)
+      =
     if is_bottom man t then t
     else if is_obottom man odest then extract_option odest
     else begin
@@ -253,19 +253,19 @@ module Descend = struct
 	in
 	let res1 = descend_bool man env f t1 tbdd1 tidd1 odest1 in
 	let res2 = descend_bool man env f t2 tbdd2 tidd2 odest2 in
-	join man res1 res2
+	ApronDD.ite bdd res1 res2
       end
     end
 
   (** Combines [descend_arith], and then [descend_bool] *)
   let descend
-    (man:'a manager)
-    (env:('b,'c,Bddapronexpr.cond) #Bddapronexpr.O.env)
-    (f:'a t -> Bddexpr.expr list -> Apronexpr.expr array -> 'a t option -> 'a t)
-    (t:'a t)
-    (texpr:Bddapronexpr.expr array)
-    (odest:'a t option)
-    =
+      (man:'a manager)
+      (env:('b,'c,Bddapronexpr.cond) #Bddapronexpr.O.env)
+      (f:'a t -> Bddexpr.expr list -> Apronexpr.expr array -> 'a t option -> 'a t)
+      (t:'a t)
+      (texpr:Bddapronexpr.expr array)
+      (odest:'a t option)
+      =
     let (tbdd,tidd) = Bddapronexpr.O.tbddidd_of_texpr texpr in
     descend_arith man env
       (begin fun t tbdd tidd odest ->
@@ -281,12 +281,12 @@ module Descend = struct
       t tbdd tidd odest
 
   let rec descend_cond
-    (man:'a manager)
-    (env:('b,'c,Bddapronexpr.cond) #Bddapronexpr.O.env)
-    (f:'a t -> Bddapronexpr.Bool.t -> 'a t)
-    (t:'a t)
-    (bexpr:Bddapronexpr.Bool.t)
-    =
+      (man:'a manager)
+      (env:('b,'c,Bddapronexpr.cond) #Bddapronexpr.O.env)
+      (f:'a t -> Bddapronexpr.Bool.t -> 'a t)
+      (t:'a t)
+      (bexpr:Bddapronexpr.Bool.t)
+      =
     if Bdd.is_false bexpr then bottom man env
     else if is_bottom man t then t
     else begin
@@ -336,10 +336,10 @@ let meet_cond man env (t:'a t) (cond:Bddapronexpr.Bool.t) : 'a t =
 
 module Asssub = struct
   let lbvar_tavar_texpr_of_sub
-    (sub:(string * Bddapronexpr.expr) list)
-    :
-    string list *  Apron.Var.t array * Bddapronexpr.expr array
-    =
+      (sub:(string * Bddapronexpr.expr) list)
+      :
+      string list *  Apron.Var.t array * Bddapronexpr.expr array
+      =
     let (lbvar,lavar,lexpr) =
       List.fold_left
 	(begin fun (lbvar,lavar,lexpr) (var,expr) ->
@@ -357,14 +357,14 @@ module Asssub = struct
 end
 
 let assign_list
-  ?relational ?nodependency
-  (man:'a manager)
-  (env:('b,'c,Bddapronexpr.cond) #Bddapronexpr.O.env) (t:'a t)
-  (sub:(string * Bddapronexpr.expr) list)
-  (odest:'a t option)
-  :
-  'a t
-  =
+    ?relational ?nodependency
+    (man:'a manager)
+    (env:('b,'c,Bddapronexpr.cond) #Bddapronexpr.O.env) (t:'a t)
+    (sub:(string * Bddapronexpr.expr) list)
+    (odest:'a t option)
+    :
+    'a t
+    =
   let cudd = env#manager in
   let apron_env = env#apron_env in
   let bottomdd = bottom man env in
@@ -372,12 +372,12 @@ let assign_list
   let (lbvar,tavar,texpr) = Asssub.lbvar_tavar_texpr_of_sub sub in
 
   let assign_elementary
-    (t:'a t)
-    (lbexpr:Bddexpr.expr list) (taexpr:Apronexpr.expr array)
-    (odest:'a t option)
-    :
-    'a t
-    =
+      (t:'a t)
+      (lbexpr:Bddexpr.expr list) (taexpr:Apronexpr.expr array)
+      (odest:'a t option)
+      :
+      'a t
+      =
     let bsub = List.combine lbvar lbexpr in
     let taexpr = Array.map (Apronexpr.to_texpr1 apron_env) taexpr in
     let res =
@@ -386,12 +386,12 @@ let assign_list
 	| None ->
 	    begin match bsub with
 	    | [varexpr] when false && tavar=[||] && env#bddincr=2 ->
-		let (relation,supp,tbdd) = 
+		let (relation,supp,tbdd) =
 		  Bdddomain.O.relation_supp_compose_of_lvarexpr
 		    env bsub
 		in
-		let image = 
-		  ApronDD.mapexistandop 
+		let image =
+		  ApronDD.mapexistandop
 		    ~absorbant:(bottom_of_abs man t)
 		    (Apron.Abstract1.join man.apron)
 		    supp relation t
@@ -400,21 +400,21 @@ let assign_list
 		image
 	    | _ ->
 		ApronDD.mapguardleaf man.apron
-		(begin fun (guard,abs) ->
-		  if Apron.Abstract1.is_bottom man.apron abs then
-		    (Bdd.dfalse cudd, bottom)
-		  else
-		    let nguard = Bdddomain.O.assign_list ?relational ?nodependency env guard bsub in
-		    let nabs =
-		      if tavar=[||] then abs
-		      else
-			Apron.Abstract1.assign_texpr_array man.apron
-			  abs tavar taexpr None
-		    in
-		    (nguard,nabs)
-		end)
-		t
-		bottom
+		  (begin fun (guard,abs) ->
+		    if Apron.Abstract1.is_bottom man.apron abs then
+		      (Bdd.dfalse cudd, bottom)
+		    else
+		      let nguard = Bdddomain.O.assign_list ?relational ?nodependency env guard bsub in
+		      let nabs =
+			if tavar=[||] then abs
+			else
+			  Apron.Abstract1.assign_texpr_array man.apron
+			    abs tavar taexpr None
+		      in
+		      (nguard,nabs)
+		  end)
+		  t
+		  bottom
 	    end
 	| Some dest ->
 	    let res = ref bottomdd in
@@ -459,25 +459,25 @@ let assign_list
   else Descend.descend man env assign_elementary t texpr odest
 
 let substitute_list
-  (man:'a manager)
-  (env:('b,'c,Bddapronexpr.cond) #Bddapronexpr.O.env)
-  (t:'a t) (sub:(string * Bddapronexpr.expr) list)
-  (odest:'a t option)
-  :
-  'a t
-  =
+    (man:'a manager)
+    (env:('b,'c,Bddapronexpr.cond) #Bddapronexpr.O.env)
+    (t:'a t) (sub:(string * Bddapronexpr.expr) list)
+    (odest:'a t option)
+    :
+    'a t
+    =
   let cudd = env#manager in
   let apron_env = env#apron_env in
   let bottomdd = bottom man env in
   let (lbvar,tavar,texpr) = Asssub.lbvar_tavar_texpr_of_sub sub in
 
   let substitute_elementary
-    (t:'a t)
-    (lbexpr:Bddexpr.expr list) (taexpr:Apronexpr.expr array)
-    (odest:'a t option)
-    :
-    'a t
-    =
+      (t:'a t)
+      (lbexpr:Bddexpr.expr list) (taexpr:Apronexpr.expr array)
+      (odest:'a t option)
+      :
+      'a t
+      =
     let bsub = List.combine lbvar lbexpr in
     let taexpr = Array.map (Apronexpr.to_texpr1 apron_env) taexpr in
     let res =
@@ -489,7 +489,7 @@ let substitute_list
 	| [||],(Some dest) -> meet man t dest
 	| (_,None) ->
 	    ApronDD.substitute_texpr_array man.apron
-	    t tavar taexpr None
+	      t tavar taexpr None
 	| (_,Some dest) ->
 	    let res = ref bottomdd in
 	    Array.iter
@@ -571,15 +571,15 @@ let forget_list (man:'d manager) (env:('a,'b,'c) #Bddapronexpr.O.env) (t:'d t) l
 module Internal = struct
 
   let rename_vars
-    (env:('a,'b,'c) #Bddapronexpr.O.env as 'e)
-    (lvarvar:(string*string) list)
-    :
-    'e * int array
-    =
+      (env:('a,'b,'c) #Bddapronexpr.O.env as 'e)
+      (lvarvar:(string*string) list)
+      :
+      'e * int array
+      =
     let (env,operm) = Bddenv.clear_cond env in
     begin match operm with
-      | None -> ()
-      | Some perm -> permute env perm
+    | None -> ()
+    | Some perm -> permute env perm
     end;
     let (nenv,perm) = Bddenv.rename_vars env lvarvar in
     let perm = match operm with
@@ -608,11 +608,11 @@ module Internal = struct
 end
 
 let rename_vars
-  (env:('a,'b,'c) #Bddapronexpr.O.env as 'e)
-  (lvarvar:(string*string) list)
-  :
-  'e
-  =
+    (env:('a,'b,'c) #Bddapronexpr.O.env as 'e)
+    (lvarvar:(string*string) list)
+    :
+    'e
+    =
   fst (Internal.rename_vars env lvarvar)
 
 end
