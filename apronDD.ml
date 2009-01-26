@@ -192,19 +192,19 @@ let mapguardleaf2 apron f t1 t2 background
   !res
 
 let assign_texpr_array
-  ?bottom
-  (apron:'a Apron.Manager.t)
-  (x:'a Apron.Abstract1.t t) (tvar:Apron.Var.t array) (texpr:Apron.Texpr1.t array)
-  (odest:'a Apron.Abstract1.t t option)
-  :
-  'a Apron.Abstract1.t t
-  =
+    ?bottom
+    (apron:'a Apron.Manager.t)
+    (x:'a Apron.Abstract1.t t) (tvar:Apron.Var.t array) (texpr:Apron.Texpr1.t array)
+    (odest:'a Apron.Abstract1.t t option)
+    :
+    'a Apron.Abstract1.t t
+    =
   if is_bottom apron x then x else begin
     match odest with
     | None ->
 	mapunop x.man
-	(fun x -> Apron.Abstract1.assign_texpr_array apron x tvar texpr None)
-	x
+	  (fun x -> Apron.Abstract1.assign_texpr_array apron x tvar texpr None)
+	  x
     | Some y ->
 	if is_bottom apron y then x else begin
 	  assert(x.man==y.man);

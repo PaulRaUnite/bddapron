@@ -65,7 +65,7 @@ let compare_cond c1 c2 = match (c1,c2) with
 let negate_cond env (c:cond) : cond = match c with
   | `Apron x -> `Apron (Apronexpr.Condition.negate env x)
 
-let cond_support cond = match cond with
+let cond_support env cond = match cond with
   | `Apron x -> Apronexpr.Condition.support x
 
 let typ_of_expr (expr:[<expr]) =
@@ -90,7 +90,7 @@ let print_env fmt (env:('a,'b,'c) env) =
     (fun fmt x -> Apron.Environment.print fmt x) env#apron_env
 
 class ['a,'b] make_env ?boolfirst ?relational man : ['a,'b,cond] env = object(self)
-  inherit ['a,'b,cond] Bddenv.make ?boolfirst ?relational man ~compare_cond ~negate_cond ~print_cond
+  inherit ['a,'b,cond] Bddenv.make ?boolfirst ?relational man ~compare_cond ~negate_cond ~support_cond:cond_support ~print_cond
   val v_apronexprdd = ApronexprDD.make_manager()
   method apronexprdd = v_apronexprdd
   val mutable v_apron_env = Apron.Environment.make [||] [||]
@@ -201,7 +201,7 @@ let compose_of_substitution (env:('a,'b,cond) #env) (substitution:(string*expr) 
     for id=0 to pred(Array.length tab) do
       begin try
 	let cond = env#cond_of_idb (id,true) in
-	let supp = cond_support cond in
+	let supp = env#support_cond cond in
 	let substitution = MappeS.interset osub supp in
 	if substitution<>MappeS.empty then begin
 	  change := true;
@@ -495,7 +495,7 @@ let support env (expr:expr) : SetteS.t
     (begin fun id ->
       try
 	let cond = env#cond_of_idb (id,true) in
-	let supp = cond_support cond in
+	let supp = env#support_cond cond in
 	set := SetteS.union supp !set
       with Not_found ->
 	let var = MappeI.find id env#idcondvar in

@@ -4,7 +4,6 @@ open Format;;
 module D = BddaprondomainE;;
 module E = BddapronexprE;;
 
-Gc.set { (Gc.get()) with Gc.verbose=0x13; Gc.space_overhead=5; };;
 (*
 bddaprontop -I $CAMLLIB_INSTALL/lib -I $MLCUDDIDL_INSTALL/lib -I $FORMULA_INSTALL/lib -I $MLGMPIDL_INSTALL/lib -I $APRON_INSTALL/lib
 
@@ -27,7 +26,7 @@ Manager.set_gc 10000
 ;;
 
 let apron = Polka.manager_alloc_loose ();;
-let apron = D.make_manager apron;;
+let bddapron = D.make_manager apron;;
 let env = D.make_env cudd;;
 let env = Bddenv.add_typ env "enum2" (`Benum [|"l1"; "l2"; "l3"|]);;
 
