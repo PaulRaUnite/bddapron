@@ -401,9 +401,6 @@ let assign_list
 	    | _ ->
 		ApronDD.mapguardleaf man.apron
 		  (begin fun (guard,abs) ->
-		    if Apron.Abstract1.is_bottom man.apron abs then
-		      (Bdd.dfalse cudd, bottom)
-		    else
 		      let nguard = Bdddomain.O.assign_list ?relational ?nodependency env guard bsub in
 		      let nabs =
 			if tavar=[||] then abs
