@@ -45,7 +45,7 @@ MLLIB_TOINSTALLx =  $(MLSRC) $(MLINT) bddapron.cmxa bddapron.a
 # Global rules
 all: bddapron
 
-bddapron: bddapron.cma bddapron.cmxa
+bddapron: $(MLINT) bddapron.cma bddapron.cmxa
 
 install:
 	$(INSTALLd) $(PREFIX)/lib
@@ -57,7 +57,7 @@ distclean:
 	(cd $(PREFIX)/lib; /bin/rm -f $(MLLIB_TOINSTALL) $(MLLIB_TOINSTALLx))
 
 clean:
-	/bin/rm -f *.[aoc] *.cm[ioxa] *.cmxa
+	/bin/rm -f *.[aoc] *.cm[ioxa] *.cmxa *.annot
 	/bin/rm -f *.log *.aux *.bbl *.blg *.toc **.idx *.ilg *.ind ocamldoc*.tex ocamldoc.sty *.dvi *.pdf
 	/bin/rm -fr html
 	/bin/rm -f bddapronrun bddaprontop
