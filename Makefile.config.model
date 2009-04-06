@@ -31,6 +31,10 @@ CUDD_PREFIX = /usr
 #
 CAML_PREFIX = /usr
 
+# Where to find CAMLIDL ($(CAMLIDL_PREFIX)/bin, $(CAMLIDL_PREFIX)/lib/, ...)
+#
+CAMLIDL_PREFIX = /usr
+
 # Where to find FORMULA ($(FORMULA_PREFIX)/lib)
 FORMULA_PREFIX = 
 
@@ -41,9 +45,8 @@ CAMLLIB_PREFIX =
 #
 MLGMPIDL_PREFIX = 
 
-# Where to find CUDDAUX and MLCUDDIDL ($(MLCUDDIDL_PREFIX)/lib)
+# Where to find MLCUDDIDL ($(MLCUDDIDL_PREFIX)/lib)
 #
-CUDDAUX_PREFIX = 
 MLCUDDIDL_PREFIX = 
 
 # Where to find APRON ($(APRON_PREFIX)/include, $(APRON_PREFIX)/lib)

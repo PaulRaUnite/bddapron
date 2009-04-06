@@ -1,4 +1,4 @@
-(** Purely arithmetic formula *)
+(** Purely arithmetic expressions *)
 
 (* This file is part of the FORMULA Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
@@ -81,12 +81,12 @@ let reduce_list (list:(Mpqf.t * 'a) list) : (Mpqf.t * (Mpqf.t * 'a) list)
 module Lin = struct
   type term = Mpqf.t * string
 
-  type expr = {
+  type t = {
     cst: Mpqf.t;
     lterm: term list;
   }
 
-  let is_dependent_on_integer_only (db:'a #db) (e:expr) =
+  let is_dependent_on_integer_only (db:'a #db) (e:t) =
     List.for_all
       (begin fun (coeff,var) ->
 	(db#typ_of_var var) = `Int
@@ -98,7 +98,7 @@ module Lin = struct
     lterm = List.stable_sort (fun (c1,v1) (c2,v2) -> String.compare v1 v2) e.lterm
   }
 
-  let support (e:expr) : SetteS.t =
+  let support (e:t) : SetteS.t =
     List.fold_left
       (begin fun res (_,var) -> SetteS.add var res end)
       SetteS.empty
@@ -288,9 +288,9 @@ module Poly = struct
 
   type term = Mpqf.t * monomial
 
-  type expr = term list
+  type t = term list
 
-  let is_dependent_on_integer_only (db:'a #db) (e:expr) =
+  let is_dependent_on_integer_only (db:'a #db) (e:t) =
     List.for_all
       (begin fun (c,mon) ->
 	List.for_all
@@ -378,7 +378,7 @@ module Poly = struct
     let ne2 = List.map (fun (c,m)  -> (c,normalize_monomial m)) ne in
     List.stable_sort (fun (c1,m1) (c2,m2) -> compare_monomial m1 m2) ne2
 
-  let substitute_by_var (e:expr) (substitution:string MappeS.t) : expr
+  let substitute_by_var (e:t) (substitution:string MappeS.t) : t
     =
     let rename_varexp ((var,exp) as varexp) : varexp =
       try (MappeS.find var substitution, exp)
@@ -393,7 +393,7 @@ module Poly = struct
     let res = List.map rename_term e in
     List.stable_sort (fun (c1,m1) (c2,m2) -> compare_monomial m1 m2) res
 
-  let support (e:expr) : SetteS.t =
+  let support (e:t) : SetteS.t =
     List.fold_left
       (begin fun res (_,monomial) ->
 	List.fold_left
@@ -488,7 +488,7 @@ module Poly = struct
 	else if v1>v2 then (v2,n2)::(mul_monomial m1 r2)
 	else (v1,n1+n2)::(mul_monomial r1 r2)
 
-  let scale ((coeff,mon):Mpqf.t*monomial) (l:expr) =
+  let scale ((coeff,mon):Mpqf.t*monomial) (l:t) =
     if (Mpqf.sgn coeff) = 0 then []
     else begin
       let res =
@@ -499,14 +499,14 @@ module Poly = struct
       normalize res
     end
 
-  let mul (l1:expr) (l2:expr) =
+  let mul (l1:t) (l2:t) =
     List.fold_left
       (begin fun res cm ->
 	add res (scale cm l2)
       end)
       [] l1
 
-  let div (l1:expr) (l2:expr) =
+  let div (l1:t) (l2:t) =
     match l2 with
     | [] -> failwith "Num.Poly.div: division by zero"
     | [(c,m)] ->
@@ -565,11 +565,11 @@ module Tree = struct
 	       | Down
 	       | Rnd
 
-  type expr = Apron.Texpr1.expr =
+  type t = Apron.Texpr1.expr =
     | Cst of Apron.Coeff.t
     | Var of Apron.Var.t
-    | Unop of unop * expr * typ * round
-    | Binop of binop * expr * expr * typ * round
+    | Unop of unop * t * typ * round
+    | Binop of binop * t * t * typ * round
 
   let is_exact = function
     | Cst _ | Var _ -> true
@@ -615,7 +615,7 @@ end
 (** {3 Conversions} *)
 (*  ==================================================================== *)
 
-let rec lin_of_poly (p:Poly.expr) : Lin.expr = match p with
+let rec lin_of_poly (p:Poly.t) : Lin.t = match p with
   | (c,m)::r ->
       let lexpr = begin match m with
 	| [] -> Lin.cst c
@@ -626,7 +626,7 @@ let rec lin_of_poly (p:Poly.expr) : Lin.expr = match p with
       Lin.add lexpr (lin_of_poly r)
   | [] -> Lin.cst (Mpqf.of_int 0)
 
-let rec lin_of_tree (x:Tree.expr) : Lin.expr =
+let rec lin_of_tree (x:Tree.t) : Lin.t =
   if not (Tree.is_exact x) then raise Exit;
   match x with
   | Tree.Cst x -> 
@@ -668,7 +668,7 @@ let rec lin_of_tree (x:Tree.expr) : Lin.expr =
       end
   | _ -> raise Exit
 
-let rec poly_of_tree (x:Tree.expr) : Poly.expr =
+let rec poly_of_tree (x:Tree.t) : Poly.t =
   if not (Tree.is_exact x) then raise Exit;
   match x with
   | Tree.Cst x -> 
@@ -690,7 +690,7 @@ let rec poly_of_tree (x:Tree.expr) : Poly.expr =
       end
   | _ -> raise Exit
 
-let tree_of_lin (lin:Lin.expr) : Tree.expr =
+let tree_of_lin (lin:Lin.t) : Tree.t =
   List.fold_left
     (begin fun res (c,v) ->
       Tree.Binop(
@@ -709,8 +709,8 @@ let tree_of_lin (lin:Lin.expr) : Tree.expr =
     (Tree.Cst (Apron.Coeff.s_of_mpqf lin.Lin.cst))
     lin.Lin.lterm
 
-let tree_of_poly (poly:Poly.expr) : Tree.expr =
-  let tree_of_monomial (mon:Poly.monomial) : Tree.expr =
+let tree_of_poly (poly:Poly.t) : Tree.t =
+  let tree_of_monomial (mon:Poly.monomial) : Tree.t =
     List.fold_left
       (begin fun res (var,exp) ->
 	let t = Tree.Var (Apron.Var.of_string var) in
@@ -738,14 +738,15 @@ let tree_of_poly (poly:Poly.expr) : Tree.expr =
     (Tree.Cst (Apron.Coeff.s_of_int 0))
     poly
 
-(*  ==================================================================== *)
-(** {3 General expressions and operations} *)
-(*  ==================================================================== *)
+(*  ********************************************************************** *)
+(** {2 General expressions and operations} *)
+(*  ********************************************************************** *)
 
-type expr =
-  | Lin of Lin.expr
-  | Poly of Poly.expr
-  | Tree of Tree.expr
+type t =
+  | Lin of Lin.t
+  | Poly of Poly.t
+  | Tree of Tree.t
+type expr = t
 
 let is_dependent_on_integer_only (db:'a #db) expr = match expr with
   | Lin e -> Lin.is_dependent_on_integer_only db e

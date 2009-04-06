@@ -27,36 +27,21 @@
 
 module O : sig
 
-(*  ====================================================================== *)
-(** {3 Environments} *)
-(*  ====================================================================== *)
-
-val add_typ : (('a,'b,'c) #Bddapronexpr.O.env as 'd) -> string -> 'b -> 'd
-val add_vars : (('a,'b,'c) #Bddapronexpr.O.env as 'd) -> (string * 'a) list -> 'd
-val remove_vars : (('a,'b,'c) #Bddapronexpr.O.env as 'd) -> string list -> 'd
-val unify_env : (('a,'b,'c) #Bddapronexpr.O.env as 'd) -> 'd -> 'd
-
-val print_cond : ('a,'b,'c) #Bddapronexpr.O.env -> Format.formatter -> [<Bddapronexpr.cond] -> unit
-val print_env : Format.formatter -> (Bddapronexpr.typ,Bddapronexpr.typdef,Bddapronexpr.cond) Bddapronexpr.O.env -> unit
-
-(*  ====================================================================== *)
-(** {3 General expressions} *)
-(*  ====================================================================== *)
-
-type 'a expr = ('a, Bddapronexpr.expr) Bddenv.value
-  constraint 'a = ('b,'c,'d) #Bddapronexpr.O.env
+type 'a t = ('a, Expr0.t) Bdd.Env.value
+  constraint 'a = ('b,'c,'d) #Env.O.t
+type 'a expr = 'a t
  (** Type of general expressions *)
 
-(*  ====================================================================== *)
-(** {3 Boolean expressions} *)
-(*  ====================================================================== *)
+val make_env :
+  ?boolfirst:bool -> ?relational:bool -> Cudd.Man.v Cudd.Man.t ->
+  ('a, 'b, Env.cond) Env.O.t
 
 module Bool : sig
-  type 'a t = ('a, Bdd.t) Bddenv.value
-    constraint 'a = ('b,'c,'d) #Bddapronexpr.O.env
+  type 'a t = ('a, Cudd.Man.v Cudd.Bdd.t) Bdd.Env.value
+    constraint 'a = ('b,'c,'d) #Env.O.t
 
-  val of_expr : ('a, [> `Bool of Bdd.t ]) Bddenv.value -> 'a t
-  val to_expr : 'a t -> ('a, [> `Bool of Bdd.t ]) Bddenv.value
+  val of_expr : ('a, [> `Bool of Cudd.Man.v Cudd.Bdd.t ]) Bdd.Env.value -> 'a t
+  val to_expr : 'a t -> ('a, [> `Bool of Cudd.Man.v Cudd.Bdd.t ]) Bdd.Env.value
 
   val extend_environment : 'a t -> 'a -> 'a t
 
@@ -101,22 +86,18 @@ module Bool : sig
   val restrict : 'a t -> 'a t -> 'a t
   val tdrestrict : 'a t -> 'a t -> 'a t
 
-  val substitute_by_var : (('b, 'c, Bddapronexpr.cond) #Bddapronexpr.O.env as 'a) t -> (string * string) list -> 'a t
-  val substitute : (('b, 'c, Bddapronexpr.cond) #Bddapronexpr.O.env as 'a) t -> (string * 'a expr) list -> 'a t
+  val substitute_by_var : (('b, 'c, Env.cond) #Env.O.t as 'a) t -> (string * string) list -> 'a t
+  val substitute : (('b, 'c, Env.cond) #Env.O.t as 'a) t -> (string * 'a expr) list -> 'a t
 
   val print : Format.formatter -> 'a t -> unit
 end
 
-(*  ====================================================================== *)
-(** {3 Bounded integer expressions} *)
-(*  ====================================================================== *)
-
 module Bint : sig
-  type 'a t = ('a, Bddint.t) Bddenv.value
-    constraint 'a = ('b,'c,'d) #Bddapronexpr.O.env
+  type 'a t = ('a, Cudd.Man.v Bdd.Int.t) Bdd.Env.value
+    constraint 'a = ('b,'c,'d) #Env.O.t
 
-  val of_expr : ('a, [> `Bint of Bddint.t ]) Bddenv.value -> 'a t
-  val to_expr : 'a t -> ('a, [> `Bint of Bddint.t ]) Bddenv.value
+  val of_expr : ('a, [> `Bint of Cudd.Man.v Bdd.Int.t ]) Bdd.Env.value -> 'a t
+  val to_expr : 'a t -> ('a, [> `Bint of Cudd.Man.v Bdd.Int.t ]) Bdd.Env.value
   val extend_environment : 'a t -> 'a -> 'a t
 
   val of_int :
@@ -144,8 +125,8 @@ module Bint : sig
   val restrict : 'a t -> 'a Bool.t -> 'a t
   val tdrestrict : 'a t -> 'a Bool.t -> 'a t
 
-  val substitute_by_var : (('b, 'c, Bddapronexpr.cond) #Bddapronexpr.O.env as 'a) t -> (string * string) list -> 'a t
-  val substitute : (('b, 'c, Bddapronexpr.cond) #Bddapronexpr.O.env as 'a) t -> (string * 'a expr) list -> 'a t
+  val substitute_by_var : (('b, 'c, Env.cond) #Env.O.t as 'a) t -> (string * string) list -> 'a t
+  val substitute : (('b, 'c, Env.cond) #Env.O.t as 'a) t -> (string * 'a expr) list -> 'a t
 
   val guard_of_int: 'a t -> int -> 'a Bool.t
     (** Return the guard of the integer value. *)
@@ -155,15 +136,11 @@ module Bint : sig
   val print : Format.formatter -> 'a t -> unit
 end
 
-(*  ====================================================================== *)
-(** {3 Enumerated expressions} *)
-(*  ====================================================================== *)
-
 module Benum : sig
-  type 'a t = ('a, Bddenum.t) Bddenv.value
-    constraint 'a = ('b,'c,'d) #Bddapronexpr.O.env
-  val of_expr : ('a, [> `Benum of Bddenum.t ]) Bddenv.value -> 'a t
-  val to_expr : 'a t -> ('a, [> `Benum of Bddenum.t ]) Bddenv.value
+  type 'a t = ('a, Cudd.Man.v Bdd.Enum.t) Bdd.Env.value
+    constraint 'a = ('b,'c,'d) #Env.O.t
+  val of_expr : ('a, [> `Benum of Cudd.Man.v Bdd.Enum.t ]) Bdd.Env.value -> 'a t
+  val to_expr : 'a t -> ('a, [> `Benum of Cudd.Man.v Bdd.Enum.t ]) Bdd.Env.value
   val extend_environment : 'a t -> 'a -> 'a t
 
   val var : 'a -> string -> 'a t
@@ -175,8 +152,8 @@ module Benum : sig
   val restrict : 'a t -> 'a Bool.t -> 'a t
   val tdrestrict : 'a t -> 'a Bool.t -> 'a t
 
-  val substitute_by_var : (('b, 'c, Bddapronexpr.cond) #Bddapronexpr.O.env as 'a) t -> (string * string) list -> 'a t
-  val substitute : (('b, 'c, Bddapronexpr.cond) #Bddapronexpr.O.env as 'a) t -> (string * 'a expr) list -> 'a t
+  val substitute_by_var : (('b, 'c, Env.cond) #Env.O.t as 'a) t -> (string * string) list -> 'a t
+  val substitute : (('b, 'c, Env.cond) #Env.O.t as 'a) t -> (string * 'a expr) list -> 'a t
 
   val guard_of_label : 'a t -> string -> 'a Bool.t
     (** Return the guard of the label. *)
@@ -187,18 +164,15 @@ module Benum : sig
   val print : Format.formatter -> 'a t -> unit
 end
 
-(*  ====================================================================== *)
-(** {3 Arithmetic expressions} *)
-(*  ====================================================================== *)
 module Apron : sig
-  type 'a t = ('a, ApronexprDD.expr) Bddenv.value
-    constraint 'a = ('b,'c,'d) #Bddapronexpr.O.env
+  type 'a t = ('a, ApronexprDD.t) Bdd.Env.value
+    constraint 'a = ('b,'c,'d) #Env.O.t
 
   val of_expr :
-    ('a, [> `Apron of ApronexprDD.expr ]) Bddenv.value -> 'a t
+    ('a, [> `Apron of ApronexprDD.t ]) Bdd.Env.value -> 'a t
 
   val to_expr :
-    'a t -> ('a, [> `Apron of ApronexprDD.expr ]) Bddenv.value
+    'a t -> ('a, [> `Apron of ApronexprDD.t ]) Bdd.Env.value
 
   val extend_environment : 'a t -> 'a -> 'a t
 
@@ -226,25 +200,19 @@ module Apron : sig
 
   val ite : 'a Bool.t -> 'a t -> 'a t -> 'a t
 
-  val condition : Apron.Tcons1.typ -> (('b, 'c, Bddapronexpr.cond) #Bddapronexpr.O.env as 'a) t -> 'a Bool.t
-  val supeq : (('b, 'c, Bddapronexpr.cond) #Bddapronexpr.O.env as 'a) t -> 'a Bool.t
-  val sup : (('b, 'c, Bddapronexpr.cond) #Bddapronexpr.O.env as 'a) t -> 'a Bool.t
-  val eq : (('b, 'c, Bddapronexpr.cond) #Bddapronexpr.O.env as 'a) t -> 'a Bool.t
+  val condition : Apron.Tcons1.typ -> (('b, 'c, Env.cond) #Env.O.t as 'a) t -> 'a Bool.t
+  val supeq : (('b, 'c, Env.cond) #Env.O.t as 'a) t -> 'a Bool.t
+  val sup : (('b, 'c, Env.cond) #Env.O.t as 'a) t -> 'a Bool.t
+  val eq : (('b, 'c, Env.cond) #Env.O.t as 'a) t -> 'a Bool.t
   val cofactor : 'a t -> 'a Bool.t -> 'a t
   val restrict : 'a t -> 'a Bool.t -> 'a t
   val tdrestrict : 'a t -> 'a Bool.t -> 'a t
 
-  val substitute_by_var : (('b, 'c, Bddapronexpr.cond) #Bddapronexpr.O.env as 'a) t -> (string * string) list -> 'a t
-  val substitute : (('b, 'c, Bddapronexpr.cond) #Bddapronexpr.O.env as 'a) t -> (string * 'a expr) list -> 'a t
+  val substitute_by_var : (('b, 'c, Env.cond) #Env.O.t as 'a) t -> (string * string) list -> 'a t
+  val substitute : (('b, 'c, Env.cond) #Env.O.t as 'a) t -> (string * 'a expr) list -> 'a t
 
   val print : Format.formatter -> 'a t -> unit
 end
-
-
-
-(*  ====================================================================== *)
-(** {3 Operations on general expressions} *)
-(*  ====================================================================== *)
 
 val typ_of_expr : 'a expr -> [
     | `Bool
@@ -254,78 +222,55 @@ val typ_of_expr : 'a expr -> [
   ]
   (** Type of an expression *)
 
-val make : 'a -> Bddapronexpr.expr -> 'a expr
+val make : 'a -> Expr0.t -> 'a t
   (** Creation from an expression without environment *)
 
-val extend_environment : 'a expr -> 'a -> 'a expr
-val var : 'a -> string -> 'a expr
+val extend_environment : 'a t -> 'a -> 'a t
+val var : 'a -> string -> 'a t
   (** Expression representing the litteral var *)
-val ite : 'a Bool.t -> 'a expr -> 'a expr -> 'a expr
+val ite : 'a Bool.t -> 'a t -> 'a t -> 'a t
   (** If-then-else operation *)
-val eq : (('b, 'c, Bddapronexpr.cond) #Bddapronexpr.O.env as 'a) expr -> 'a expr -> 'a Bool.t
+val eq : (('b, 'c, Env.cond) #Env.O.t as 'a) expr -> 'a t -> 'a Bool.t
   (** Equality operation *)
 
 val substitute_by_var :
-  (('b, 'c, Bddapronexpr.cond) #Bddapronexpr.O.env as 'a) expr ->
-  (string * string) list -> 'a expr
+  (('b, 'c, Env.cond) #Env.O.t as 'a) expr ->
+  (string * string) list -> 'a t
     (** Variable renaming.
       The new variables should already have been declared *)
 val substitute :
-  (('b, 'c, Bddapronexpr.cond) #Bddapronexpr.O.env as 'a) expr ->
-  (string * 'a expr) list -> 'a expr
+  (('b, 'c, Env.cond) #Env.O.t as 'a) expr ->
+  (string * 'a t) list -> 'a t
     (** Parallel substitution of variables by expressions *)
 
-val support : (('b, 'c, Bddapronexpr.cond) #Bddapronexpr.O.env as 'a) expr -> SetteS.t
+val support : (('b, 'c, Env.cond) #Env.O.t as 'a) expr -> SetteS.t
     (** Support of the expression *)
-val support_cond : 'a expr -> Bdd.t
+val support_cond : 'a t -> Cudd.Man.v Cudd.Bdd.t
     (** Return the support of an expression as a conjunction of the BDD
       identifiers involved in the expression *)
-val vectorsupport_cond : 'a expr array -> Bdd.t
-    (** Return the support of an array of expressions as a conjunction of the
-      BDD identifiers involved in the expressions *)
 
-val cofactor : 'a expr -> 'a Bool.t -> 'a expr
+val cofactor : 'a t -> 'a Bool.t -> 'a t
     (** Evaluate the expression. The BDD is assumed to be a cube *)
-val restrict : 'a expr -> 'a Bool.t -> 'a expr
-val tdrestrict : 'a expr -> 'a Bool.t -> 'a expr
+val restrict : 'a t -> 'a Bool.t -> 'a t
+val tdrestrict : 'a t -> 'a Bool.t -> 'a t
     (** Simplify the expression knowing that the BDD is true.  Generalizes
       [cofactor]. *)
 
-val print_expr : Format.formatter -> 'a expr -> unit
+val print : Format.formatter -> 'a t -> unit
 end
 
 (*  ********************************************************************** *)
 (** {2 Closed signature} *)
 (*  ********************************************************************** *)
 
-(*  ====================================================================== *)
-(** {3 Environments} *)
-(*  ====================================================================== *)
-
-type env = Bddapronexpr.env
-
-val make_env : ?boolfirst:bool -> ?relational:bool -> Manager.t -> env
-    (** Create an environment with a CUDD manager *)
-
-val add_typ : env -> string -> Bddapronexpr.typdef -> env
-    (** Declaration of a new type *)
-val add_vars : env -> (string * Bddapronexpr.typ) list -> env
-    (** Add (typed) variables *)
-val remove_vars : env -> string list -> env
-    (** Remove variables *)
-val unify_env : env -> env -> env
-    (** Unify environments (non-disjoint union of environments) *)
-
-val print_typ : Format.formatter -> [< Bddapronexpr.typ] -> unit
-val print_typdef : Format.formatter -> [< Bddapronexpr.typdef] -> unit
-val print_cond : env -> Format.formatter -> [<Bddapronexpr.cond] -> unit
-val print_env : Format.formatter -> env -> unit
+val make_env :
+  ?boolfirst:bool -> ?relational:bool -> Cudd.Man.v Cudd.Man.t -> Env.t
 
 (*  ====================================================================== *)
 (** {3 General expressions} *)
 (*  ====================================================================== *)
-
-type expr = (env, Bddapronexpr.expr) Bddenv.value
+type t = (Env.t, Expr0.t) Bdd.Env.value
+type expr = t
   (** Type of general expressions *)
 
 (*  ====================================================================== *)
@@ -333,17 +278,17 @@ type expr = (env, Bddapronexpr.expr) Bddenv.value
 (*  ====================================================================== *)
 
 module Bool : sig
-  type t = (env, Bdd.t) Bddenv.value
+  type t = (Env.t, Cudd.Man.v Cudd.Bdd.t) Bdd.Env.value
 
   val of_expr : expr -> t
   val to_expr : t -> expr
 
-  val extend_environment : t -> env -> t
+  val extend_environment : t -> Env.t -> t
 
-  val dtrue : env -> t
-  val dfalse : env -> t
-  val of_bool : env -> bool -> t
-  val var : env -> string -> t
+  val dtrue : Env.t -> t
+  val dfalse : Env.t -> t
+  val of_bool : Env.t -> bool -> t
+  val var : Env.t -> string -> t
 
   (** {4 Logical connectors} *)
 
@@ -392,15 +337,15 @@ end
 (*  ====================================================================== *)
 
 module Bint : sig
-  type t = (env, Bddint.t) Bddenv.value
+  type t = (Env.t, Cudd.Man.v Bdd.Int.t) Bdd.Env.value
 
   val of_expr : expr -> t
   val to_expr : t -> expr
-  val extend_environment : t -> env -> t
+  val extend_environment : t -> Env.t -> t
 
   val of_int :
-    env -> [`Tbint of bool * int ] -> int -> t
-  val var : env -> string -> t
+    Env.t -> [`Tbint of bool * int ] -> int -> t
+  val var : Env.t -> string -> t
 
   val neg : t -> t
   val succ : t -> t
@@ -439,12 +384,12 @@ end
 (*  ====================================================================== *)
 
 module Benum : sig
-  type t = (env, Bddenum.t) Bddenv.value
+  type t = (Env.t, Cudd.Man.v Bdd.Enum.t) Bdd.Env.value
   val of_expr : expr -> t
   val to_expr : t -> expr
-  val extend_environment : t -> env -> t
+  val extend_environment : t -> Env.t -> t
 
-  val var : env -> string -> t
+  val var : Env.t -> string -> t
   val ite : Bool.t -> t -> t -> t
   val eq : t -> t -> Bool.t
   val eq_label : t -> string -> Bool.t
@@ -469,15 +414,15 @@ end
 (** {3 Arithmetic expressions} *)
 (*  ====================================================================== *)
 module Apron : sig
-  type t = (env, ApronexprDD.expr) Bddenv.value
+  type t = (Env.t, ApronexprDD.t) Bdd.Env.value
 
   val of_expr : expr -> t
   val to_expr : t -> expr
 
-  val extend_environment : t -> env -> t
+  val extend_environment : t -> Env.t -> t
 
-  val var : env -> string -> t
-  val cst : env -> Apron.Coeff.t -> t
+  val var : Env.t -> string -> t
+  val cst : Env.t -> Apron.Coeff.t -> t
   val add :
     ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round ->
     t -> t -> t
@@ -518,7 +463,7 @@ end
 (** {3 Operations on general expressions} *)
 (*  ====================================================================== *)
 
-val typ_of_expr : expr -> [
+val typ_of_expr : t -> [
     | `Bool
     | `Bint of bool * int
     | `Benum of string
@@ -526,39 +471,38 @@ val typ_of_expr : expr -> [
   ]
   (** Type of an expression *)
 
-val make : env -> Bddapronexpr.expr -> expr
+(*
+val make : Env.t -> Expr0.t -> expr
+*)
   (** Creation from an expression without environment *)
 
-val extend_environment : expr -> env -> expr
-val var : env -> string -> expr
+val extend_environment : t -> Env.t -> t
+val var : Env.t -> string -> t
   (** Expression representing the litteral var *)
-val ite : Bool.t -> expr -> expr -> expr
+val ite : Bool.t -> t -> t -> t
   (** If-then-else operation *)
-val eq : expr -> expr -> Bool.t
+val eq : t -> t -> Bool.t
   (** Equality operation *)
 
-val substitute_by_var : expr -> (string * string) list -> expr
+val substitute_by_var : t -> (string * string) list -> t
     (** Variable renaming.
       The new variables should already have been declared *)
-val substitute : expr -> (string * expr) list -> expr
+val substitute : t -> (string * t) list -> t
     (** Parallel substitution of variables by expressions *)
 
-val support : expr -> SetteS.t
+val support : t -> SetteS.t
     (** Support of the expression *)
-val support_cond : expr -> Bdd.t
+val support_cond : t -> Cudd.Man.v Cudd.Bdd.t
     (** Return the support of an expression as a conjunction of the BDD
       identifiers involved in the expression *)
-val vectorsupport_cond : expr array -> Bdd.t
-    (** Return the support of an array of expressions as a conjunction of the
-      BDD identifiers involved in the expressions *)
 
-val cofactor : expr -> Bool.t -> expr
+val cofactor : t -> Bool.t -> t
     (** Evaluate the expression. The BDD is assumed to be a cube *)
-val restrict : expr -> Bool.t -> expr
-val tdrestrict : expr -> Bool.t -> expr
+val restrict : t -> Bool.t -> t
+val tdrestrict : t -> Bool.t -> t
     (** Simplify the expression knowing that the BDD is true.  Generalizes
       [cofactor]. *)
 
-val print_expr : Format.formatter -> expr -> unit
+val print : Format.formatter -> t -> unit
 
 
