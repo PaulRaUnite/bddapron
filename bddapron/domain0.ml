@@ -58,7 +58,7 @@ let meet_idcondb
     'a t
     =
   let (idcond,b) = idcondb in
-  if MappeI.mem idcond env#idcondvar then begin
+  if PMappe.mem idcond env#idcondvar then begin
     let bdd = Cudd.Bdd.ithvar env#cudd idcond in
     let bdd = if b then bdd else Cudd.Bdd.dnot bdd in
     Cudd.Mtbdd.ite bdd t (bottom man env)
@@ -80,7 +80,7 @@ let cofactors
     :
     ('a t * 'a t)
     =
-  if MappeI.mem idcond env#idcondvar then begin
+  if PMappe.mem idcond env#idcondvar then begin
     let bdd = Cudd.Bdd.ithvar env#cudd idcond in
     (Cudd.Mtbdd.cofactor t bdd,
     Cudd.Mtbdd.cofactor t (Cudd.Bdd.dnot bdd))

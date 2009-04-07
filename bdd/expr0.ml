@@ -34,7 +34,7 @@ module O = struct
 
 let register_of_var (env:('a,'b,'c,'d) #Env.O.t) (var:string) : 'd Cudd.Bdd.t array
     =
-  let tid = MappeS.find var env#vartid in
+  let tid = PMappe.find var env#vartid in
   let cudd = env#cudd in
   let reg = Array.map (fun id -> Cudd.Bdd.ithvar cudd id) tid in
   reg  
@@ -68,15 +68,15 @@ let bddvar (env:('a,'b,'c,'d) #Env.O.t) (var:string) : 'd expr
 (*  ---------------------------------------------------------------------- *)
 
 let mem_id (env:('a,'b,'c,'d) #Env.O.t) (id:int) : bool =
-  MappeI.mem id env#idcondvar
+  PMappe.mem id env#idcondvar
 
 let vartyptid_of_id (env:('a,'b,'c,'d) #Env.O.t) (id:int) =
-  let var = MappeI.find id env#idcondvar in
-  (var, MappeS.find var env#vartyp, MappeS.find var env#vartid)
+  let var = PMappe.find id env#idcondvar in
+  (var, PMappe.find var env#vartyp, PMappe.find var env#vartid)
 
 let tid_of_var (env:('a,'b,'c,'d) #Env.O.t) (var:string) : int array
   =
-  MappeS.find var env#vartid
+  PMappe.find var env#vartid
 
 let reg_of_expr (expr:'a expr) : 'a Cudd.Bdd.t array
   =
@@ -210,7 +210,7 @@ module Expr = struct
     end
     else begin
       try
-	Tatom(Tcond (DMappe.Custom.x_of_y idcondb env#cond))
+	Tatom(Tcond (PDMappe.x_of_y idcondb env#cond))
       with Not_found ->
 	Texternal(idcond,b)
     end
@@ -241,7 +241,7 @@ module Expr = struct
     try
       let res = ref ([]:'c term list) in
       (* We iterate first on the Boolean variables *)
-      MappeS.iter
+      PMappe.iter
 	(begin fun var tid ->
 	  match env#typ_of_var var with
 	  | `Bool ->
@@ -256,7 +256,7 @@ module Expr = struct
 	env#vartid
       ;
       (* We print then integers and enumerated variables *)
-      MappeS.iter
+      PMappe.iter
 	(begin fun var tid ->
 	  match env#typ_of_var var with
 	  | `Bool -> ()
@@ -280,7 +280,7 @@ module Expr = struct
 	    let b = bool_of_tbool v in
 	    let term =
 	      try
-		Tatom(Tcond(DMappe.Custom.x_of_y (id,b) env#cond))
+		Tatom(Tcond(PDMappe.x_of_y (id,b) env#cond))
 	      with Not_found ->
 		Texternal(id, bool_of_tbool v)
 	    in
@@ -414,7 +414,7 @@ let print_minterm
 
 let simplify env (bdd:'a Cudd.Bdd.t) =
   let res = ref bdd in
-  MappeS.iter
+  PMappe.iter
     (begin fun var set ->
       if not (Cudd.Bdd.is_true set) then begin
 	let bddreg = match bddvar env var with
@@ -499,8 +499,8 @@ let cube_of_bdd env (bdd:'a Cudd.Bdd.t) : 'a Cudd.Bdd.t
     let list = Cudd.Bdd.list_of_cube cube in
     let map =
       List.fold_left
-	(fun map (id,b) -> MappeI.add id b map)
-	MappeI.empty list
+	(fun map (id,b) -> PMappe.add id b map)
+	(PMappe.empty (-)) list
     in
     ref map
   in
@@ -511,7 +511,7 @@ let cube_of_bdd env (bdd:'a Cudd.Bdd.t) : 'a Cudd.Bdd.t
     if not (mem_id env id) then begin
       let var = Cudd.Bdd.ithvar env#cudd id in
       res := Cudd.Bdd.dand (if b then var else Cudd.Bdd.dnot var) !res;
-      map := MappeI.remove id !map
+      map := PMappe.remove id !map
     end
     else begin
       let (var,typ,tid) = vartyptid_of_id env id in
@@ -519,12 +519,12 @@ let cube_of_bdd env (bdd:'a Cudd.Bdd.t) : 'a Cudd.Bdd.t
       | `Bool ->
 	  let var = Cudd.Bdd.ithvar env#cudd tid.(0) in
 	  res := Cudd.Bdd.dand (if b then var else Cudd.Bdd.dnot var) !res;
-	  map := MappeI.remove id !map
+	  map := PMappe.remove id !map
       | `Bint _ | `Benum _ ->
 	  let tokeep =
 	    try
 	      for i=0 to pred(Array.length tid) do
-		if not (MappeI.mem tid.(i) !map) then raise Exit
+		if not (PMappe.mem tid.(i) !map) then raise Exit
 	      done;
 	      true
 	    with Exit ->
@@ -533,16 +533,16 @@ let cube_of_bdd env (bdd:'a Cudd.Bdd.t) : 'a Cudd.Bdd.t
 	  if tokeep then begin
 	    for i=0 to pred(Array.length tid) do
 	      let id = tid.(i) in
-	      let b = MappeI.find id !map in
+	      let b = PMappe.find id !map in
 	      let var = Cudd.Bdd.ithvar env#cudd tid.(i) in
 	      res := Cudd.Bdd.dand (if b then var else Cudd.Bdd.dnot var) !res;
-	      map := MappeI.remove id !map
+	      map := PMappe.remove id !map
 	    done
 	  end
 	  else begin
 	    for i=0 to pred(Array.length tid) do
 	      let id = tid.(i) in
-	      map := MappeI.remove id !map
+	      map := PMappe.remove id !map
 	    done;
 	  end
       | _ -> ()
@@ -550,9 +550,9 @@ let cube_of_bdd env (bdd:'a Cudd.Bdd.t) : 'a Cudd.Bdd.t
     end
   in
 
-  while !map<>MappeI.empty do
+  while not (PMappe.is_empty !map) do
     try
-      MappeI.iter
+      PMappe.iter
 	(begin fun id b ->
 	  process id b;
 	  raise Exit
@@ -993,7 +993,7 @@ let support_of_bdd env (supp:'a Cudd.Bdd.t) : SetteS.t
   let list = Cudd.Bdd.list_of_support supp in
   List.fold_left
     (begin fun res id ->
-      let var = MappeI.find id env#idcondvar in
+      let var = PMappe.find id env#idcondvar in
       SetteS.add var res
     end)
     SetteS.empty

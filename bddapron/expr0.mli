@@ -184,7 +184,7 @@ val substitute_by_var : ('a,'b,Env.cond) #Env.O.t -> t -> (string*string) list -
 val substitute : ('a,'b,Env.cond) #Env.O.t -> t -> (string*t) list -> t
     (** Parallel substitution of variables by expressions *)
 
-val support : ('a,'b,Env.cond) #Env.O.t -> t -> SetteS.t
+val support : ('a,'b,Env.cond) #Env.O.t -> t -> string PSette.t
     (** Return the full support of the expression *)
 
 val eq : ('a,'b,Env.cond) #Env.O.t -> t -> t -> Bool.t
@@ -201,7 +201,7 @@ val print : ('a,'b,'c) #Env.O.t -> Format.formatter -> [<t] -> unit
 val print_bdd : ('a,'b,'c) #Env.O.t -> Format.formatter -> Cudd.Man.v Cudd.Bdd.t -> unit
 
 val compose_of_substitution :
-  ('a,'b,Env.cond) #Env.O.t -> (string*t) list -> Cudd.Man.v Cudd.Bdd.t array option * t MappeS.t
+  ('a,'b,Env.cond) #Env.O.t -> (string*t) list -> Cudd.Man.v Cudd.Bdd.t array option * (string, t) PMappe.t
 
 end
 
@@ -405,7 +405,7 @@ val tdrestrict : t -> Bool.t -> t
 val permute : t -> int array -> t
   (** Permutation (rather internal) *)
 
-val support : Env.t -> t -> SetteS.t
+val support : Env.t -> t -> string PSette.t
     (** Return the full support of the expression *)
 
 val eq : Env.t -> t -> t -> Bool.t

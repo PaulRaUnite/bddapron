@@ -98,10 +98,10 @@ module Lin = struct
     lterm = List.stable_sort (fun (c1,v1) (c2,v2) -> String.compare v1 v2) e.lterm
   }
 
-  let support (e:t) : SetteS.t =
+  let support (e:t) : string PSette.t =
     List.fold_left
-      (begin fun res (_,var) -> SetteS.add var res end)
-      SetteS.empty
+      (begin fun res (_,var) -> PSette.add var res end)
+      (PSette.empty String.compare)
       e.lterm
 
   let substitute_by_var e (substitution:string MappeS.t)
@@ -393,17 +393,17 @@ module Poly = struct
     let res = List.map rename_term e in
     List.stable_sort (fun (c1,m1) (c2,m2) -> compare_monomial m1 m2) res
 
-  let support (e:t) : SetteS.t =
+  let support (e:t) : string PSette.t =
     List.fold_left
       (begin fun res (_,monomial) ->
 	List.fold_left
 	(begin fun res (var,_) ->
-	  SetteS.add var res
+	  PSette.add var res
 	end)
 	res
 	monomial
       end)
-      SetteS.empty
+      (PSette.empty String.compare)
       e
 
   let compare l1 l2 =
@@ -581,10 +581,10 @@ module Tree = struct
     | Binop(Mul,_,_,Int,_) -> true
     | _ -> false
   let rec support = function
-    | Cst _ -> SetteS.empty
-    | Var(var) -> SetteS.singleton (Apron.Var.to_string var)
+    | Cst _ -> (PSette.empty String.compare)
+    | Var(var) -> PSette.singleton String.compare (Apron.Var.to_string var)
     | Unop(op,e,_,_) -> support e
-    | Binop(op,e1,e2,_,_) -> SetteS.union (support e1) (support e2)
+    | Binop(op,e1,e2,_,_) -> PSette.union (support e1) (support e2)
 
   let substitute_by_var e (substitution:string MappeS.t) =
     let rec parcours = function

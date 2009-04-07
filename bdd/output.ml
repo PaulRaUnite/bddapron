@@ -86,7 +86,7 @@ type 'a mtbdd = {
     (** Reachable conditions *)
   mutable mdef : 'a mnode MappeI.t;
     (** Global IDDs graph *)
-  lhash : ('a Cudd.Mtbdd.unique, unit) Hashhe.Custom.t;
+  lhash : ('a Cudd.Mtbdd.unique, unit) PHashhe.t;
     (** Reachable MTBDD leafs *)
   mhash : ('a Cudd.Mtbdd.t, int) Hashhe.t;
   mutable mlastid : int;
@@ -94,13 +94,13 @@ type 'a mtbdd = {
 }
 
 let make_mtbdd ~(table:'a Cudd.Mtbdd.table) ~cond = 
-  let compare = table.Cudd.Weakke.Custom.compare in
-  let hash = compare.Cudd.Weakke.hash in
-  let equal = compare.Cudd.Weakke.equal in
+  let compare = table.Cudd.PWeakke.compare in
+  let hash = compare.Cudd.PWeakke.hash in
+  let equal = compare.Cudd.PWeakke.equal in
   {
     cond = cond;
     mdef = MappeI.empty;
-    lhash = Hashhe.Custom.create hash equal 23;
+    lhash = PHashhe.create hash equal 23;
     mhash = Hashhe.create 23;
     mlastid = -1;
   }
@@ -123,7 +123,7 @@ let id_of_mtbdd
 	    let idelse = iter delse in
 	    MIte(cond,idthen,idelse)
 	| Cudd.Mtbdd.Leaf(cst) ->
-	    Hashhe.Custom.replace db.lhash cst ();
+	    PHashhe.replace db.lhash cst ();
 	    MCst(Cudd.Mtbdd.get cst)
 	end
       in

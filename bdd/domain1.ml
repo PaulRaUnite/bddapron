@@ -16,18 +16,18 @@ type ('a,'b) t = ('a,'b) Expr1.O.Bool.t
 type ('a,'b) expr = ('a,'b) Expr1.O.expr
 
 let check2 t1 t2 =
-  if not (MappeS.equal (=) t1.env#vartyp t2.env#vartyp) then begin
+  if not (PMappe.equal (=) t1.env#vartyp t2.env#vartyp) then begin
     if true then
       printf "env1=%a@.env2=%a@."
-	(MappeS.print pp_print_string Env.print_typ) t1.env#vartyp
-	(MappeS.print pp_print_string Env.print_typ) t2.env#vartyp
+	(PMappe.print pp_print_string Env.print_typ) t1.env#vartyp
+	(PMappe.print pp_print_string Env.print_typ) t2.env#vartyp
     ;
     failwith "The two abstract values are not defined on the same environment"
   end
   ;
   ()
 let check_expr (permute:'a -> int array -> 'a) env expr =
-  if not (MappeS.subset (=) env#vartyp expr.env#vartyp) then
+  if not (PMappe.subset (=) env#vartyp expr.env#vartyp) then
     failwith "The expression is not defined on a subenvironment of the value"
   ;
   permute expr.value (Env.permutation12 expr.env env)
@@ -110,11 +110,11 @@ let compute_change_environment env nenv =
     then None
     else
       let setvar =
-	SetteS.diff
-	  (MappeS.maptoset lce#vartid)
-	  (MappeS.maptoset nenv#vartid)
+	PSette.diff
+	  (PMappe.maptoset lce#vartid)
+	  (PMappe.maptoset nenv#vartid)
       in
-      let supp = Expr0.O.bddsupport lce (SetteS.elements setvar) in
+      let supp = Expr0.O.bddsupport lce (PSette.elements setvar) in
       Some(supp, Env.permutation21 lce nenv)
   in
   { intro = intro; remove = remove }

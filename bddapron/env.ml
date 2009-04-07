@@ -58,10 +58,10 @@ module O = struct
     method apron_env = v_apron_env
     method set_apron_env apron_env = v_apron_env <- apron_env
       
-    method vars : SetteS.t =
-      let vars = MappeS.maptoset v_vartid in
+    method vars : string PSette.t =
+      let vars = PMappe.maptoset v_vartid in
       let (ivar,qvar) = Apron.Environment.vars v_apron_env in
-      let add ap_var set = SetteS.add (Apron.Var.to_string ap_var) set in
+      let add ap_var set = PSette.add (Apron.Var.to_string ap_var) set in
       let vars = Array.fold_right add ivar vars in
       let vars = Array.fold_right add qvar vars in
       vars

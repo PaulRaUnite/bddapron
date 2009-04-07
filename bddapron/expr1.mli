@@ -243,7 +243,7 @@ val substitute :
   (string * 'a t) list -> 'a t
     (** Parallel substitution of variables by expressions *)
 
-val support : (('b, 'c, Env.cond) #Env.O.t as 'a) expr -> SetteS.t
+val support : (('b, 'c, Env.cond) #Env.O.t as 'a) expr -> string PSette.t
     (** Support of the expression *)
 val support_cond : 'a t -> Cudd.Man.v Cudd.Bdd.t
     (** Return the support of an expression as a conjunction of the BDD
@@ -490,7 +490,7 @@ val substitute_by_var : t -> (string * string) list -> t
 val substitute : t -> (string * t) list -> t
     (** Parallel substitution of variables by expressions *)
 
-val support : t -> SetteS.t
+val support : t -> string PSette.t
     (** Support of the expression *)
 val support_cond : t -> Cudd.Man.v Cudd.Bdd.t
     (** Return the support of an expression as a conjunction of the BDD

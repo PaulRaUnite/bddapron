@@ -41,7 +41,7 @@ module Lin :
     val sub : t -> t -> t
     val scale : Mpqf.t -> t -> t
     val negate : t -> t
-    val support : t -> SetteS.t
+    val support : t -> string PSette.t
     val substitute_by_var : t -> string MappeS.t -> t
     val normalize_as_constraint : t -> t
     val print : Format.formatter -> t -> unit
@@ -73,7 +73,7 @@ module Poly :
     val mul : t -> t -> t
     val div : t -> t -> t
     val negate : t -> t
-    val support : t -> SetteS.t
+    val support : t -> string PSette.t
     val substitute_by_var : t -> string MappeS.t -> t
     val normalize_as_constraint : t -> t
     val print : Format.formatter -> t -> unit
@@ -103,7 +103,7 @@ module Tree :
       | Var of Apron.Var.t
       | Unop of unop * t * typ * round
       | Binop of binop * t * t * typ * round
-    val support : t -> SetteS.t
+    val support : t -> string PSette.t
     val substitute_by_var : t -> string MappeS.t -> t
     val print : Format.formatter -> t -> unit
     val compare : t -> t -> int
@@ -141,7 +141,7 @@ val gmod : ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> t -> t -> t
 val negate : t -> t
 val cast : ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> t -> t
 val sqrt : ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> t -> t
-val support : t -> SetteS.t
+val support : t -> string PSette.t
 val substitute_by_var : t -> string MappeS.t -> t
 val normalize : t -> t
 val equal : t -> t -> bool
@@ -172,7 +172,7 @@ module Condition :
     type t = typ * expr
     val make : 'a #db -> typ -> expr -> [ `Cond of t | `Bool of bool ]
     val negate : 'a #db -> t -> t
-    val support : t -> SetteS.t
+    val support : t -> string PSette.t
     val print : Format.formatter -> t -> unit
     val compare : t -> t -> int
     val to_tcons1 : Apron.Environment.t -> t -> Apron.Tcons1.t

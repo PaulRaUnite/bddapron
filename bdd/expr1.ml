@@ -21,7 +21,7 @@ let check_envvar (env:('a,'b,'c,'d) #Env.O.t) (var:string) : unit =
     let typ = env#typ_of_var var in
     let ok =
       match typ with
-      | #Enum.typ -> MappeS.mem var env#vartid
+      | #Enum.typ -> PMappe.mem var env#vartid
       | _ -> true
     in
     if not ok then raise Not_found

@@ -24,7 +24,7 @@ module O = struct
   let make_env = Env.O.make
 
   let check_expr print_expr permute t expr =
-    if not (MappeS.subset (=) expr.env#vartyp t.env#vartyp) then
+    if not (PMappe.subset (=) expr.env#vartyp t.env#vartyp) then
       failwith
 	(Print.sprintf
 	  "The expression is not defined on a subenvironment of the value:@.expr=%a@.t=%a@.epxr.env=%a@.t.env=%a@."
@@ -45,7 +45,7 @@ module O = struct
     let nenv =
       List.fold_left
 	(begin fun nenv (var,expr) ->
-	  if not (MappeS.subset (=) expr.env#vartyp t.env#vartyp) then
+	  if not (PMappe.subset (=) expr.env#vartyp t.env#vartyp) then
 	    failwith "The expression is not defined on a subenvironment of the value"
 	  ;
 	  Bdd.Env.lce2 nenv expr.env

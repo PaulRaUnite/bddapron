@@ -26,7 +26,7 @@ let is_eq = Expr0.O.Bool.is_eq
 
 let is_variable_unconstrained env abs var =
   Expr1.O.check_envvar env var;
-  let tid = MappeS.find var env#vartid in
+  let tid = PMappe.find var env#vartid in
   Array.fold_left
     (begin fun res id -> res && not (Cudd.Bdd.is_var_in id abs) end)
     true

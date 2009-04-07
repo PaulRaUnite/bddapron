@@ -10,7 +10,7 @@ open Format
 (*  ********************************************************************** *)
 
 
-let table = Cudd.Weakke.Custom.create Apronexpr.hash Apronexpr.equal 23
+let table = Cudd.PWeakke.create Apronexpr.hash Apronexpr.equal 23
 
 type t = Apronexpr.t Cudd.Mtbdd.t
 
@@ -126,8 +126,8 @@ let sqrt ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e =
 
 let support_leaf e =
   Array.fold_left
-    (fun res e -> SetteS.union res (Apronexpr.support e))
-    SetteS.empty
+    (fun res e -> PSette.union res (Apronexpr.support e))
+    (PSette.empty String.compare)
     (Cudd.Mtbdd.leaves e)
 
 let support_cond = Cudd.Mtbdd.support
@@ -135,14 +135,14 @@ let support_cond = Cudd.Mtbdd.support
 let substitute_linexpr
   cudd
   (linexpr:Apronexpr.Lin.t)
-  (substitution:[>`Apron of t] MappeS.t)
+  (substitution:(string, [>`Apron of t]) PMappe.t)
   :
   t
   =
   let substitute_linterm (term:Apronexpr.Lin.term) : t
     =
     let (mpqf,var) = term in
-    let expr = of_expr (MappeS.find var substitution) in
+    let expr = of_expr (PMappe.find var substitution) in
     let coeffexpr = 
       Cudd.Mtbdd.cst cudd table
 	(Apronexpr.cst (Apron.Coeff.s_of_mpqf mpqf))
@@ -152,7 +152,7 @@ let substitute_linexpr
 
   let (lterm1,lterm2) =
     List.partition
-      (fun (coeff,var) -> MappeS.mem var substitution)
+      (fun (coeff,var) -> PMappe.mem var substitution)
       linexpr.Apronexpr.Lin.lterm
   in
   if lterm1=[] then
@@ -179,7 +179,7 @@ let substitute_linexpr
 let substitute_polyexpr
   cudd
   (polyexpr:Apronexpr.Poly.t)
-  (substitution:[>`Apron of t] MappeS.t)
+  (substitution:(string, [>`Apron of t]) PMappe.t)
   :
   t
   =
@@ -187,7 +187,7 @@ let substitute_polyexpr
     =
     let (var,exp) = varexp in
     try
-      let expr = of_expr (MappeS.find var substitution) in
+      let expr = of_expr (PMappe.find var substitution) in
       let res = ref res in
       for i=1 to exp do
 	res := mul !res expr
@@ -223,7 +223,7 @@ let substitute_polyexpr
 let substitute_treeexpr
   cudd
   (treeexpr:Apronexpr.Tree.t)
-  (substitution:[>`Apron of t] MappeS.t)
+  (substitution:(string, [>`Apron of t]) PMappe.t)
   :
   t
   =
@@ -233,7 +233,7 @@ let substitute_treeexpr
     | Apronexpr.Tree.Var var ->
 	let name = Apron.Var.to_string var in
 	begin
-	  try of_expr (MappeS.find name substitution)
+	  try of_expr (PMappe.find name substitution)
 	  with Not_found ->
 	    Cudd.Mtbdd.cst cudd table (Apronexpr.Lin(Apronexpr.Lin.var name))
 	end
@@ -261,7 +261,7 @@ let substitute_treeexpr
 let substitute
   cudd 
   (expr:Apronexpr.t)
-  (substitution:[>`Apron of t] MappeS.t)
+  (substitution:(string, [>`Apron of t]) PMappe.t)
   :
   t
   =
@@ -302,7 +302,7 @@ module Condition = struct
    cudd
    env
    (cond:Apronexpr.Condition.t)
-   (substitution:[>`Apron of t] MappeS.t)
+   (substitution:(string,[>`Apron of t]) PMappe.t)
    :
    Cudd.Man.v Cudd.Bdd.t
     =

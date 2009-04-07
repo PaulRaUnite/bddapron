@@ -32,7 +32,7 @@ type 'a mnode =
 type 'a mtbdd = {
   cond : SetteI.t ref;
   mutable mdef : 'a mnode MappeI.t;
-  lhash : ('a Cudd.Mtbdd.unique, unit) Hashhe.Custom.t;
+  lhash : ('a Cudd.Mtbdd.unique, unit) PHashhe.t;
   mhash : ('a Cudd.Mtbdd.t, int) Hashhe.t;
   mutable mlastid : int;
 }

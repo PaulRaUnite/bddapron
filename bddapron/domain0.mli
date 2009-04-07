@@ -77,11 +77,11 @@ module O : sig
   val meet_idcondb :
     'a man ->
     ([> Env.typ ], [> Env.typdef ], Env.cond)
-      #Env.O.t -> 'a t -> MappeI.key * bool -> 'a t
+      #Env.O.t -> 'a t -> int * bool -> 'a t
   val cofactors :
     'a man ->
     ([> Env.typ ], [> Env.typdef ], Env.cond)
-      #Env.O.t -> 'a t -> MappeI.key -> 'a t * 'a t
+      #Env.O.t -> 'a t -> int -> 'a t * 'a t
 
   module Descend : sig
     val texpr_cofactor :

@@ -24,7 +24,7 @@ val compare_cond :
   [< `Apron of Apronexpr.Condition.t ] ->
   [< `Apron of Apronexpr.Condition.t ] -> int
 val negate_cond : [> Apronexpr.typ ] #Apronexpr.db -> cond -> cond
-val cond_support : 'a -> [< `Apron of Apronexpr.Condition.t ] -> SetteS.t
+val cond_support : 'a -> [< `Apron of Apronexpr.Condition.t ] -> string PSette.t
   
 (*  ********************************************************************** *)
 (** {2 Opened signature} *)

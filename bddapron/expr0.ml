@@ -72,7 +72,7 @@ let check_typ2 e2 e3 =
 
 let compose_of_substitution (env:('a,'b,Env.cond) #Env.O.t) (substitution:(string*expr) list)
   :
-  Cudd.Man.v Cudd.Bdd.t array option * expr MappeS.t
+  Cudd.Man.v Cudd.Bdd.t array option * (string, expr) PMappe.t
   =
   let change = ref false in
   (* we first look at Boolean variables/conditions *)
@@ -83,23 +83,23 @@ let compose_of_substitution (env:('a,'b,Env.cond) #Env.O.t) (substitution:(strin
 	| #Bdd.Expr0.t as x ->
 	    ((var,x)::bsub,osub)
 	| _ ->
-	    (bsub, MappeS.add var expr osub)
+	    (bsub, PMappe.add var expr osub)
 	end
       end)
-      ([],MappeS.empty)
+      ([],(PMappe.empty String.compare))
       substitution
   in
   if bsub<>[] then change := true;
   (* we initialize the substitution table *)
   let tab = Bdd.Expr0.O.composition_of_substitution env bsub in
-  if osub<>MappeS.empty then begin
+  if not (PMappe.is_empty osub) then begin
     (* we now take care of other conditions *)
     for id=0 to pred(Array.length tab) do
       begin try
 	let cond = env#cond_of_idb (id,true) in
 	let supp = env#support_cond cond in
-	let substitution = MappeS.interset osub supp in
-	if substitution<>MappeS.empty then begin
+	let substitution = PMappe.interset osub supp in
+	if not (PMappe.is_empty substitution) then begin
 	  change := true;
 	  let bdd = match cond with
 	    | `Apron x ->
@@ -120,7 +120,7 @@ let substitute (env:('a,'b,Env.cond) #Env.O.t) (e:t) (substitution:(string*expr)
     e
   else begin
     let (tab,sub) = compose_of_substitution env substitution in
-    if sub=MappeS.empty then begin
+    if PMappe.is_empty sub then begin
       let tab = match tab with
 	| None -> assert false
 	| Some(tab) -> tab
@@ -373,27 +373,27 @@ let support_cond env (expr:t) : Cudd.Man.v Cudd.Bdd.t =
   | `Apron x ->
       Apron.support x
  
-let support env (expr:t) : SetteS.t
+let support env (expr:t) : string PSette.t
   =
   let supp = support_cond env expr in
   let list = Cudd.Bdd.list_of_support supp in
-  let set = ref SetteS.empty in
+  let set = ref (PSette.empty String.compare) in
   List.iter
     (begin fun id ->
       try
 	let cond = env#cond_of_idb (id,true) in
 	let supp = env#support_cond cond in
-	set := SetteS.union supp !set
+	set := PSette.union supp !set
       with Not_found ->
-	let var = MappeI.find id env#idcondvar in
-	set := SetteS.add var !set
+	let var = PMappe.find id env#idcondvar in
+	set := PSette.add var !set
     end)
     list
   ;
   begin match expr with
   | #Bdd.Expr0.t -> ()
   | `Apron expr ->
-      set := SetteS.union (Apron.support_leaf expr) !set
+      set := PSette.union (Apron.support_leaf expr) !set
   end;
   !set
 

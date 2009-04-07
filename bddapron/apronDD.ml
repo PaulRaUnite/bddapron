@@ -18,7 +18,7 @@ type 'a man = {
 }
 
 let make_table apron : 'a table =
-  Cudd.Weakke.Custom.create
+  Cudd.PWeakke.create
     Hashtbl.hash
     (fun (x:'a Apron.Abstract1.t) (y:'a Apron.Abstract1.t) ->
       x==y ||

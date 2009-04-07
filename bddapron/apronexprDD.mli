@@ -50,16 +50,16 @@ val sqrt :
   ?typ:Apron.Texpr1.typ ->
   ?round:Apron.Texpr1.round ->
   t -> t
-val support_leaf : t -> SetteS.t
+val support_leaf : t -> string PSette.t
 val support_cond : t -> Cudd.Man.v Cudd.Bdd.t
 val substitute_linexpr :
-  Cudd.Man.v Cudd.Man.t -> Apronexpr.Lin.t -> [> `Apron of t ] MappeS.t -> t
+  Cudd.Man.v Cudd.Man.t -> Apronexpr.Lin.t -> (string, [> `Apron of t ]) PMappe.t -> t
 val substitute_polyexpr :
-  Cudd.Man.v Cudd.Man.t -> Apronexpr.Poly.t -> [> `Apron of t ] MappeS.t -> t
+  Cudd.Man.v Cudd.Man.t -> Apronexpr.Poly.t -> (string, [> `Apron of t ]) PMappe.t -> t
 val substitute_treeexpr :
-  Cudd.Man.v Cudd.Man.t -> Apronexpr.Tree.t -> [> `Apron of t ] MappeS.t -> t
+  Cudd.Man.v Cudd.Man.t -> Apronexpr.Tree.t -> (string, [> `Apron of t ]) PMappe.t -> t
 val substitute :
-  Cudd.Man.v Cudd.Man.t -> Apronexpr.t -> [> `Apron of t ] MappeS.t -> t
+  Cudd.Man.v Cudd.Man.t -> Apronexpr.t -> (string, [> `Apron of t ]) PMappe.t -> t
 module Condition :
   sig
     val make :
@@ -82,5 +82,5 @@ module Condition :
       Cudd.Man.v Cudd.Man.t ->
       < idb_of_cond : [> `Apron of Apronexpr.Condition.t ] -> int * bool;
         typ_of_var : string -> [> Apronexpr.typ ]; .. > ->
-      Apronexpr.Condition.t -> [> `Apron of t ] MappeS.t -> Cudd.Man.v Cudd.Bdd.t
+      Apronexpr.Condition.t -> (string, [> `Apron of t ]) PMappe.t -> Cudd.Man.v Cudd.Bdd.t
   end

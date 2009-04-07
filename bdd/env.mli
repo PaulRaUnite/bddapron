@@ -60,7 +60,7 @@ module O : sig
     (** Is the label/var defined in the database ? *)
     method typ_of_var : string -> 'a
     (** Return the type of the label/variable *)
-    method vars : SetteS.t
+    method vars : string PSette.t
     (** Return the list of variables *)
 
     method permutation : int array
@@ -92,9 +92,9 @@ module O : sig
     (** CUDD manager *)
     val mutable v_paired : bool
     (** Are pair groups active (default false) ? *)
-    val mutable v_typdef : 'b MappeS.t
+    val mutable v_typdef : (string, 'b) PMappe.t
     (** Named types definitions *)
-    val mutable v_vartyp : 'a MappeS.t
+    val mutable v_vartyp : (string, 'a) PMappe.t
     (** Associate to a var/label its type *)
     val mutable v_boolfirst : bool
     (** If true, when normalizing,
@@ -104,18 +104,18 @@ module O : sig
     val mutable v_bddincr : int
     (** Increment used by [self#add_var] for incrementing
 	[self#_v_bddindex] *)
-    val mutable v_idcondvar : string MappeI.t
+    val mutable v_idcondvar : (int, string) PMappe.t
     (** Associates to a BDD index the variable involved by it *)
-    val mutable v_vartid : (int array) MappeS.t
+    val mutable v_vartid : (string, int array) PMappe.t
     (** (Sorted) array of BDD indices associated to finite-type variables. *)
-    val mutable v_varset : 'd Cudd.Bdd.t MappeS.t
+    val mutable v_varset : (string, 'd Cudd.Bdd.t) PMappe.t
     (** Associates to enumerated variable the (care)set of
 	possibled values. *)
     val v_compare_cond : 'c -> 'c -> int
     val v_negate_cond : ('a,'b,'c,'d) t -> 'c -> 'c
-    val v_support_cond : ('a,'b,'c,'d) t -> 'c -> SetteS.t
+    val v_support_cond : ('a,'b,'c,'d) t -> 'c -> string PSette.t
     val mutable v_print_cond : ('a,'b,'c,'d) t -> Format.formatter -> 'c -> unit
-    val mutable v_cond : ('c,int*bool) DMappe.Custom.t
+    val mutable v_cond : ('c,int*bool) PDMappe.t
     (** Two-way association between a condition and a pair of a BDD index and a polarity *)
     val mutable v_cond_supp : 'd Cudd.Bdd.t
     (** Support of conditions *)
@@ -128,31 +128,31 @@ module O : sig
 	By default, [pp_print_int]. *)
 
     method cudd : 'd Cudd.Man.t
-    method typdef : 'b MappeS.t
-    method vartyp : 'a MappeS.t
+    method typdef : (string, 'b) PMappe.t
+    method vartyp : (string, 'a) PMappe.t
     method boolfirst : bool
     method bddindex : int
     method bddincr : int
-    method idcondvar : string MappeI.t
-    method vartid : int array MappeS.t
-    method varset : 'd Cudd.Bdd.t MappeS.t
+    method idcondvar : (int, string) PMappe.t
+    method vartid : (string, int array) PMappe.t
+    method varset : (string, 'd Cudd.Bdd.t) PMappe.t
     method compare_cond : 'c -> 'c -> int
     method negate_cond : 'c -> 'c
-    method support_cond : 'c -> SetteS.t
+    method support_cond : 'c -> string PSette.t
     method print_cond : Format.formatter -> 'c -> unit
-    method cond : ('c,int*bool) DMappe.Custom.t
+    method cond : ('c,int*bool) PDMappe.t
     method cond_supp : 'd Cudd.Bdd.t
     method careset : 'd Cudd.Bdd.t
     method print_external_idcondb : Format.formatter -> int*bool -> unit
     method set_bddindex : int -> unit
     method set_bddincr : int -> unit
     method set_boolfirst : bool -> unit
-    method set_idcondvar : string MappeI.t -> unit
-    method set_vartid : int array MappeS.t -> unit
-    method set_varset : 'd Cudd.Bdd.t MappeS.t -> unit
-    method set_typdef : 'b MappeS.t -> unit
-    method set_vartyp : 'a MappeS.t -> unit
-    method set_cond : ('c,int*bool) DMappe.Custom.t -> unit
+    method set_idcondvar : (int, string) PMappe.t -> unit
+    method set_vartid : (string, int array) PMappe.t -> unit
+    method set_varset : (string, 'd Cudd.Bdd.t) PMappe.t -> unit
+    method set_typdef : (string, 'b) PMappe.t -> unit
+    method set_vartyp : (string, 'a) PMappe.t -> unit
+    method set_cond : ('c,int*bool) PDMappe.t -> unit
     method set_cond_supp : 'd Cudd.Bdd.t -> unit
     method set_careset : 'd Cudd.Bdd.t -> unit
     method set_print_external_idcondb :
@@ -165,7 +165,7 @@ module O : sig
     ?relational:bool ->
     compare_cond:('c -> 'c -> int) ->
     negate_cond:(('a,'b,'c,'d) t -> 'c -> 'c) ->
-    support_cond:(('a,'b,'c,'d) t -> 'c -> SetteS.t) ->
+    support_cond:(('a,'b,'c,'d) t -> 'c -> string PSette.t) ->
     print_cond:(('a,'b,'c,'d) t -> Format.formatter -> 'c -> unit) ->
     ['a,'b,'c,'d] t
     (** Creates an environment from scratch *)
