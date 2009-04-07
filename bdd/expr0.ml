@@ -988,18 +988,18 @@ let vectorsupport_cond env (texpr:'a expr array) : 'a Cudd.Bdd.t
   =
   Cudd.Bdd.vectorsupport (tbdd_of_texpr texpr)
 
-let support_of_bdd env (supp:'a Cudd.Bdd.t) : SetteS.t
+let support_of_bdd env (supp:'a Cudd.Bdd.t) : string PSette.t
   =
   let list = Cudd.Bdd.list_of_support supp in
   List.fold_left
     (begin fun res id ->
       let var = PMappe.find id env#idcondvar in
-      SetteS.add var res
+      PSette.add var res
     end)
-    SetteS.empty
+    (PSette.empty String.compare)
     list
 
-let support env (expr:'a expr) : SetteS.t =
+let support env (expr:'a expr) : string PSette.t =
   let supp = support_cond env expr in
   support_of_bdd env supp
 

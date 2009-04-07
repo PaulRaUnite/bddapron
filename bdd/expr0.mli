@@ -186,7 +186,7 @@ val tdrestrict : 'a t -> 'a Cudd.Bdd.t -> 'a t
     (** Simplify the expression knowing that the BDD is true.  Generalizes
       [cofactor]. *)
 
-val support : 'a Env.t -> 'a t -> SetteS.t
+val support : 'a Env.t -> 'a t -> string PSette.t
     (** Support of the expression *)
 
 val support_cond : 'a Env.t -> 'a t -> 'a Cudd.Bdd.t
@@ -393,7 +393,7 @@ val substitute_by_var : ('a,'b,'c,'d) #Env.O.t -> 'd expr -> (string * string) l
 val substitute : ('a,'b,'c,'d) #Env.O.t -> 'd expr -> (string * 'd expr) list -> 'd expr
     (** Parallel substitution of variables by expressions *)
 
-val support : ('a,'b,'c,'d) #Env.O.t -> 'd expr -> SetteS.t
+val support : ('a,'b,'c,'d) #Env.O.t -> 'd expr -> string PSette.t
     (** Support of the expression *)
 
 val support_cond : ('a,'b,'c,'d) #Env.O.t -> 'd expr -> 'd Cudd.Bdd.t
@@ -501,7 +501,7 @@ module Expr : sig
     ('a,'b,'c,'d) #Env.O.t ->
     string -> 'd Enum.t -> Reg.Minterm.t -> 'c term
   val term_of_idcondb :
-    ('a,'b,'c,'d) #Env.O.t -> MappeI.key * bool -> 'c term
+    ('a,'b,'c,'d) #Env.O.t -> int * bool -> 'c term
   val bool_of_tbool : Cudd.Man.tbool -> bool
   val mand : 'c term list ref -> 'c term -> unit
   val conjunction_of_minterm :

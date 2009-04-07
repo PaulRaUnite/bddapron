@@ -178,7 +178,7 @@ val substitute_by_var : 'a expr -> (string * string) list -> 'a expr
 val substitute : 'a expr -> (string * 'a expr) list -> 'a expr
     (** Parallel substitution of variables by expressions *)
 
-val support : 'a expr -> SetteS.t
+val support : 'a expr -> string PSette.t
     (** Support of the expression *)
 
 val support_cond : 'a expr -> 'a Cudd.Bdd.t
@@ -385,7 +385,7 @@ val substitute_by_var : ('a,'b) t -> (string * string) list -> ('a,'b) t
 val substitute : ('a,'b) t -> (string * ('a,'b) t) list -> ('a,'b) t
     (** Parallel substitution of variables by expressions *)
 
-val support : ('a,'b) t -> SetteS.t
+val support : ('a,'b) t -> string PSette.t
     (** Support of the expression *)
 
 val support_cond : ('a,'b) t -> 'b Cudd.Bdd.t

@@ -15,9 +15,9 @@ type bnode =
       (** Terminal case. Not needed in principle *)
 
 type 'a bdd = {
-  cond : SetteI.t ref;
+  cond : int PSette.t ref;
     (** Reachable conditions *)
-  mutable bdef : bnode MappeI.t;
+  mutable bdef : (int, bnode) PMappe.t;
     (** Global BDDs graph *)
   bhash : ('a Cudd.Bdd.t, int) Hashhe.t;
   mutable blastid : int;
@@ -30,7 +30,7 @@ type 'a bdd = {
 
 let make_bdd ~cond = {
   cond = cond;
-  bdef = MappeI.empty;
+  bdef = PMappe.empty (-);
   bhash = Hashhe.create 23;
   blastid = -1;
 }
@@ -50,7 +50,7 @@ let signid_of_bdd (db:'a bdd) (bdd:'a Cudd.Bdd.t)
 	let bdef =
 	  begin match Cudd.Bdd.inspect bdd with
 	  | Cudd.Bdd.Ite(cond,dthen,delse) ->
-	      db.cond := SetteI.add cond !(db.cond);
+	      db.cond := PSette.add cond !(db.cond);
 	      let (b1,id1) = iter dthen in
 	      let (b2,id2) = iter delse in
 	      assert(not b1);
@@ -62,7 +62,7 @@ let signid_of_bdd (db:'a bdd) (bdd:'a Cudd.Bdd.t)
 	in
 	db.blastid <- db.blastid + 1;
 	Hashhe.add db.bhash bdd db.blastid;
-	db.bdef <- MappeI.add db.blastid bdef db.bdef;
+	db.bdef <- PMappe.add db.blastid bdef db.bdef;
 	(cmpl,db.blastid)
     in
     res
@@ -82,12 +82,11 @@ type 'a mnode =
 
 (** Database *)
 type 'a mtbdd = {
-  cond : SetteI.t ref;
+  cond : int PSette.t ref;
     (** Reachable conditions *)
-  mutable mdef : 'a mnode MappeI.t;
-    (** Global IDDs graph *)
+  mutable mdef : (int, 'a mnode) PMappe.t;
+    (** Global MTBDDs graph *)
   lhash : ('a Cudd.Mtbdd.unique, unit) PHashhe.t;
-    (** Reachable MTBDD leafs *)
   mhash : ('a Cudd.Mtbdd.t, int) Hashhe.t;
   mutable mlastid : int;
     (** Hashtables and Counters for MTBDD nodes. *)
@@ -99,7 +98,7 @@ let make_mtbdd ~(table:'a Cudd.Mtbdd.table) ~cond =
   let equal = compare.Cudd.PWeakke.equal in
   {
     cond = cond;
-    mdef = MappeI.empty;
+    mdef = PMappe.empty (-);
     lhash = PHashhe.create hash equal 23;
     mhash = Hashhe.create 23;
     mlastid = -1;
@@ -118,7 +117,7 @@ let id_of_mtbdd
       let mdef =
 	begin match Cudd.Mtbdd.inspect mtbdd with
 	| Cudd.Mtbdd.Ite(cond,dthen,delse) ->
-	    db.cond := SetteI.add cond !(db.cond);
+	    db.cond := PSette.add cond !(db.cond);
 	    let idthen = iter dthen in
 	    let idelse = iter delse in
 	    MIte(cond,idthen,idelse)
@@ -129,7 +128,7 @@ let id_of_mtbdd
       in
       db.mlastid <- db.mlastid + 1;
       Hashhe.add db.mhash mtbdd db.mlastid;
-      db.mdef <- MappeI.add db.mlastid mdef db.mdef;
+      db.mdef <- PMappe.add db.mlastid mdef db.mdef;
       db.mlastid
   in
   iter mtbdd
@@ -146,8 +145,8 @@ type rnode =
 
 (** Database *)
 type rdd = {
-  cond : SetteI.t ref;
-  mutable rdef : rnode MappeI.t;
+  cond : int PSette.t ref;
+  mutable rdef : (int, rnode) PMappe.t;
   mutable lset : float Sette.t;
   rhash : (Cudd.Rdd.t, int) Hashhe.t;
   mutable rlastid : int;
@@ -156,7 +155,7 @@ type rdd = {
 let make_rdd ~cond = 
   {
     cond = cond;
-    rdef = MappeI.empty;
+    rdef = PMappe.empty (-);
     lset = Sette.empty;
     rhash = Hashhe.create 23;
     rlastid = -1;
@@ -175,7 +174,7 @@ let id_of_rdd
       let mdef =
 	begin match Cudd.Rdd.inspect rdd with
 	| Cudd.Rdd.Ite(cond,dthen,delse) ->
-	    db.cond := SetteI.add cond !(db.cond);
+	    db.cond := PSette.add cond !(db.cond);
 	    let idthen = iter dthen in
 	    let idelse = iter delse in
 	    RIte(cond,idthen,idelse)
@@ -186,7 +185,7 @@ let id_of_rdd
       in
       db.rlastid <- db.rlastid + 1;
       Hashhe.add db.rhash rdd db.rlastid;
-      db.rdef <- MappeI.add db.rlastid mdef db.rdef;
+      db.rdef <- PMappe.add db.rlastid mdef db.rdef;
       db.rlastid
   in
   iter rdd
@@ -195,20 +194,20 @@ let id_of_rdd
 (** {2 Iterators} *)
 (*  ********************************************************************** *)
 
-let iter_cond_ordered (cond:SetteI.t) (manager:'a Cudd.Man.t) (f:int -> unit) : unit
+let iter_cond_ordered (cond:int PSette.t) (manager:'a Cudd.Man.t) (f:int -> unit) : unit
   =
   let size = Cudd.Man.get_bddvar_nb manager in
   for level=0 to pred size do
     let var = Cudd.Man.var_of_level manager level in
-    if SetteI.mem var cond then
+    if PSette.mem var cond then
       f var
   done;
   ()
 
 let iter_bdef_ordered (db:'a bdd) (f:int -> bnode -> unit) : unit
   =
-  MappeI.iter f db.bdef
+  PMappe.iter f db.bdef
 
 let iter_mdef_ordered (db:'a mtbdd) (f:int -> 'a mnode -> unit) : unit
   =
-  MappeI.iter f db.mdef
+  PMappe.iter f db.mdef

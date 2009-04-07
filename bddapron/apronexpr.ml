@@ -104,7 +104,7 @@ module Lin = struct
       (PSette.empty String.compare)
       e.lterm
 
-  let substitute_by_var e (substitution:string MappeS.t)
+  let substitute_by_var e (substitution:(string,string) PMappe.t)
     =
     let ne = {
       cst = e.cst;
@@ -112,7 +112,7 @@ module Lin = struct
 	List.map
 	  (begin fun ((c,v) as x) ->
 	    try
-	      (c, MappeS.find v substitution)
+	      (c, PMappe.find v substitution)
 	    with Not_found ->
 	      x
 	  end)
@@ -378,10 +378,10 @@ module Poly = struct
     let ne2 = List.map (fun (c,m)  -> (c,normalize_monomial m)) ne in
     List.stable_sort (fun (c1,m1) (c2,m2) -> compare_monomial m1 m2) ne2
 
-  let substitute_by_var (e:t) (substitution:string MappeS.t) : t
+  let substitute_by_var (e:t) (substitution:(string,string) PMappe.t) : t
     =
     let rename_varexp ((var,exp) as varexp) : varexp =
-      try (MappeS.find var substitution, exp)
+      try (PMappe.find var substitution, exp)
       with Not_found -> varexp
     in
     let rename_monomial (monomial:monomial) : monomial =
@@ -586,14 +586,14 @@ module Tree = struct
     | Unop(op,e,_,_) -> support e
     | Binop(op,e1,e2,_,_) -> PSette.union (support e1) (support e2)
 
-  let substitute_by_var e (substitution:string MappeS.t) =
+  let substitute_by_var e (substitution:(string,string) PMappe.t) =
     let rec parcours = function
     | Cst _ as x -> x
     | Var(var) as x ->
 	begin
 	  try
 	    let name = Apron.Var.to_string var in
-	    let name2 = MappeS.find name substitution in
+	    let name2 = PMappe.find name substitution in
 	    Var(Apron.Var.of_string name2)
 	  with Not_found -> x
 	end
@@ -881,7 +881,7 @@ let cast ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e =
 let sqrt ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e =
   Tree(Tree.Unop(Tree.Sqrt, to_tree e,typ,round))
 
-let substitute_by_var e (substitution:string MappeS.t) =
+let substitute_by_var e (substitution:(string,string) PMappe.t) =
   match e with
   | Lin l -> Lin(Lin.substitute_by_var l substitution)
   | Poly p -> Poly(Poly.substitute_by_var p substitution)

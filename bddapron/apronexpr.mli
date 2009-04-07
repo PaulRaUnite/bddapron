@@ -42,7 +42,7 @@ module Lin :
     val scale : Mpqf.t -> t -> t
     val negate : t -> t
     val support : t -> string PSette.t
-    val substitute_by_var : t -> string MappeS.t -> t
+    val substitute_by_var : t -> (string,string) PMappe.t -> t
     val normalize_as_constraint : t -> t
     val print : Format.formatter -> t -> unit
 
@@ -74,7 +74,7 @@ module Poly :
     val div : t -> t -> t
     val negate : t -> t
     val support : t -> string PSette.t
-    val substitute_by_var : t -> string MappeS.t -> t
+    val substitute_by_var : t -> (string,string) PMappe.t -> t
     val normalize_as_constraint : t -> t
     val print : Format.formatter -> t -> unit
   end
@@ -104,7 +104,7 @@ module Tree :
       | Unop of unop * t * typ * round
       | Binop of binop * t * t * typ * round
     val support : t -> string PSette.t
-    val substitute_by_var : t -> string MappeS.t -> t
+    val substitute_by_var : t -> (string,string) PMappe.t -> t
     val print : Format.formatter -> t -> unit
     val compare : t -> t -> int
   end
@@ -142,7 +142,7 @@ val negate : t -> t
 val cast : ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> t -> t
 val sqrt : ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> t -> t
 val support : t -> string PSette.t
-val substitute_by_var : t -> string MappeS.t -> t
+val substitute_by_var : t -> (string,string) PMappe.t -> t
 val normalize : t -> t
 val equal : t -> t -> bool
 val hash : t -> int
