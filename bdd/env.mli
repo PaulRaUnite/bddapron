@@ -51,11 +51,13 @@ module O : sig
 	should also be applied to expressions defined in this
 	environment) *)
     method remove_vars : string list -> int array option
-    (** Remove the set of variables, possibly normalize the
-	environment and return the applied permutation. *)
+    (** Remove the set of variables, as well as all constraints,
+	and possibly normalize the environment and return the
+	applied permutation. *)
     method rename_vars : (string * string) list -> int array option
-    (** Rename the variables, possibly normalize the environment
-	and return the applied permutation. *)
+    (** Rename the variables, and remove all constraints,possibly
+	normalize the environment and return the applied
+	permutation. *)
     method mem_var : string -> bool
     (** Is the label/var defined in the database ? *)
     method typ_of_var : string -> 'a

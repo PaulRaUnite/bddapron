@@ -77,11 +77,13 @@ module O = struct
 	should also be applied to expressions defined in this
 	environment) *)
     method remove_vars : string list -> int array option
-    (** Remove the set of variables, possibly normalize the
-	environment and return the applied permutation. *)
+    (** Remove the set of variables, as well as all constraints,
+	and possibly normalize the environment and return the
+	applied permutation. *)
     method rename_vars : (string * string) list -> int array option
-    (** Rename the variables, possibly normalize the environment
-	and return the applied permutation. *)
+    (** Rename the variables, and remove all constraints,possibly
+	normalize the environment and return the applied
+	permutation. *)
     method mem_var : string -> bool
     (** Is the label/var defined in the database ? *)
     method typ_of_var : string -> 'a
@@ -324,8 +326,6 @@ module O = struct
       self#permute perm;
       perm
 
-
-
     method add_typ (typ:string) (typdef:'b) : unit
       =
       if PMappe.mem typ v_typdef then
@@ -366,7 +366,7 @@ module O = struct
     method add_var var typ : unit
       =
       if PMappe.mem var v_vartyp then
-	failwith (sprintf "Bddenv.env#add_var: label/var %s already defined" var)
+	failwith (sprintf "Bdd.Env.env#add_var: label/var %s already defined" var)
       ;
       v_vartyp <- PMappe.add var typ v_vartyp;
       begin match typ with
@@ -437,7 +437,7 @@ module O = struct
 	      with Not_found ->
 		failwith
 		  (Format.sprintf
-		    "Bddenv.remove: trying to remove the label %s of an enumerated type"
+		    "Bdd.Env.remove: trying to remove the label %s of an enumerated type"
 		    var)
 	      end
 	  | _ -> ()
@@ -446,35 +446,18 @@ module O = struct
 	end)
 	lvar
       ;
-      (* conditions *)
-      let svar = List.fold_left
-	(fun res x -> PSette.add x res)
-	(PSette.empty String.compare) lvar
-      in
-      let supp_removed = ref (Cudd.Bdd.dtrue v_cudd) in
-      PDMappe.iter
-	(begin fun condition (id,b) ->
-	  if b then begin
-	    let supp = self#support_cond condition in
-	    if not (PSette.is_empty (PSette.inter supp svar)) then begin
-	      length := !length + v_bddincr;
-	      supp_removed := Cudd.Bdd.dand !supp_removed (Cudd.Bdd.ithvar v_cudd id);
-	      v_cond <- PDMappe.remove condition v_cond;
-	      let ncondition = PDMappe.x_of_y (id,false) v_cond in
-	      v_cond <- PDMappe.remove ncondition v_cond;
-	    end
-	  end
-	end)
-	v_cond
-      ;
-      v_cond_supp <- (Cudd.Bdd.exist !supp_removed v_cond_supp);
-      v_careset <- (Cudd.Bdd.exist !supp_removed v_careset);
-      if !length = 0 then
+      if !length = 0 && PDMappe.is_empty v_cond then
 	None
-      else 
+      else begin
+	(* remove conditions *)
+	let dtrue = Cudd.Bdd.dtrue v_cudd in
+	v_cond <- (PDMappe.empty self#compare_cond compare_idb);
+	v_cond_supp <- dtrue;
+	v_careset <- dtrue;
 	let perm = self#normalize in
 	v_bddindex <- (v_bddindex - !length);
 	Some perm
+      end
 
     method rename_vars (lvarvar:(string*string) list)
       :
@@ -515,7 +498,7 @@ module O = struct
 	  if PMappe.mem nvar v_vartyp then
 	    failwith
 	      (Format.sprintf
-		"Bddenv.rename_vars: error, variable %s renamed in already existing %s"
+		"Bdd.Env.rename_vars: error, variable %s renamed in already existing %s"
 		var nvar)
 	  ;
 	  v_vartyp <- PMappe.add nvar typ v_vartyp;
@@ -527,7 +510,7 @@ module O = struct
 	  if PMappe.mem nvar v_vartyp then
 	    failwith
 	      (Format.sprintf
-		"Bddenv.rename_vars: error, variable %s renamed in already existing %s"
+		"Bdd.Env.rename_vars: error, variable %s renamed in already existing %s"
 		var nvar)
 	  ;
 	  v_vartyp <- PMappe.add nvar typ v_vartyp;
@@ -545,33 +528,15 @@ module O = struct
 	end)
 	lvarvartyptidoset
       ;
-      (* conditions *)
-      let svar = List.fold_left
-	(fun res (var,nvar) -> PSette.add var res)
-	(PSette.empty String.compare) lvarvar
-      in
-      let supp_removed = ref (Cudd.Bdd.dtrue v_cudd) in
-      PDMappe.iter
-	(begin fun condition (id,b) ->
-	  if b then begin
-	    let supp = self#support_cond condition in
-	    if not (PSette.is_empty (PSette.inter supp svar)) then begin
-	      length := !length + v_bddincr;
-	      supp_removed := Cudd.Bdd.dand !supp_removed (Cudd.Bdd.ithvar v_cudd id);
-	      v_cond <- PDMappe.remove condition v_cond;
-	      let ncondition = PDMappe.x_of_y (id,false) v_cond in
-	      v_cond <- PDMappe.remove ncondition v_cond;
-	    end
-	  end
-	end)
-	v_cond
-      ;
-      v_cond_supp <- (Cudd.Bdd.exist !supp_removed v_cond_supp);
-      v_careset <- (Cudd.Bdd.exist !supp_removed v_careset);
+      (* remove conditions *)
+      let dtrue = Cudd.Bdd.dtrue v_cudd in
+      v_cond <- (PDMappe.empty self#compare_cond compare_idb);
+      v_cond_supp <- dtrue;
+      v_careset <- dtrue;
       let perm = self#normalize in
       v_bddindex <- (v_bddindex - !length);
       Some perm
-
+  
     method clear_cond : int array option =
       let dtrue = Cudd.Bdd.dtrue v_cudd in
       let oldcond = v_cond in
@@ -834,7 +799,7 @@ let check_normalized (env:('a,'b,'c,'d) #O.t) : bool
 	  (begin fun id ->
 	    if id <> !index then begin
 	      printf
-		"Bddenv.check_normalized: not normalized at index %i@.env=%a@."
+		"Bdd.Env.check_normalized: not normalized at index %i@.env=%a@."
 		!index
 		print (env:>('a,'b,'c,'d) O.t)
 	      ;
@@ -851,7 +816,7 @@ let check_normalized (env:('a,'b,'c,'d) #O.t) : bool
 	if b then begin
 	  if id <> !index then begin
 	    printf
-	      "Bddenv.check_normalized: not normalized at index %i@.env=%a@."
+	      "Bdd.Env.check_normalized: not normalized at index %i@.env=%a@."
 	      !index
 	      print (env:>('a,'b,'c,'d) O.t)
 	    ;
@@ -1219,7 +1184,7 @@ let make_value env value =
     then
       check_normalized env
     else begin
-      printf "Pb in Bddenv.make_value@.";
+      printf "Pb in Bdd.Env.make_value@.";
       printf "env=%a@."
 	print env
       ;
@@ -1237,7 +1202,7 @@ let extend_environment
     value
   else begin
     if not (is_leq value.env nenv) then
-      failwith "Bddenv.extend_environment: the given environment is not a superenvironment "
+      failwith "Bdd.Env.extend_environment: the given environment is not a superenvironment "
     ;
     let perm = permutation12 value.env nenv in
     make_value nenv (permute value.value perm)
