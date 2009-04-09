@@ -35,9 +35,6 @@ CAML_PREFIX = /usr
 #
 CAMLIDL_PREFIX = /usr
 
-# Where to find FORMULA ($(FORMULA_PREFIX)/lib)
-FORMULA_PREFIX = 
-
 # Where to find CAMLLIB ($(CAMLLIB_PREFIX)/lib)
 #
 CAMLLIB_PREFIX = 
@@ -56,24 +53,30 @@ APRON_PREFIX =
 # Tools and Flags
 ######################################################################
 
+AR = ar
 RANLIB = ranlib
+SED = sed
+M4 = m4
 INSTALL = install
 INSTALLd = install -d
+RM=/bin/rm -f
 
 
 OCAMLC = $(CAML_PREFIX)/bin/ocamlc.opt
 OCAMLOPT = $(CAML_PREFIX)/bin/ocamlopt.opt
-
-# ocamlc compilation flags
-OCAMLFLAGS = -g
-# ocamlopt compilation flags
-OCAMLOPTFLAGS = -inline 20
-
 OCAMLDEP = $(CAML_PREFIX)/bin/ocamldep
 OCAMLLEX = $(CAML_PREFIX)/bin/ocamllex.opt
 OCAMLYACC = $(CAML_PREFIX)/bin/ocamlyacc
 OCAMLDOC = $(CAML_PREFIX)/bin/ocamldoc.opt
 OCAMLMKTOP = $(CAML_PREFIX)/bin/ocamlmktop
+
+CAMLIDL = $(CAMLIDL_PREFIX)/bin/camlidl
+
+# ocamlc compilation flags
+OCAMLFLAGS = -annot -g
+# ocamlopt compilation flags
+OCAMLOPTFLAGS = -annot -inline 20
+
 
 LATEX=latex
 DVIPDF=dvipdf

@@ -1,0 +1,47 @@
+About
+=====
+
+This package contains two sublibraries/modules:
+
+1. Bdd: 
+   a) Manipulation of formula and expressions involving Boolean,
+      enumerated, bounded integer variables, using BDDs
+   b) BDDs as an "abstract" domain
+
+2. Bddapron extends Bdd with 
+   a) Combined finite-type and numerical expressions 
+   b) Abstract domain for finite type and numerical types,
+      implemented as MTBDDs with Boolean decisions and APRON
+      abstract values as leaves.
+
+
+Required
+========
+OCaml
+Camlidl
+C  libraries: 
+  GMP (http://gmplib.org)
+  MPFR (http://www.mpfr.org/)
+  CUDD (http://vlsi.colorado.edu/~fabio/CUDD/)
+OCaml libraries:
+  camllib (http://http://pop-art.inrialpes.fr/~bjeannet/bjeannet-forge/camllib/)
+To configure
+============
+- copy Makefile.config.model into Makefile.config
+- set properly the flags
+
+To compile and install
+========================
+make all        # for bytecode and nativecode compilation of bdd and bddapron
+make bddtop     # for a custom toplevel for Bdd (contains CUDD C library 
+                                                 + extension)
+make bddaprontop # for a custom toplevel for Bddapron (adds APRON C library)
+make bdd.pdf bddapron.pdf # doc
+make html        # doc
+...
+
+see Makefile
+
+To install the library:
+=======================
+make install
