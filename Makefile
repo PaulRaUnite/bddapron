@@ -167,7 +167,7 @@ example2.opt: bddapron/example2.ml bddapron.cmxa
 #--------------------------------------------------------------
 
 .SUFFIXES: .ml .mli .cmi .cmo .cmx .tex
-.PRECIOUS: $(BDDMOD:%=%.cmi %.cmo %.cmx) $(BDDAPRONMOD:%=%.cmi %.cmo %.cmx) 
+.PRECIOUS: $(BDDMOD:%=%.cmi) $(BDDMOD:%=%.cmo) $(BDDMOD:%=%.cmx) $(BDDAPRONMOD:%=%.cmi) $(BDDAPRONMOD:%=%.cmo) $(BDDAPRONMOD:%=%.cmx) 
 
 #-----------------------------------
 # CAML
