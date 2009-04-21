@@ -10,7 +10,7 @@ type typ = [
   | `Real
 ]
 
-class type ['a] db = object
+class type ['a] env = object
   constraint 'a = [>typ]
   method typ_of_var : string -> 'a
 end
@@ -129,7 +129,7 @@ type t =
   | Tree of Tree.t
 type expr = t
 
-val var : 'a #db -> string -> t
+val var : 'a #env -> string -> t
 val zero : t
 val one : t
 val cst : Apron.Coeff.t -> t
@@ -148,8 +148,8 @@ val equal : t -> t -> bool
 val hash : t -> int
 val compare : t -> t -> int
 val normalize_as_constraint : t -> t
-val is_dependent_on_integer_only : 'a #db -> t -> bool
-val typ_of_expr : 'a #db -> t -> [`Int | `Real]
+val is_dependent_on_integer_only : 'a #env -> t -> bool
+val typ_of_expr : 'a #env -> t -> [`Int | `Real]
 val print : Format.formatter -> t -> unit
 val print_typ : Format.formatter -> [>typ] -> unit
 
@@ -170,8 +170,8 @@ module Condition :
     type typ = Apron.Tcons1.typ = 
       EQ | SUPEQ | SUP | DISEQ | EQMOD of Apron.Scalar.t
     type t = typ * expr
-    val make : 'a #db -> typ -> expr -> [ `Cond of t | `Bool of bool ]
-    val negate : 'a #db -> t -> t
+    val make : 'a #env -> typ -> expr -> [ `Cond of t | `Bool of bool ]
+    val negate : 'a #env -> t -> t
     val support : t -> string PSette.t
     val print : Format.formatter -> t -> unit
     val compare : t -> t -> int

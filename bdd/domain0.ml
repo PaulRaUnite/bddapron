@@ -6,7 +6,6 @@
 open Format
 
 type 'a t = 'a Expr0.Bool.t
-type 'a expr = 'a Expr0.expr
 
 let size = Cudd.Bdd.size
 
@@ -25,7 +24,7 @@ let is_leq = Expr0.O.Bool.is_leq
 let is_eq = Expr0.O.Bool.is_eq
 
 let is_variable_unconstrained env abs var =
-  Expr1.O.check_envvar env var;
+  Expr1.O.check_var env var;
   let tid = PMappe.find var env#vartid in
   Array.fold_left
     (begin fun res id -> res && not (Cudd.Bdd.is_var_in id abs) end)
@@ -34,7 +33,7 @@ let is_variable_unconstrained env abs var =
 
 let meet = Expr0.O.Bool.dand
 let join = Expr0.O.Bool.dor
-let meet_cond = meet
+let meet_condition = meet
 
 module Asssub = struct
   let sort tid tbdd =
@@ -109,9 +108,8 @@ module Asssub = struct
     post f tid tbdd
 end
 
-let relation_supp_compose_of_lvarexpr
-  env
-  (lvarexpr:(string * 'a Expr0.expr) list)
+let relation_supp_compose_of_lvarlexpr
+  env lvar (lexpr:'a Expr0.t list)
   :
   'a Cudd.Bdd.t * 'a Cudd.Bdd.t * 'a Cudd.Bdd.t array
   =
@@ -120,11 +118,11 @@ let relation_supp_compose_of_lvarexpr
   let relation = ref (Cudd.Bdd.dtrue manager) in
   let supp = ref (!relation) in
   let tbdd =
-    Array.init (max env#bddindex (Cudd.Man.get_bddvar_nb manager))
+    Array.init env#bddindex
       (fun i -> Cudd.Bdd.ithvar manager i)
   in
-  List.iter
-    (begin fun (var,expr) ->
+  List.iter2
+    (begin fun var expr ->
       let tid = Expr0.O.tid_of_var env var in
       let reg = Expr0.O.reg_of_expr expr in
       Array.iteri
@@ -137,25 +135,26 @@ let relation_supp_compose_of_lvarexpr
 	end)
 	tid
     end)
-    lvarexpr
+    lvar lexpr
   ;
   (!relation,!supp,tbdd)
 
-let assign_list
+let assign_lexpr
   ?(relational=false)
   ?(nodependency=false)
-  env abs (lvarexpr:(string * 'a Expr0.expr) list)
+  env abs lvar (lexpr:'a Expr0.t list)
   =
-  if lvarexpr=[] then abs
+  assert(List.length lvar = List.length lexpr);
+  if lvar=[] then abs
   else begin
     let res =
       if relational then begin
 	let manager = env#cudd in
 	if nodependency then begin
-	  let supp = Expr0.O.bddsupport env (fst (List.split lvarexpr)) in
+	  let supp = Expr0.O.bddsupport env lvar in
 	  let image = ref (Cudd.Bdd.exist supp abs) in
-	  List.iter
-	    (begin fun (var,expr) ->
+	  List.iter2
+	    (begin fun var expr ->
 	      let tid = Expr0.O.tid_of_var env var in
 	      let reg = Expr0.O.reg_of_expr expr in
 	      Array.iteri
@@ -165,14 +164,13 @@ let assign_list
 		end)
 		tid
 	    end)
-	    lvarexpr
+	    lvar lexpr
 	  ;
 	  !image
 	end
 	else begin
 	  let (relation,supp,tbdd) = 
-	    relation_supp_compose_of_lvarexpr
-	      env lvarexpr
+	    relation_supp_compose_of_lvarlexpr env lvar lexpr
 	  in
 	  let image = Cudd.Bdd.existand supp abs relation in
 	  let image = Cudd.Bdd.vectorcompose tbdd image in
@@ -180,7 +178,7 @@ let assign_list
 	end
       end
       else begin
-	let tbdd = Expr0.O.composition_of_substitution env lvarexpr in
+	let tbdd = Expr0.O.composition_of_lvarlexpr env lvar lexpr in
 	let image = Asssub.postcondition abs tbdd in
 	image
       end
@@ -188,11 +186,12 @@ let assign_list
     res
   end
 
-let substitute_list env abs lvarexpr =
-  if lvarexpr=[] then
+let substitute_lexpr env abs lvar lexpr =
+  assert(List.length lvar = List.length lexpr);
+  if lvar=[] then
     abs
   else begin
-    let tbdd = Expr0.O.composition_of_substitution env lvarexpr in
+    let tbdd = Expr0.O.composition_of_lvarlexpr env lvar lexpr in
     Cudd.Bdd.vectorcompose tbdd abs
   end
 
@@ -204,8 +203,6 @@ end
 (** {2 Closed signature} *)
 (*  ********************************************************************** *)
 
-let make_env = Env.make
-
 let print = O.print
 let bottom = O.bottom
 let top = O.top
@@ -216,7 +213,7 @@ let is_eq = O.is_eq
 let is_variable_unconstrained = O.is_variable_unconstrained
 let meet = O.meet
 let join = O.join
-let meet_cond = O.meet_cond
-let assign_list = O.assign_list
-let substitute_list = O.substitute_list
+let meet_condition = O.meet_condition
+let assign_lexpr = O.assign_lexpr
+let substitute_lexpr = O.substitute_lexpr
 let forget_list = O.forget_list

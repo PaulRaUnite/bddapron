@@ -35,8 +35,6 @@ let neutral_join x =
   let apron =  Apron.Abstract1.manager x in
   Apron.Abstract1.is_bottom apron x
 
-
-
 (*
 let absorbant_meet xu =
   let x = Cudd.Mtbdd.get xu in

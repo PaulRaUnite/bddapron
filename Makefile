@@ -31,6 +31,7 @@ BDDMOD = \
 	bdd/int \
 	bdd/enum \
 	bdd/env \
+	bdd/cond \
 	bdd/expr0 bdd/expr1 \
 	bdd/domain0 bdd/domain1
 
@@ -40,7 +41,8 @@ BDDAPRONMOD = \
 	bddapron/apronexprDD \
 	bddapron/apronDD \
 	bddapron/env \
-	bddapron/expr0 bddapron/expr1 \
+	bddapron/cond \
+	bddapron/expr0 bddapron/expr1 bddapron/expr2 \
 	bddapron/domain0 bddapron/domain1 \
 	bddapron/syntax bddapron/yacc bddapron/lex bddapron/parser
 
@@ -60,6 +62,9 @@ MLLIB_TOINSTALLx = bdd.cmx bdd.cmxa bdd.a bddapron.cmx bddapron.cmxa bddapron.a
 
 # Global rules
 all: $(MLLIB_TOINSTALL) $(MLLIB_TOINSTALLx)
+
+byte: $(MLLIB_TOINSTALL)
+opt: $(MLLIB_TOINSTALLx)
 
 install:
 	$(INSTALLd) $(PREFIX)/lib
@@ -97,16 +102,16 @@ bdd.cmxa: bdd.cmx
 	$(OCAMLOPT) -a $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ $^
 	$(RANLIB) bdd.a
 
-bddapron.cmo bddapron.cmi: $(BDDAPRONMOD:%=%.cmo)
+bddapron.cmo: $(BDDAPRONMOD:%=%.cmo)
 	$(OCAMLC) $(OCAMLFLAGS) $(OCAMLINC) -pack -o $@ $^
 
-bddapron.cmx bddapron.o: $(BDDAPRONMOD:%=%.cmx)
+bddapron.cmx: $(BDDAPRONMOD:%=%.cmx)
 	$(OCAMLOPT) $(OCAMLOPTFLAGS) -pack -o $@ $^
 
-bdd.cmo bdd.cmi: $(BDDMOD:%=%.cmo)
+bdd.cmo: $(BDDMOD:%=%.cmo)
 	$(OCAMLC) $(OCAMLFLAGS) $(OCAMLINC) -pack -o $@ $^
 
-bdd.cmx bdd.o: $(BDDMOD:%=%.cmx)
+bdd.cmx: $(BDDMOD:%=%.cmx)
 	$(OCAMLOPT) $(OCAMLOPTFLAGS) -pack -o $@ $^
 
 

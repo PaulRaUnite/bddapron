@@ -6,11 +6,11 @@
 val table : Apronexpr.t Cudd.Mtbdd.table
 
 type t = Apronexpr.t Cudd.Mtbdd.t
-type cond = [ `Apron of Apronexpr.Condition.t ]
 val of_expr : [> `Apron of 'a ] -> 'a
 val to_expr : t -> [> `Apron of t ]
 val print :
-  (Format.formatter -> Cudd.Man.v Cudd.Bdd.t -> unit) -> Format.formatter -> t -> unit
+  (Format.formatter -> Cudd.Man.v Cudd.Bdd.t -> unit) ->
+  Format.formatter -> t -> unit
 val is_zero : Apronexpr.t -> bool
 val is_one : Apronexpr.t -> bool
 val absorbant_zero :
@@ -20,7 +20,7 @@ val absorbant_one :
 val cst : Cudd.Man.v Cudd.Man.t -> Apron.Coeff.t -> t
 val var :
   Cudd.Man.v Cudd.Man.t ->
-  [> Apronexpr.typ ] #Apronexpr.db -> string -> t
+  [> Apronexpr.typ ] #Apronexpr.env -> string -> t
 val add :
   ?typ:Apron.Texpr1.typ ->
   ?round:Apron.Texpr1.round ->
@@ -60,27 +60,28 @@ val substitute_treeexpr :
   Cudd.Man.v Cudd.Man.t -> Apronexpr.Tree.t -> (string, [> `Apron of t ]) PMappe.t -> t
 val substitute :
   Cudd.Man.v Cudd.Man.t -> Apronexpr.t -> (string, [> `Apron of t ]) PMappe.t -> t
-module Condition :
-  sig
-    val make :
-      < idb_of_cond : [> `Apron of Apronexpr.Condition.t ] -> int * bool;
-        typ_of_var : string -> [> Apronexpr.typ ]; .. > ->
-      Apronexpr.Condition.typ -> t -> Cudd.Man.v Cudd.Bdd.t
-    val supeq :
-      < idb_of_cond : [> `Apron of Apronexpr.Condition.t ] -> int * bool;
-        typ_of_var : string -> [> Apronexpr.typ ]; .. > ->
-      t -> Cudd.Man.v Cudd.Bdd.t
-    val sup :
-      < idb_of_cond : [> `Apron of Apronexpr.Condition.t ] -> int * bool;
-        typ_of_var : string -> [> Apronexpr.typ ]; .. > ->
-      t -> Cudd.Man.v Cudd.Bdd.t
-    val eq :
-      < idb_of_cond : [> `Apron of Apronexpr.Condition.t ] -> int * bool;
-        typ_of_var : string -> [> Apronexpr.typ ]; .. > ->
-      t -> Cudd.Man.v Cudd.Bdd.t
-    val substitute :
-      Cudd.Man.v Cudd.Man.t ->
-      < idb_of_cond : [> `Apron of Apronexpr.Condition.t ] -> int * bool;
-        typ_of_var : string -> [> Apronexpr.typ ]; .. > ->
-      Apronexpr.Condition.t -> (string, [> `Apron of t ]) PMappe.t -> Cudd.Man.v Cudd.Bdd.t
-  end
+module Condition :  sig
+  val make :
+    ([> Apronexpr.typ ] #Apronexpr.env as 'a) ->
+    < idb_of_cond : 'a -> [> `Apron of Apronexpr.Condition.t ] -> int * bool; .. > ->
+    Apronexpr.Condition.typ -> t -> Cudd.Man.v Cudd.Bdd.t
+  val supeq :
+    ([> Apronexpr.typ ] #Apronexpr.env as 'a) ->
+    < idb_of_cond : 'a -> [> `Apron of Apronexpr.Condition.t ] -> int * bool; .. > ->
+    t -> Cudd.Man.v Cudd.Bdd.t
+  val sup :
+    ([> Apronexpr.typ ] #Apronexpr.env as 'a) ->
+    < idb_of_cond : 'a -> [> `Apron of Apronexpr.Condition.t ] -> int * bool; .. > ->
+    t -> Cudd.Man.v Cudd.Bdd.t
+  val eq :
+    ([> Apronexpr.typ ] #Apronexpr.env as 'a) ->
+    < idb_of_cond : 'a -> [> `Apron of Apronexpr.Condition.t ] -> int * bool; .. > ->
+    t -> Cudd.Man.v Cudd.Bdd.t
+  val substitute :
+    Cudd.Man.v Cudd.Man.t ->
+    ([> Apronexpr.typ ] #Apronexpr.env as 'a) ->
+    < idb_of_cond : 'a -> [> `Apron of Apronexpr.Condition.t ] -> int * bool; .. > ->
+    Apronexpr.Condition.t ->
+    (string, [> `Apron of t]) PMappe.t -> 
+    Cudd.Man.v Cudd.Bdd.t
+end

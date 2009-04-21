@@ -10,7 +10,7 @@ type typ = [
   | `Real
 ]
 
-class type ['a] db = object
+class type ['a] env = object
   constraint 'a = [>typ]
   method typ_of_var : string -> 'a
 end
@@ -86,10 +86,10 @@ module Lin = struct
     lterm: term list;
   }
 
-  let is_dependent_on_integer_only (db:'a #db) (e:t) =
+  let is_dependent_on_integer_only (env:'a #env) (e:t) =
     List.for_all
       (begin fun (coeff,var) ->
-	(db#typ_of_var var) = `Int
+	(env#typ_of_var var) = `Int
       end)
       e.lterm
 
@@ -290,12 +290,12 @@ module Poly = struct
 
   type t = term list
 
-  let is_dependent_on_integer_only (db:'a #db) (e:t) =
+  let is_dependent_on_integer_only (env:'a #env) (e:t) =
     List.for_all
       (begin fun (c,mon) ->
 	List.for_all
 	(begin fun (var,exp) ->
-	  (db#typ_of_var var) = `Int
+	  (env#typ_of_var var) = `Int
 	end)
 	mon
       end)
@@ -748,9 +748,9 @@ type t =
   | Tree of Tree.t
 type expr = t
 
-let is_dependent_on_integer_only (db:'a #db) expr = match expr with
-  | Lin e -> Lin.is_dependent_on_integer_only db e
-  | Poly e -> Poly.is_dependent_on_integer_only db e
+let is_dependent_on_integer_only (env:'a #env) expr = match expr with
+  | Lin e -> Lin.is_dependent_on_integer_only env e
+  | Poly e -> Poly.is_dependent_on_integer_only env e
   | _ -> false
 
 let print fmt expr = match expr with
@@ -788,8 +788,8 @@ let normalize expr =
 	expr
       end
 
-let var (db:'a #db) x =
-  match db#typ_of_var x with
+let var (env:'a #env) x =
+  match env#typ_of_var x with
   | #typ -> Lin(Lin.var x)
   | _ ->
       failwith
@@ -916,8 +916,8 @@ let normalize_as_constraint expr = match expr with
   | Poly e -> Poly (Poly.normalize_as_constraint e)
   | _ -> expr
 
-let typ_of_expr (db:'a #db) expr =
-  if is_dependent_on_integer_only db expr then `Int else `Real
+let typ_of_expr (env:'a #env) expr =
+  if is_dependent_on_integer_only env expr then `Int else `Real
 
 let to_texpr1 (env:Apron.Environment.t) expr =
   Apron.Texpr1.of_expr env (to_tree expr)
@@ -964,10 +964,10 @@ module Condition = struct
     fprintf fmt "%a%a0" print expr print_typ typ
 
   (** Assume a normalized-as-constraint expression *)
-  let normalize db (cons:t) : [ `Cond of t | `Bool of bool ]
+  let normalize env (cons:t) : [ `Cond of t | `Bool of bool ]
     =
     let (typ,expr) = cons in
-    if is_dependent_on_integer_only db expr then begin
+    if is_dependent_on_integer_only env expr then begin
       let cst = extract_cst expr in
       let is_integer = (Mpzf.cmp_int (Mpqf.get_den cst) 1)=0 in
       begin match (typ,is_integer) with
@@ -990,10 +990,10 @@ module Condition = struct
     else
       `Cond(cons)
 
-  let make db typ expr =
+  let make env typ expr =
     begin try
       let nexpr = normalize_as_constraint expr in
-      normalize db (typ,nexpr)
+      normalize env (typ,nexpr)
     with Constant sgn ->
       begin match typ with
       | EQ -> `Bool(sgn=0)
@@ -1004,16 +1004,16 @@ module Condition = struct
       end
     end
 
-  let negate db (cons:t)
+  let negate env (cons:t)
     =
     let ncons =
       match cons with
       | (EQ,expr) -> `Cond (DISEQ,expr)
       | (DISEQ,expr) -> `Cond (EQ,expr)
       | (SUPEQ,expr) ->
-	  normalize db (SUP,negate expr)
+	  normalize env (SUP,negate expr)
       | (SUP,expr) ->
-	  normalize db (SUPEQ,negate expr)
+	  normalize env (SUPEQ,negate expr)
       | (EQMOD _, _) ->
 	  failwith ""
     in

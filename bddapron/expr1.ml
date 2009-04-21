@@ -13,300 +13,327 @@ open Env
 
 module O = struct
 
-let make_env = Env.O.make
+  (*  ==================================================================== *)
+  (** {3 General expressions} *)
+  (*  ==================================================================== *)
 
-(*  ====================================================================== *)
-(** {3 General expressions} *)
-(*  ====================================================================== *)
+  type 'a t = ('a, Expr0.t) Env.value
+  constraint 'a = ('b,'c) #Env.O.t
 
-type 'a t = ('a, Expr0.t) Bdd.Env.value
-    constraint 'a = ('b,'c,'d) #Env.O.t
-type 'a expr = 'a t
+  type 'a expr = 'a t
 
-let make permute env e =
-  let perm = env#normalize in
-  make_value env (permute e perm)
-
-let substitute (e:'a t) (substitution:(string * 'a t) list) : 'a t
-  =
-  let (nenv,e,lvarexpr) =
-    Bdd.Expr1.O.check_lvarvalue Expr0.permute Expr0.permute
-      e substitution
-  in
-  make_value nenv (Expr0.O.substitute nenv e lvarexpr)
-
-let var env (var:string) : 'a t
-  =
-  make_value env (Expr0.O.var env var)
-
-let substitute_by_var e (substitution:(string*string) list) =
-  let nenv = Oo.copy e.env in
-  let res = Expr0.O.substitute_by_var nenv e.value substitution in
-  let env = if Bdd.Env.is_eq nenv e.env then e.env else nenv in
-  make_value env res
-
-let ddsubstitute = substitute
-let ddsubstitute_by_var = substitute_by_var
-
-(*  ====================================================================== *)
-(** {3 Bdd expressions} *)
-(*  ====================================================================== *)
-
-module Bool = struct
-  type 'a t = ('a, Cudd.Man.v Cudd.Bdd.t) Bdd.Env.value
-    constraint 'a = ('b,'c,'d) #Env.O.t
-
-  let of_expr = Bdd.Expr1.O.Bool.of_expr
-  let to_expr = Bdd.Expr1.O.Bool.to_expr
-  let extend_environment = Bdd.Expr1.O.Bool.extend_environment
-  let dtrue = Bdd.Expr1.O.Bool.dtrue
-  let dfalse = Bdd.Expr1.O.Bool.dfalse
-  let of_bool = Bdd.Expr1.O.Bool.of_bool
-  let var = Bdd.Expr1.O.Bool.var
-  let dnot = Bdd.Expr1.O.Bool.dnot
-  let dand = Bdd.Expr1.O.Bool.dand
-  let dor = Bdd.Expr1.O.Bool.dor
-  let xor = Bdd.Expr1.O.Bool.xor
-  let nand = Bdd.Expr1.O.Bool.nand
-  let nor = Bdd.Expr1.O.Bool.nor
-  let nxor = Bdd.Expr1.O.Bool.nxor
-  let eq = Bdd.Expr1.O.Bool.eq
-  let leq = Bdd.Expr1.O.Bool.leq
-  let ite = Bdd.Expr1.O.Bool.ite
-  let is_true = Bdd.Expr1.O.Bool.is_true
-  let is_false = Bdd.Expr1.O.Bool.is_false
-  let is_cst = Bdd.Expr1.O.Bool.is_cst
-  let is_eq = Bdd.Expr1.O.Bool.is_eq
-  let is_leq = Bdd.Expr1.O.Bool.is_leq
-  let is_inter_false = Bdd.Expr1.O.Bool.is_inter_false
-  let exist = Bdd.Expr1.O.Bool.exist
-  let forall = Bdd.Expr1.O.Bool.forall
-  let cofactor = Bdd.Expr1.O.Bool.cofactor
-  let restrict = Bdd.Expr1.O.Bool.restrict
-  let tdrestrict = Bdd.Expr1.O.Bool.tdrestrict
-  let print = Bdd.Expr1.O.Bool.print
-  let substitute_by_var e sub =
-    of_expr (ddsubstitute_by_var (to_expr e) sub)
-  let substitute e sub =
-    of_expr (ddsubstitute (to_expr e) sub)
-end
-module Bint = struct
-  type 'a t = ('a, Cudd.Man.v Bdd.Int.t) Bdd.Env.value
-    constraint 'a = ('b,'c,'d) #Env.O.t
-
-  let of_expr = Bdd.Expr1.O.Bint.of_expr
-  let to_expr = Bdd.Expr1.O.Bint.to_expr
-  let extend_environment = Bdd.Expr1.O.Bint.extend_environment
-
-  let of_int = Bdd.Expr1.O.Bint.of_int
-  let var = Bdd.Expr1.O.Bint.var
-  let neg = Bdd.Expr1.O.Bint.neg
-  let succ = Bdd.Expr1.O.Bint.succ
-  let pred = Bdd.Expr1.O.Bint.pred
-  let add = Bdd.Expr1.O.Bint.add
-  let sub = Bdd.Expr1.O.Bint.sub
-  let mul = Bdd.Expr1.O.Bint.mul
-  let shift_left = Bdd.Expr1.O.Bint.shift_left
-  let shift_right = Bdd.Expr1.O.Bint.shift_right
-  let scale = Bdd.Expr1.O.Bint.scale
-  let ite = Bdd.Expr1.O.Bint.ite
-
-  let zero = Bdd.Expr1.O.Bint.zero
-  let eq = Bdd.Expr1.O.Bint.eq
-  let eq_int = Bdd.Expr1.O.Bint.eq_int
-  let supeq = Bdd.Expr1.O.Bint.supeq
-  let supeq_int = Bdd.Expr1.O.Bint.supeq_int
-  let sup = Bdd.Expr1.O.Bint.sup
-
-  let cofactor = Bdd.Expr1.O.Bint.cofactor
-  let restrict = Bdd.Expr1.O.Bint.restrict
-  let tdrestrict = Bdd.Expr1.O.Bint.tdrestrict
-
-  let guard_of_int = Bdd.Expr1.O.Bint.guard_of_int
-  let guardints = Bdd.Expr1.O.Bint.guardints
-
-  let print = Bdd.Expr1.O.Bint.print
-  let substitute_by_var e sub =
-    of_expr (ddsubstitute_by_var (to_expr e) sub)
-  let substitute e sub =
-    of_expr (ddsubstitute (to_expr e) sub)
-
-end
-module Benum = struct
-  type 'a t = ('a, Cudd.Man.v Bdd.Enum.t) Bdd.Env.value
-    constraint 'a = ('b,'c,'d) #Env.O.t
-  let of_expr = Bdd.Expr1.O.Benum.of_expr
-  let to_expr = Bdd.Expr1.O.Benum.to_expr
-  let extend_environment = Bdd.Expr1.O.Benum.extend_environment
-
-  let var = Bdd.Expr1.O.Benum.var
-  let ite = Bdd.Expr1.O.Benum.ite
-  let eq = Bdd.Expr1.O.Benum.eq
-  let eq_label = Bdd.Expr1.O.Benum.eq_label
-  let cofactor = Bdd.Expr1.O.Benum.cofactor
-  let restrict = Bdd.Expr1.O.Benum.restrict
-  let tdrestrict = Bdd.Expr1.O.Benum.tdrestrict
-  let guard_of_label = Bdd.Expr1.O.Benum.guard_of_label
-  let guardlabels = Bdd.Expr1.O.Benum.guardlabels
-  let print = Bdd.Expr1.O.Benum.print
-  let substitute_by_var e sub =
-    of_expr (ddsubstitute_by_var (to_expr e) sub)
-  let substitute e sub =
-    of_expr (ddsubstitute (to_expr e) sub)
-end
-
-(*  ====================================================================== *)
-(** {3 Arith expressions} *)
-(*  ====================================================================== *)
-
-module Apron = struct
-  type 'a t = ('a, ApronexprDD.t) Bdd.Env.value
-    constraint 'a = ('b,'c,'d) #Env.O.t
-
-  let of_expr e : 'a t =
-    match e.value with
-    | `Apron x -> make_value e.env x
-    | _ -> failwith "Apron.of_expr: arithmetic expression expected"
-
-  let to_expr (e:'a t) =
-    make_value e.env (`Apron e.value)
-
-  let extend_environment e nenv =
-    if Bdd.Env.is_eq e.env nenv then
-      e
-    else begin
-      if not (Bdd.Env.is_leq e.env nenv) then
-	failwith "Apron.extend_environment: the given environment is not a superenvironment "
-      ;
-      let perm = Bdd.Env.permutation12 e.env nenv in
-      make_value nenv (Cudd.Mtbdd.permute e.value perm)
-    end
-
-  let var env name = make_value env (Expr0.O.Apron.var env name)
-  let cst env cst = make_value env (Expr0.O.Apron.cst env cst)
-  let add ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-    Bdd.Expr1.O.mapbinop Cudd.Mtbdd.permute Cudd.Mtbdd.permute
-      (ApronexprDD.add ~typ ~round) e1 e2
-  let mul ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-    Bdd.Expr1.O.mapbinop Cudd.Mtbdd.permute Cudd.Mtbdd.permute
-      (ApronexprDD.mul ~typ ~round) e1 e2
-  let sub ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-    Bdd.Expr1.O.mapbinop Cudd.Mtbdd.permute Cudd.Mtbdd.permute
-      (ApronexprDD.sub ~typ ~round) e1 e2
-  let div ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-    Bdd.Expr1.O.mapbinop Cudd.Mtbdd.permute Cudd.Mtbdd.permute
-      (ApronexprDD.div ~typ ~round) e1 e2
-  let gmod ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-    Bdd.Expr1.O.mapbinop Cudd.Mtbdd.permute Cudd.Mtbdd.permute
-      (ApronexprDD.gmod ~typ ~round) e1 e2
-  let negate e = Bdd.Expr1.O.mapunop ApronexprDD.negate e
-  let sqrt ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e =
-    Bdd.Expr1.O.mapunop (ApronexprDD.sqrt ~typ ~round) e
-  let cast ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e =
-    Bdd.Expr1.O.mapunop (ApronexprDD.cast ~typ ~round) e
-
-  let ite e1 e2 e3 =
-    let (nenv,value1,value2,value3) =
-      Bdd.Expr1.O.check_value3 Cudd.Bdd.permute Cudd.Mtbdd.permute Cudd.Mtbdd.permute e1 e2 e3
+  let substitute cond (e:'a t) (substitution:(string * 'a t) list) : 'a t
+      =
+    let lvarexpr =
+      Bdd.Expr1.O.check_lvarvalue e.env substitution
     in
-    make_value nenv (Cudd.Mtbdd.ite value1 value2 value3)
+    make_value e.env (Expr0.O.substitute e.env cond e.val0 lvarexpr)
 
-  let condition typ e =
-    let env = Oo.copy e.env in
-    let res = ApronexprDD.Condition.make env typ e.value in
-    if Bdd.Env.is_eq env e.env then
-      make_value e.env res
-    else
-      make Expr0.Bool.permute env res
+  let substitute_by_var cond e (substitution:(string*string) list) =
+    make_value e.env (Expr0.O.substitute_by_var e.env cond e.val0 substitution)
 
-  let supeq expr = condition Apron.Tcons1.SUPEQ expr
-  let sup expr = condition Apron.Tcons1.SUP expr
-  let eq expr = 
-    condition Apron.Tcons1.EQ expr
+  let ddsubstitute = substitute
+  let ddsubstitute_by_var = substitute_by_var
 
-  let cofactor e1 e2 = Bdd.Expr1.O.mapbinop Cudd.Mtbdd.permute Cudd.Bdd.permute Cudd.Mtbdd.cofactor e1 e2
-  let restrict e1 e2 = Bdd.Expr1.O.mapbinop Cudd.Mtbdd.permute Cudd.Bdd.permute Cudd.Mtbdd.restrict e1 e2
-  let tdrestrict e1 e2 = Bdd.Expr1.O.mapbinop Cudd.Mtbdd.permute Cudd.Bdd.permute Cudd.Mtbdd.tdrestrict e1 e2
+  let var env cond (var:string) : 'a t
+      =
+    make_value env (Expr0.O.var env cond var)
 
-  let print fmt (x:'a t) =
-    ApronexprDD.print (Bdd.Expr0.O.print_bdd x.env) fmt x.value
+  (*  ==================================================================== *)
+  (** {3 Bdd expressions} *)
+  (*  ==================================================================== *)
 
-  let substitute_by_var e sub =
-    of_expr (ddsubstitute_by_var (to_expr e) sub)
-  let substitute e sub =
-    of_expr (ddsubstitute (to_expr e) sub)
-end
+  module Bool = struct
+    type 'a t = ('a, Cudd.Man.v Cudd.Bdd.t) Env.value
+    constraint 'a = ('b,'c) #Env.O.t
 
-(*  ********************************************************************** *)
-(** {2 General expressions} *)
-(*  ********************************************************************** *)
+    let of_expr = Bdd.Expr1.O.Bool.of_expr
+    let to_expr = Bdd.Expr1.O.Bool.to_expr
+    let extend_environment = Bdd.Expr1.O.Bool.extend_environment
 
-let typ_of_expr e = Expr0.typ_of_expr e.value
+    let dtrue env cond = Bdd.Expr1.O.Bool.dtrue env
+    let dfalse env cond = Bdd.Expr1.O.Bool.dfalse env
+    let of_bool env cond = Bdd.Expr1.O.Bool.of_bool env
+    let var env cond = Bdd.Expr1.O.Bool.var env
+    let dnot cond = Bdd.Expr1.O.Bool.dnot
+    let dand cond = Bdd.Expr1.O.Bool.dand
+    let dor cond = Bdd.Expr1.O.Bool.dor
+    let xor cond = Bdd.Expr1.O.Bool.xor
+    let nand cond = Bdd.Expr1.O.Bool.nand
+    let nor cond = Bdd.Expr1.O.Bool.nor
+    let nxor cond = Bdd.Expr1.O.Bool.nxor
+    let eq cond = Bdd.Expr1.O.Bool.eq
+    let leq cond = Bdd.Expr1.O.Bool.leq
+    let ite cond = Bdd.Expr1.O.Bool.ite
+    let is_true cond = Bdd.Expr1.O.Bool.is_true
+    let is_false cond = Bdd.Expr1.O.Bool.is_false
+    let is_cst cond = Bdd.Expr1.O.Bool.is_cst
+    let is_eq cond = Bdd.Expr1.O.Bool.is_eq
+    let is_leq cond = Bdd.Expr1.O.Bool.is_leq
+    let is_inter_false cond = Bdd.Expr1.O.Bool.is_inter_false
+    let exist cond = Bdd.Expr1.O.Bool.exist
+    let forall cond = Bdd.Expr1.O.Bool.forall
+    let cofactor = Bdd.Expr1.O.Bool.cofactor
+    let restrict = Bdd.Expr1.O.Bool.restrict
+    let tdrestrict = Bdd.Expr1.O.Bool.tdrestrict
 
-let permute (e:Expr0.t) (tab:int array) : Expr0.t = match e with
-  | #Bdd.Expr0.t as e ->
-      let res = Bdd.Expr0.O.permute e tab in
-      (res:>Expr0.t)
-  | `Apron e -> `Apron (Cudd.Mtbdd.permute e tab)
+    let print cond fmt e = Expr0.O.Bool.print e.env cond fmt e.val0
 
-let extend_environment abs nenv =
-  if Bdd.Env.is_eq abs.env nenv then
-    abs
-  else begin
-    if not (Bdd.Env.is_leq abs.env nenv) then
-      failwith "BddapronexprE.O.extend_environment: the given environment is not a superenvironment"
-    ;
-    let perm = Bdd.Env.permutation12 abs.env nenv in
-    make_value nenv (permute abs.value perm)
+    let substitute_by_var cond e sub =
+      of_expr (ddsubstitute_by_var cond (to_expr e) sub)
+    let substitute cond e sub =
+      of_expr (ddsubstitute cond (to_expr e) sub)
+  end
+  module Bint = struct
+    type 'a t = ('a, Cudd.Man.v Bdd.Int.t) Env.value
+    constraint 'a = ('b,'c) #Env.O.t
+
+    let of_expr = Bdd.Expr1.O.Bint.of_expr
+    let to_expr = Bdd.Expr1.O.Bint.to_expr
+    let extend_environment = Bdd.Expr1.O.Bint.extend_environment
+
+    let of_int env cond = Bdd.Expr1.O.Bint.of_int env
+    let var env cond = Bdd.Expr1.O.Bint.var env
+    let neg cond = Bdd.Expr1.O.Bint.neg
+    let succ cond = Bdd.Expr1.O.Bint.succ
+    let pred cond = Bdd.Expr1.O.Bint.pred
+    let add cond = Bdd.Expr1.O.Bint.add
+    let sub cond = Bdd.Expr1.O.Bint.sub
+    let mul cond = Bdd.Expr1.O.Bint.mul
+    let shift_left cond = Bdd.Expr1.O.Bint.shift_left
+    let shift_right cond = Bdd.Expr1.O.Bint.shift_right
+    let scale cond = Bdd.Expr1.O.Bint.scale
+    let ite cond = Bdd.Expr1.O.Bint.ite
+
+    let zero cond = Bdd.Expr1.O.Bint.zero
+    let eq cond = Bdd.Expr1.O.Bint.eq
+    let eq_int cond = Bdd.Expr1.O.Bint.eq_int
+    let supeq cond = Bdd.Expr1.O.Bint.supeq
+    let supeq_int cond = Bdd.Expr1.O.Bint.supeq_int
+    let sup cond = Bdd.Expr1.O.Bint.sup
+
+    let cofactor = Bdd.Expr1.O.Bint.cofactor
+    let restrict = Bdd.Expr1.O.Bint.restrict
+    let tdrestrict = Bdd.Expr1.O.Bint.tdrestrict
+
+    let guard_of_int cond = Bdd.Expr1.O.Bint.guard_of_int
+    let guardints cond = Bdd.Expr1.O.Bint.guardints
+
+    let print cond fmt e = Expr0.O.Bint.print e.env cond fmt e.val0
+
+    let substitute_by_var cond e sub =
+      of_expr (ddsubstitute_by_var cond (to_expr e) sub)
+    let substitute cond e sub =
+      of_expr (ddsubstitute cond (to_expr e) sub)
+
+  end
+  module Benum = struct
+    type 'a t = ('a, Cudd.Man.v Bdd.Enum.t) Env.value
+    constraint 'a = ('b,'c) #Env.O.t
+    let of_expr = Bdd.Expr1.O.Benum.of_expr
+    let to_expr = Bdd.Expr1.O.Benum.to_expr
+    let extend_environment = Bdd.Expr1.O.Benum.extend_environment
+
+    let var env cond = Bdd.Expr1.O.Benum.var env
+    let ite cond = Bdd.Expr1.O.Benum.ite
+    let eq cond = Bdd.Expr1.O.Benum.eq
+    let eq_label cond = Bdd.Expr1.O.Benum.eq_label
+    let cofactor = Bdd.Expr1.O.Benum.cofactor
+    let restrict = Bdd.Expr1.O.Benum.restrict
+    let tdrestrict = Bdd.Expr1.O.Benum.tdrestrict
+    let guard_of_label cond = Bdd.Expr1.O.Benum.guard_of_label
+    let guardlabels cond = Bdd.Expr1.O.Benum.guardlabels
+
+    let print cond fmt e = Expr0.O.Benum.print e.env cond fmt e.val0
+
+    let substitute_by_var cond e sub =
+      of_expr (ddsubstitute_by_var cond (to_expr e) sub)
+    let substitute cond e sub =
+      of_expr (ddsubstitute cond (to_expr e) sub)
   end
 
-let ite e1 e2 e3 =
-  let (nenv,value1,value2,value3) =
-    Bdd.Expr1.O.check_value3 Cudd.Bdd.permute permute permute e1 e2 e3
-  in
-  make_value nenv (Expr0.O.ite nenv value1 value2 value3)
+  (*  ==================================================================== *)
+  (** {3 Arith expressions} *)
+  (*  ==================================================================== *)
 
-let cofactor e1 e2 = Bdd.Expr1.O.mapbinop permute Cudd.Bdd.permute Expr0.cofactor e1 e2
-let restrict e1 e2 = Bdd.Expr1.O.mapbinop permute Cudd.Bdd.permute Expr0.restrict e1 e2
-let tdrestrict e1 e2 = Bdd.Expr1.O.mapbinop permute Cudd.Bdd.permute Expr0.tdrestrict e1 e2
+  module Apron = struct
+    type 'a t = ('a, ApronexprDD.t) Env.value
+    constraint 'a = ('b,'c) #Env.O.t
 
-let eq e1 e2 =
-  let t = Expr0.O.check_typ2 e1.value e2.value in
-  match t with
-  | `Bool ->
-      Bool.eq (Bool.of_expr e1) (Bool.of_expr e2)
-  | `Bint _ ->
-      Bint.eq (Bint.of_expr e1) (Bint.of_expr e2)
-  | `Benum _ ->
-      Benum.eq (Benum.of_expr e1) (Benum.of_expr e2)
-  | `Real ->
-      let diff = Apron.sub
-	(Apron.of_expr e1)
-	(Apron.of_expr e2)
-      in
-      Apron.eq diff
-  | _ -> failwith ""
+    let of_expr e : 'a t =
+      match e.val0 with
+      | `Apron x -> make_value e.env x
+      | _ -> failwith "Apron.of_expr: arithmetic expression expected"
 
-let support (e:'a t) = Expr0.O.support e.env e.value
-let support_cond (e:'a t) = Expr0.O.support_cond e.env e.value
+    let to_expr (e:'a t) =
+      make_value e.env (`Apron e.val0)
 
-let print fmt (e:'a t) : unit =
-  Expr0.O.print e.env fmt e.value
+    let extend_environment e nenv =
+      if Bdd.Env.is_eq e.env nenv then
+	e
+      else begin
+	if not (Bdd.Env.is_leq e.env nenv) then
+	  failwith "Apron.extend_environment: the given environment is not a superenvironment "
+	;
+	let perm = Bdd.Env.permutation12 e.env nenv in
+	make_value nenv (Cudd.Mtbdd.permute e.val0 perm)
+      end
 
-let make env x = make Expr0.permute env x
+    let var env cond name = make_value env (Expr0.O.Apron.var env cond name)
+    let cst env cond cst = make_value env (Expr0.O.Apron.cst env cond cst)
+    let add cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
+      Bdd.Expr1.O.mapbinop
+	(ApronexprDD.add ~typ ~round) e1 e2
+    let mul cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
+      Bdd.Expr1.O.mapbinop
+	(ApronexprDD.mul ~typ ~round) e1 e2
+    let sub cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
+      Bdd.Expr1.O.mapbinop
+	(ApronexprDD.sub ~typ ~round) e1 e2
+    let div cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
+      Bdd.Expr1.O.mapbinop
+	(ApronexprDD.div ~typ ~round) e1 e2
+    let gmod cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
+      Bdd.Expr1.O.mapbinop
+	(ApronexprDD.gmod ~typ ~round) e1 e2
+    let negate cond e = Bdd.Expr1.O.mapunop ApronexprDD.negate e
+    let sqrt cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e =
+      Bdd.Expr1.O.mapunop (ApronexprDD.sqrt ~typ ~round) e
+    let cast cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e =
+      Bdd.Expr1.O.mapunop (ApronexprDD.cast ~typ ~round) e
+
+    let ite cond e1 e2 e3 =
+      Bdd.Expr1.O.mapterop Cudd.Mtbdd.ite e1 e2 e3
+
+    let condition (cond:(Cond.cond,'a) #Cond.O.t) typ (e:'a t) : 'a Bool.t =
+      make_value e.env (ApronexprDD.Condition.make e.env cond typ e.val0)
+
+    let supeq cond expr = condition cond Apron.Tcons1.SUPEQ expr
+    let sup cond expr = condition cond Apron.Tcons1.SUP expr
+    let eq cond expr = condition cond Apron.Tcons1.EQ expr
+
+    let cofactor e1 e2 = Bdd.Expr1.O.mapbinop Cudd.Mtbdd.cofactor e1 e2
+    let restrict e1 e2 = Bdd.Expr1.O.mapbinop Cudd.Mtbdd.restrict e1 e2
+    let tdrestrict e1 e2 = Bdd.Expr1.O.mapbinop Cudd.Mtbdd.tdrestrict e1 e2
+
+    let print cond fmt (x:'a t) =
+      ApronexprDD.print (Expr0.O.print_bdd x.env cond) fmt x.val0
+
+    let substitute_by_var cond e sub =
+      of_expr (ddsubstitute_by_var cond (to_expr e) sub)
+    let substitute cond e sub =
+      of_expr (ddsubstitute cond (to_expr e) sub)
+  end
+
+  (*  ====================================================================== *)
+  (** {3 General expressions} *)
+  (*  ====================================================================== *)
+
+  let typ_of_expr e = Expr0.typ_of_expr e.val0
+
+  let permute (e:Expr0.t) (tab:int array) : Expr0.t = match e with
+    | #Bdd.Expr0.t as e ->
+	let res = Bdd.Expr0.O.permute e tab in
+	(res:>Expr0.t)
+    | `Apron e -> `Apron (Cudd.Mtbdd.permute e tab)
+
+  let extend_environment abs nenv =
+    if Bdd.Env.is_eq abs.env nenv then
+      abs
+    else begin
+      if not (Bdd.Env.is_leq abs.env nenv) then
+	failwith "BddapronexprE.O.extend_environment: the given environment is not a superenvironment"
+      ;
+      let perm = Bdd.Env.permutation12 abs.env nenv in
+      make_value nenv (permute abs.val0 perm)
+    end
+
+  let ite cond e1 e2 e3 =
+    Bdd.Expr1.O.check_value3 e1 e2 e3;
+    make_value e1.env (Expr0.O.ite e1.env cond e1.val0 e2.val0 e3.val0)
+
+  let cofactor e1 e2 = Bdd.Expr1.O.mapbinop Expr0.cofactor e1 e2
+  let restrict e1 e2 = Bdd.Expr1.O.mapbinop Expr0.restrict e1 e2
+  let tdrestrict e1 e2 = Bdd.Expr1.O.mapbinop Expr0.tdrestrict e1 e2
+
+  let eq cond e1 e2 =
+    let t = Expr0.O.check_typ2 e1.val0 e2.val0 in
+    match t with
+    | `Bool ->
+	Bool.eq cond (Bool.of_expr e1) (Bool.of_expr e2)
+    | `Bint _ ->
+	Bint.eq cond (Bint.of_expr e1) (Bint.of_expr e2)
+    | `Benum _ ->
+	Benum.eq cond (Benum.of_expr e1) (Benum.of_expr e2)
+    | `Real ->
+	let diff = Apron.sub cond
+	  (Apron.of_expr e1)
+	  (Apron.of_expr e2)
+	in
+	Apron.eq cond diff
+    | _ -> failwith ""
+
+  let support cond (e:'a t) = Expr0.O.support e.env cond e.val0
+  let support_cond cond (e:'a t) = Expr0.O.support_cond e.env e.val0
+
+  let print cond fmt (e:'a t) : unit =
+    Expr0.O.print e.env cond fmt e.val0
+
+  let make = make_value
+
+  let normalize ?reduce ?careset (cond,lexpr) =
+    let (lenv,lexpr) =
+      List.fold_left
+	(fun (lenv,lexpr) e -> (e.env::lenv,e.val0::lexpr))
+	([],[]) lexpr
+    in
+    let (cond,lexpr) = Expr0.O.normalize ?reduce ?careset (cond,lexpr) in
+    let lexpr =
+      List.rev_map2 make_value lenv lexpr
+    in
+    (cond,lexpr)
+
+  (*  ====================================================================== *)
+  (** {3 List of expressions} *)
+  (*  ====================================================================== *)
+
+  module List = struct
+    type 'a t = ('a, Expr0.t list) Env.value
+    constraint 'a = ('b,'c) #Env.O.t
+
+    let of_lexpr0 = make_value
+    let of_lexpr1 env lexpr1 =
+      let lexpr0 = Bdd.Expr1.O.check_lvalue env lexpr1 in
+      of_lexpr0 env lexpr0
+
+    let extend_environment e nenv =
+      Bdd.Env.extend_environment
+	(fun lexpr0 perm ->
+	  (List.map (fun e -> Expr0.O.permute e perm) lexpr0))
+	e nenv
+
+    let normalize ?reduce ?careset (cond,list) =
+      let (cond,lexpr0) = Expr0.O.normalize ?reduce ?careset (cond,list.val0) in
+      (cond, of_lexpr0 list.env lexpr0)
+
+    let print ?first ?sep ?last (cond:(Cond.cond,'a) #Cond.O.t) fmt (x:'a t) =
+      Print.list ?first ?sep ?last
+	(Expr0.O.print x.env cond) fmt x.val0
+
+  end
+
 end
 
 (*  ********************************************************************** *)
 (** {2 Closed signature} *)
 (*  ********************************************************************** *)
 
-let make_env = Env.make
-
 (*  ====================================================================== *)
 (** {3 Operations on general expressions} *)
 (*  ====================================================================== *)
 
-type t = (Env.t, Expr0.t) Bdd.Env.value
+type t = (Env.t, Expr0.t) Env.value
+
 type expr = t
 let typ_of_expr = O.typ_of_expr
 let make = O.make
@@ -322,13 +349,15 @@ let cofactor = O.cofactor
 let restrict = O.restrict
 let tdrestrict = O.tdrestrict
 let print = O.print
+let make = O.make
+let normalize = O.normalize
 
 (*  ====================================================================== *)
 (** {3 Boolean expressions} *)
 (*  ====================================================================== *)
 
 module Bool = struct
-  type t = (Env.t, Cudd.Man.v Cudd.Bdd.t) Bdd.Env.value
+  type t = (Env.t, Cudd.Man.v Cudd.Bdd.t) Env.value
   let of_expr = O.Bool.of_expr
   let to_expr = O.Bool.to_expr
   let extend_environment = O.Bool.extend_environment
@@ -367,7 +396,7 @@ end
 (*  ====================================================================== *)
 
 module Bint = struct
-  type t = (Env.t, Cudd.Man.v Bdd.Int.t) Bdd.Env.value
+  type t = (Env.t, Cudd.Man.v Bdd.Int.t) Env.value
   let of_expr = O.Bint.of_expr
   let to_expr = O.Bint.to_expr
   let extend_environment = O.Bint.extend_environment
@@ -404,7 +433,7 @@ end
 (*  ====================================================================== *)
 
 module Benum = struct
-  type t = (Env.t, Cudd.Man.v Bdd.Enum.t) Bdd.Env.value
+  type t = (Env.t, Cudd.Man.v Bdd.Enum.t) Env.value
   let of_expr = O.Benum.of_expr
   let to_expr = O.Benum.to_expr
   let extend_environment = O.Benum.extend_environment
@@ -426,7 +455,7 @@ end
 (** {3 Arithmetic expressions} *)
 (*  ====================================================================== *)
 module Apron = struct
-  type t = (Env.t, ApronexprDD.t) Bdd.Env.value
+  type t = (Env.t, ApronexprDD.t) Env.value
   let of_expr = O.Apron.of_expr
   let to_expr = O.Apron.to_expr
   let extend_environment = O.Apron.extend_environment
@@ -451,4 +480,18 @@ module Apron = struct
   let substitute_by_var = O.Apron.substitute_by_var
   let substitute = O.Apron.substitute
   let print = O.Apron.print
+end
+
+(*  ====================================================================== *)
+(** {3 List of expressions} *)
+(*  ====================================================================== *)
+
+module List = struct
+  type t = (Env.t, Expr0.t list) Env.value
+
+  let of_lexpr0 = O.List.of_lexpr0
+  let of_lexpr1 = O.List.of_lexpr1
+  let extend_environment = O.List.extend_environment
+  let normalize = O.List.normalize
+  let print = O.List.print
 end

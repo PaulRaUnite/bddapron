@@ -7,29 +7,29 @@ open Format
 (** {2 Translation from [Syntax.expr] to [Bddapron.Expr0.t]} *)
 (*  ********************************************************************** *)
 
-let translate_cst env (cst:Syntax.cst)
+let translate_cst env cond (cst:Syntax.cst)
     =
   match cst with
   | `Bool b ->
       Expr0.Bool.to_expr
 	((if b then Expr0.Bool.dtrue else Expr0.Bool.dfalse)
-	  env)
+	  env cond)
   | `Bint (typ,n) ->
       Expr0.Bint.to_expr
-	(Expr0.Bint.of_int env (`Tbint typ) n)
+	(Expr0.Bint.of_int env cond (`Tbint typ) n)
   | `Apron coeff ->
       Expr0.Apron.to_expr
-	(Expr0.Apron.cst env coeff)
+	(Expr0.Apron.cst env cond coeff)
 
-let apply_bbinop env (op:Syntax.bbinop) e1 e2
+let apply_bbinop env cond (op:Syntax.bbinop) e1 e2
     =
   match op with
   | Or | And ->
       let e1 = Expr0.Bool.of_expr e1 in
       let e2 = Expr0.Bool.of_expr e2 in
       begin match op with
-      | Or -> Expr0.Bool.dor env e1 e2
-      | And -> Expr0.Bool.dand env e1 e2
+      | Or -> Expr0.Bool.dor env cond e1 e2
+      | And -> Expr0.Bool.dand env cond e1 e2
       | _ -> failwith ""
       end
   | EQ | NEQ ->
@@ -42,10 +42,10 @@ let apply_bbinop env (op:Syntax.bbinop) e1 e2
 	  Syntax.print_typ typexpr1
 	  Syntax.print_typ typexpr2)
       end;
-      let res = Expr0.eq env e1 e2 in
+      let res = Expr0.eq env cond e1 e2 in
       if op = EQ
       then res
-      else Expr0.Bool.dnot env res
+      else Expr0.Bool.dnot env cond res
   | GT | GEQ | LEQ | LT ->
       let typexpr1 = Expr0.typ_of_expr e1 in
       let typexpr2 = Expr0.typ_of_expr e2 in
@@ -61,10 +61,10 @@ let apply_bbinop env (op:Syntax.bbinop) e1 e2
 	  let e1 = Expr0.Bint.of_expr e1 in
 	  let e2 = Expr0.Bint.of_expr e2 in
 	  begin match op with
-	  | GT ->  Expr0.Bint.sup env e1 e2
-	  | GEQ -> Expr0.Bint.supeq env e1 e2
-	  | LEQ -> Expr0.Bint.supeq env e2 e1
-	  | LT ->  Expr0.Bint.sup env e2 e1
+	  | GT ->  Expr0.Bint.sup env cond e1 e2
+	  | GEQ -> Expr0.Bint.supeq env cond e1 e2
+	  | LEQ -> Expr0.Bint.supeq env cond e2 e1
+	  | LT ->  Expr0.Bint.sup env cond e2 e1
 	  | _ -> failwith ""
 	  end
       | `Real ->
@@ -72,17 +72,17 @@ let apply_bbinop env (op:Syntax.bbinop) e1 e2
 	  let e2 = Expr0.Apron.of_expr e2 in
 	  begin match op with
 	  | GT ->
-	      let e = Expr0.Apron.sub env e1 e2 in
-	      Expr0.Apron.sup env e
+	      let e = Expr0.Apron.sub env cond e1 e2 in
+	      Expr0.Apron.sup env cond e
 	  | GEQ ->
-	      let e = Expr0.Apron.sub env e1 e2 in
-	      Expr0.Apron.supeq env e
+	      let e = Expr0.Apron.sub env cond e1 e2 in
+	      Expr0.Apron.supeq env cond e
 	  | LEQ ->
-	      let e = Expr0.Apron.sub env e2 e1 in
-	      Expr0.Apron.supeq env e
+	      let e = Expr0.Apron.sub env cond e2 e1 in
+	      Expr0.Apron.supeq env cond e
 	  | LT ->
-	      let e = Expr0.Apron.sub env e2 e1 in
-	      Expr0.Apron.sup env e
+	      let e = Expr0.Apron.sub env cond e2 e1 in
+	      Expr0.Apron.sup env cond e
 	  | _ -> failwith ""
 	  end
       | _ ->
@@ -92,11 +92,11 @@ let apply_bbinop env (op:Syntax.bbinop) e1 e2
 	    Syntax.print_typ typexpr1)
       end
 
-let apply_binop env (binop:Syntax.binop) e1 e2
+let apply_binop env cond (binop:Syntax.binop) e1 e2
     =
   match binop with
   | `Bool op ->
-      let e = apply_bbinop env op e1 e2 in
+      let e = apply_bbinop env cond op e1 e2 in
       Expr0.Bool.to_expr e
   | `Apron(op,typ,round) ->
       let typexpr1 = Expr0.typ_of_expr e1 in
@@ -123,7 +123,7 @@ let apply_binop env (binop:Syntax.binop) e1 e2
 		  "operation %a not permitted on bounded integer expressions"
 		  Apron.Texpr0.print_binop op
 	  in
-	  let e = fop env e1 e2 in
+	  let e = fop env cond e1 e2 in
 	  Expr0.Bint.to_expr e
       | `Real ->
 	  let e1 = Expr0.Apron.of_expr e1 in
@@ -135,7 +135,7 @@ let apply_binop env (binop:Syntax.binop) e1 e2
 	    | Apron.Texpr1.Div -> Expr0.Apron.div
 	    | Apron.Texpr1.Mod -> Expr0.Apron.gmod
 	  in
-	  let e = fop env ~typ ~round e1 e2 in
+	  let e = fop env cond ~typ ~round e1 e2 in
 	  Expr0.Apron.to_expr e
       | _ ->
 	  error
@@ -145,26 +145,26 @@ let apply_binop env (binop:Syntax.binop) e1 e2
       end
 
 let rec translate_expr
-    env
+    env cond
     (expr:Syntax.expr)
     :
     Expr0.t
     =
   try
     let res = match expr with
-      | Cst cst -> translate_cst env cst
+      | Cst cst -> translate_cst env cond cst
       | Ref var ->
 	  if not (env#mem_var var) then
 	    (error
 	      "unknown label/variable %s" var)
 	  else
-	    Expr0.var env var
+	    Expr0.var env cond var
       | Unop(op,e) ->
-	  let e = translate_expr env e in
+	  let e = translate_expr env cond e in
 	  begin match op with
 	  | `Not ->
 	      Expr0.Bool.to_expr
-		(Expr0.Bool.dnot env (Expr0.Bool.of_expr e))
+		(Expr0.Bool.dnot env cond (Expr0.Bool.of_expr e))
 	  | `Apron (op,typ,round) ->
 	      let typexpr = Expr0.typ_of_expr e in
 	      begin match typexpr with
@@ -176,17 +176,17 @@ let rec translate_expr
 			  failwith (
 			    Print.sprintf
 			      "@[<v>@ negation cannot be applied to the expression@ %a@ of type %a (unsigned integer)@ @]"
-			      (Expr0.Bint.print env) e
+			      (Expr0.Bint.print env cond) e
 			      Syntax.print_typ typexpr
 			  )
 			;
-			Expr0.Bint.neg env e
+			Expr0.Bint.neg env cond e
 		    | Apron.Texpr1.Cast
 		    | Apron.Texpr1.Sqrt ->
 			failwith (
 			  Print.sprintf
 			    "@[<v>@ cast or sqrt operators cannot be applied to the expression@ %a@ of type %a@ @]"
-			    (Expr0.Bint.print env) e
+			    (Expr0.Bint.print env cond) e
 			    Syntax.print_typ typexpr
 			)
 		  end
@@ -195,40 +195,40 @@ let rec translate_expr
 	      | `Real ->
 		  let e = Expr0.Apron.of_expr e in
 		  let e = match op with
-		    | Apron.Texpr1.Neg -> Expr0.Apron.negate env e
-		    | Apron.Texpr1.Cast -> Expr0.Apron.cast env ~typ ~round e
-		    | Apron.Texpr1.Sqrt -> Expr0.Apron.sqrt env ~typ ~round e
+		    | Apron.Texpr1.Neg -> Expr0.Apron.negate env cond e
+		    | Apron.Texpr1.Cast -> Expr0.Apron.cast env cond ~typ ~round e
+		    | Apron.Texpr1.Sqrt -> Expr0.Apron.sqrt env cond ~typ ~round e
 		  in
 		  Expr0.Apron.to_expr e
 	      | _ ->
 		  failwith (
 		    Print.sprintf
 		      "@[<v>@ neg, cast or sqrt operators cannot be applied to the expression@ %a@ of type %a@ @]"
-		      (Expr0.print env) e
+		      (Expr0.print env cond) e
 		      Syntax.print_typ typexpr
 		  )
 	      end
 	  end
       | Binop(op,e1,e2) ->
-	  let e1 = translate_expr env e1 in
-	  let e2 = translate_expr env e2 in
-	  apply_binop env op e1 e2
+	  let e1 = translate_expr env cond e1 in
+	  let e2 = translate_expr env cond e2 in
+	  apply_binop env cond op e1 e2
       | If(e1,e2,e3) ->
-	  let e1 = translate_expr env e1 in
+	  let e1 = translate_expr env cond e1 in
 	  let e1 = Expr0.Bool.of_expr e1 in
-	  let e2 = translate_expr env e2 in
-	  let e3 = translate_expr env e3 in
-	  Expr0.ite env e1 e2 e3
+	  let e2 = translate_expr env cond e2 in
+	  let e3 = translate_expr env cond e3 in
+	  Expr0.ite env cond e1 e2 e3
       | In(e0,le) ->
-	  let e0 = translate_expr env e0 in
-	  let acc = Expr0.Bool.dfalse env in
+	  let e0 = translate_expr env cond e0 in
+	  let acc = Expr0.Bool.dfalse env cond in
 	  let res =
 	    List.fold_left
 	      (begin fun acc e ->
-		let e = translate_expr env e in
-		Expr0.Bool.dor env
+		let e = translate_expr env cond e in
+		Expr0.Bool.dor env cond
 		  acc
-		  (Expr0.eq env e0 e)
+		  (Expr0.eq env cond e0 e)
 	      end)
 	      acc le
 	  in
@@ -243,18 +243,17 @@ let rec translate_expr
 (** {2 Parsing} *)
 (*  ********************************************************************** *)
 
-let expr1_of_expr env expr : Expr1.t =
-  let expr0 = translate_expr env expr in
-  Expr1.O.make (Oo.copy env) expr0
+let expr0_of_expr env cond expr : Expr0.t =
+  translate_expr env cond expr
 
-let expr1_of_lexbuf env lexbuf =
+let expr0_of_lexbuf env cond lexbuf =
   let x = Yacc.expr Lex.lex lexbuf in
-  expr1_of_expr env x
+  expr0_of_expr env cond x
 
-let expr1_of_string env str =
+let expr0_of_string env cond str =
   try
     let lexbuf = Lexing.from_string str in
-    try expr1_of_lexbuf env lexbuf
+    try expr0_of_lexbuf env cond lexbuf
     with Parsing.Parse_error ->
       error
 	"Syntaxical error, characters %d-%d in expression %s"
@@ -265,3 +264,32 @@ let expr1_of_string env str =
     error
       "Lexical error, characters %d-%d in expression %s"
       s e str
+
+let expr1_of_string env cond str =
+  Env.make_value env (expr0_of_string env cond str)
+let expr1_of_expr env cond expr : Expr1.t =
+  Env.make_value env (expr0_of_expr env cond expr)
+
+let listexpr1_of_lexpr env cond lexpr =
+  let lexpr0 = List.map (expr0_of_expr env cond) lexpr in
+  Expr1.List.of_lexpr0 env lexpr0
+let listexpr1_of_lstring env cond lstr =
+  let lexpr0 = List.map (expr0_of_string env cond) lstr in
+  Expr1.List.of_lexpr0 env lexpr0
+
+let listexpr2_of_lexpr ?normalize ?reduce ?careset env cond lexpr =
+  let lexpr0 = List.map (expr0_of_expr env cond) lexpr in
+  Expr2.List.of_lexpr0 ?normalize ?reduce ?careset env cond lexpr0
+let listexpr2_of_lstring ?normalize ?reduce ?careset env cond lstr =
+  let lexpr0 = List.map (expr0_of_string env cond) lstr in
+  Expr2.List.of_lexpr0 ?normalize ?reduce ?careset env cond lexpr0
+
+let boolexpr2_of_expr ?normalize ?reduce ?careset env cond expr =
+  let expr0 = expr0_of_expr env cond expr in
+  let bexpr0 = Expr0.Bool.of_expr expr0 in
+  Expr2.Bool.of_expr0 ?normalize ?reduce ?careset env cond bexpr0
+
+let boolexpr2_of_string ?normalize ?reduce ?careset env cond str =
+  let expr0 = expr0_of_string env cond str in
+  let bexpr0 = Expr0.Bool.of_expr expr0 in
+  Expr2.Bool.of_expr0 ?normalize ?reduce ?careset env cond bexpr0

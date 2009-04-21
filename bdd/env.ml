@@ -9,6 +9,8 @@ open Format
 (** {2 Datatypes } *)
 (*  ********************************************************************** *)
 
+exception Bddindex
+
 (** Type defintion *)
 type typdef = [
   | `Benum of string array
@@ -60,10 +62,9 @@ let print_tid (fmt:Format.formatter) (tid:int array) : unit =
 (*  ********************************************************************** *)
 
 module O = struct
-  class type ['a,'b,'c,'d] t = object('e)
+  class type ['a,'b,'c] t = object('d)
     constraint 'a = [> typ]
     constraint 'b = [> typdef]
-    constraint 'c = [> ]
 
     method add_typ : string -> 'b -> unit
     (** Declaration of a new type *)
@@ -92,31 +93,25 @@ module O = struct
     (** Return the list of variables *)
 
     method permutation : int array
-    (** Compute the permutation fornormalizing the environment *)
+    (** Compute the permutation for normalizing the environment *)
     method permute : int array -> unit
     (** Apply the given permutation to the environment *)
     method normalize : int array
     (** Combine the two previous functions, and return the permutation *)
 
-    method compute_careset : normalized:bool -> unit
-    (** Computes the careset, using [self#compare_cond] *)
-    method clear_cond : int array option
-    (** Remove the condition of an environment *)
+(*
     method pair : unit
-    (** Assuming [bddindex] is odd and [bddincr=2]), if [v_paired=false],
+    (** Assuming [bddindex] is even and [bddincr=2]), if [v_paired=false],
 	groups variable by pair *)
-
+*)
     method add_var : string -> 'a -> unit
     (** Private function *)
-
-    method cond_of_idb : int*bool -> 'c
-    method idb_of_cond : 'c -> int*bool
 
     method print_idcondb : Format.formatter -> int*bool -> unit
     method print_order : Format.formatter -> unit
     (** Print the BDD variable ordering *)
 
-    val v_cudd : 'd Cudd.Man.t
+    val v_cudd : 'c Cudd.Man.t
     (** CUDD manager *)
     val mutable v_paired : bool
     (** Are pair groups active (default false) ? *)
@@ -124,65 +119,45 @@ module O = struct
     (** Named types definitions *)
     val mutable v_vartyp : (string, 'a) PMappe.t
     (** Associate to a var/label its type *)
-    val mutable v_boolfirst : bool
-    (** If true, when normalizing,
-	Boolean variables are putabove conditions, otherwise below *)
+    val mutable v_bddindex0 : int
+    (** First index for finite-type variables *)
+    val mutable v_bddsize : int
+    (** Number of indices dedicated to finite-type variables *)
     val mutable v_bddindex : int
     (** Next free index in BDDs used by [self#add_var]. *)
-    val mutable v_bddincr : int
+    val v_bddincr : int
     (** Increment used by [self#add_var] for incrementing
 	[self#_v_bddindex] *)
     val mutable v_idcondvar : (int, string) PMappe.t
     (** Associates to a BDD index the variable involved by it *)
     val mutable v_vartid : (string, int array) PMappe.t
     (** (Sorted) array of BDD indices associated to finite-type variables. *)
-    val mutable v_varset : (string, 'd Cudd.Bdd.t) PMappe.t
+    val mutable v_varset : (string, 'c Cudd.Bdd.t) PMappe.t
     (** Associates to enumerated variable the (care)set of
 	possibled values. *)
-    val v_compare_cond : 'c -> 'c -> int
-    val v_negate_cond : ('a,'b,'c,'d) t -> 'c -> 'c
-    val v_support_cond : ('a,'b,'c,'d) t -> 'c -> string PSette.t
-    val mutable v_print_cond : ('a,'b,'c,'d) t -> Format.formatter -> 'c -> unit
-    val mutable v_cond : ('c,int*bool) PDMappe.t
-    (** Two-way association between a condition and a pair of a BDD index and a polarity *)
-    val mutable v_cond_supp : 'd Cudd.Bdd.t
-    (** Support of conditions *)
-    val mutable v_careset : 'd Cudd.Bdd.t
-    (** Boolean formula indicating which logical
-	combination known as true could be exploited for simplification.
-	For instance, [x>=1 => x>=0]. *)
     val mutable v_print_external_idcondb : Format.formatter -> int*bool -> unit
-    (** Printing conditions not managed by [Bddvar].
+    (** Printing conditions not managed by the environment..
 	By default, [pp_print_int]. *)
 
-    method cudd : 'd Cudd.Man.t
+    method cudd : 'c Cudd.Man.t
     method typdef : (string, 'b) PMappe.t
     method vartyp : (string, 'a) PMappe.t
-    method boolfirst : bool
+    method bddindex0 : int
+    method bddsize : int
     method bddindex : int
     method bddincr : int
     method idcondvar : (int, string) PMappe.t
     method vartid : (string, int array) PMappe.t
-    method varset : (string, 'd Cudd.Bdd.t) PMappe.t
-    method compare_cond : 'c -> 'c -> int
-    method negate_cond : 'c -> 'c
-    method support_cond : 'c -> string PSette.t
-    method print_cond : Format.formatter -> 'c -> unit
-    method cond : ('c,int*bool) PDMappe.t
-    method cond_supp : 'd Cudd.Bdd.t
-    method careset : 'd Cudd.Bdd.t
+    method varset : (string, 'c Cudd.Bdd.t) PMappe.t
     method print_external_idcondb : Format.formatter -> int*bool -> unit
+    method set_bddindex0 : int -> unit
+    method set_bddsize : int -> unit
     method set_bddindex : int -> unit
-    method set_bddincr : int -> unit
-    method set_boolfirst : bool -> unit
     method set_idcondvar : (int, string) PMappe.t -> unit
     method set_vartid : (string, int array) PMappe.t -> unit
-    method set_varset : (string, 'd Cudd.Bdd.t) PMappe.t -> unit
+    method set_varset : (string, 'c Cudd.Bdd.t) PMappe.t -> unit
     method set_typdef : (string, 'b) PMappe.t -> unit
     method set_vartyp : (string, 'a) PMappe.t -> unit
-    method set_cond : ('c,int*bool) PDMappe.t -> unit
-    method set_cond_supp : 'd Cudd.Bdd.t -> unit
-    method set_careset : 'd Cudd.Bdd.t -> unit
     method set_print_external_idcondb :
       (Format.formatter -> int*bool -> unit) -> unit
   end
@@ -191,36 +166,27 @@ module O = struct
   (** {3 Creating the class [env]} *)
   (*  ============================================================ *)
 
-  class ['a,'b,'c,'d] make
-    (man:'d Cudd.Man.t)
-    ?(boolfirst=true)
+  class ['a,'b,'c] make
+    ?(bddindex0=0)
+    ?(bddsize=100)
     ?(relational=false)
-    ~(compare_cond: 'c -> 'c -> int)
-    ~(negate_cond:('a,'b,'c,'d) t -> 'c -> 'c)
-    ~(support_cond:(('a,'b,'c,'d) t -> 'c -> string PSette.t))
-    ~(print_cond: ('a,'b,'c,'d) t -> Format.formatter -> 'c -> unit)
+    (man:'c Cudd.Man.t)
     :
-    ['a,'b,'c,'d] t
+    ['a,'b,'c] t
     =
-  object(self:'e)
+  object(self:'d)
 
     val v_cudd = man
     val mutable v_paired = false
     val mutable v_typdef = PMappe.empty String.compare
     val mutable v_vartyp = PMappe.empty String.compare
-    val mutable v_boolfirst = boolfirst
-    val mutable v_bddindex = 0
-    val mutable v_bddincr = if relational then 2 else 1
+    val mutable v_bddindex0 = bddindex0
+    val mutable v_bddsize = bddsize
+    val mutable v_bddindex = bddindex0
+    val v_bddincr = if relational then 2 else 1
     val mutable v_idcondvar = PMappe.empty (-)
     val mutable v_vartid = PMappe.empty String.compare
     val mutable v_varset = PMappe.empty String.compare
-    val v_compare_cond = compare_cond
-    val v_negate_cond = negate_cond
-    val v_support_cond = support_cond
-    val mutable v_print_cond = print_cond
-    val mutable v_cond = PDMappe.empty compare_cond compare_idb
-    val mutable v_cond_supp = Cudd.Bdd.dtrue man
-    val mutable v_careset = Cudd.Bdd.dtrue man
     val mutable v_print_external_idcondb =
       begin fun fmt (id,b) ->
 	fprintf fmt "%s%i" (if b then "not " else "") id
@@ -229,61 +195,38 @@ module O = struct
     method cudd = v_cudd
     method typdef = v_typdef
     method vartyp = v_vartyp
-    method boolfirst = v_boolfirst
+    method bddindex0 = v_bddindex0
+    method bddsize = v_bddsize
     method bddindex = v_bddindex
     method bddincr = v_bddincr
     method idcondvar = v_idcondvar
     method vartid = v_vartid
     method varset = v_varset
-    method compare_cond = compare_cond
-    method negate_cond c = negate_cond (self:>('a,'b,'c,'d) t) c
-    method support_cond c = support_cond (self:>('a,'b,'c,'d) t) c
-    method print_cond = print_cond (self:>('a,'b,'c,'d) t)
-    method cond = v_cond
-    method cond_supp = v_cond_supp
-    method careset = v_careset
     method print_external_idcondb = v_print_external_idcondb
     method set_typdef x = v_typdef <- x
     method set_vartyp x = v_vartyp <- x
-    method set_boolfirst x = v_boolfirst <- x
+    method set_bddindex0 x = v_bddindex0 <- x
+    method set_bddsize x = v_bddsize <- x
     method set_bddindex x = v_bddindex <- x
-    method set_bddincr x = v_bddincr <- x
     method set_idcondvar x = v_idcondvar <- x
     method set_vartid x = v_vartid <- x
     method set_varset x = v_varset <- x
-    method set_cond cond = v_cond <- cond
-    method set_cond_supp supp = v_cond_supp <- supp
-    method set_careset x = v_careset <- x
     method set_print_external_idcondb x = v_print_external_idcondb <- x
 
     method permutation : int array
       =
-      let perm = Array.init v_bddindex (fun i -> i) in
-      let index = ref 0 in
-      let bddvar () =
-	PMappe.iter
-	  (begin fun var tid ->
-	    Array.iter
-	      (begin fun id ->
-		perm.(id) <- !index;
-		index := !index + v_bddincr;
-	      end)
-	      tid
-	  end)
-	  v_vartid
-      and bddcond () =
-	PDMappe.iter
-	  (begin fun cond (id,b) ->
-	    if b then begin
+      let perm = Array.init (Cudd.Man.get_bddvar_nb v_cudd) (fun i -> i) in
+      let index = ref v_bddindex0 in
+      PMappe.iter
+	(begin fun var tid ->
+	  Array.iter
+	    (begin fun id ->
 	      perm.(id) <- !index;
 	      index := !index + v_bddincr;
-	    end
-	  end)
-	  v_cond
-      in
-      if v_boolfirst
-      then (bddvar (); bddcond ())
-      else (bddcond (); bddvar ())
+	    end)
+	    tid
+	end)
+	v_vartid
       ;
       perm
 
@@ -309,16 +252,6 @@ module O = struct
 	  (begin fun set -> Cudd.Bdd.permute set perm end)
 	  v_varset)
       ;
-      v_cond <-
-	(PDMappe.fold
-	  (begin fun cond (id,b) res ->
-	    PDMappe.add cond (perm.(id),b) res
-	  end)
-	  v_cond
-	  (PDMappe.empty v_compare_cond compare_idb))
-      ;
-      v_cond_supp <- (Cudd.Bdd.permute v_cond_supp perm);
-      v_careset <- (Cudd.Bdd.permute v_careset perm);
       ()
 
     method normalize : int array =
@@ -353,6 +286,7 @@ module O = struct
 
     method mem_var (label:string) : bool =
       PMappe.mem label v_vartyp
+
     method typ_of_var (label:string) : 'a
       =
       try
@@ -387,21 +321,23 @@ module O = struct
 	    Array.iter
 	      (fun id -> v_idcondvar <- PMappe.add id var v_idcondvar)
 	      tid;
-	    for i=oldindex to pred(v_bddindex) do 
-	      ignore (Cudd.Bdd.ithvar v_cudd i) 
+	    for i=oldindex to pred(v_bddindex) do
+	      ignore (Cudd.Bdd.ithvar v_cudd i)
 	    done;
 	  end;
 	  v_vartid <- PMappe.add var tid v_vartid;
 	  ()
       | _ ->
 	  ()
-      end
-	
+      end;
+      if v_bddindex >= v_bddindex0+v_bddsize then raise Bddindex;
+      ()
+
     method add_vars lvartyp
       :
       int array option
       =
-      let oldindex = v_bddindex in 
+      let oldindex = v_bddindex in
       List.iter
 	(begin fun (var,typ) ->
 	  self#add_var var typ
@@ -412,7 +348,7 @@ module O = struct
 	None
       else
 	Some(self#normalize)
-	  
+
     method remove_vars (lvar:string list) : int array option
       =
       let length = ref 0 in
@@ -446,14 +382,9 @@ module O = struct
 	end)
 	lvar
       ;
-      if !length = 0 && PDMappe.is_empty v_cond then
+      if !length = 0 then
 	None
       else begin
-	(* remove conditions *)
-	let dtrue = Cudd.Bdd.dtrue v_cudd in
-	v_cond <- (PDMappe.empty self#compare_cond compare_idb);
-	v_cond_supp <- dtrue;
-	v_careset <- dtrue;
 	let perm = self#normalize in
 	v_bddindex <- (v_bddindex - !length);
 	Some perm
@@ -463,7 +394,6 @@ module O = struct
       :
       int array option
       =
-      let length = ref 0 in
       (* we need to distinguish variables without indices from the
 	 other one. *)
       let (lvarvartyptidoset,lvarvartyp) =
@@ -528,123 +458,19 @@ module O = struct
 	end)
 	lvarvartyptidoset
       ;
-      (* remove conditions *)
-      let dtrue = Cudd.Bdd.dtrue v_cudd in
-      v_cond <- (PDMappe.empty self#compare_cond compare_idb);
-      v_cond_supp <- dtrue;
-      v_careset <- dtrue;
       let perm = self#normalize in
-      v_bddindex <- (v_bddindex - !length);
       Some perm
-  
-    method clear_cond : int array option =
-      let dtrue = Cudd.Bdd.dtrue v_cudd in
-      let oldcond = v_cond in
-      v_cond <- (PDMappe.empty self#compare_cond compare_idb);
-      v_cond_supp <- dtrue;
-      v_careset <- dtrue;
-      if v_boolfirst then begin
-	begin
-	  try
-	    let (id,b) = PMappe.min_key (PDMappe.mapy oldcond) in
-	    v_bddindex <- id
-	  with Not_found ->
-	    ()
-	end;
-	None
-      end
-      else begin
-	let firstbool =
-	  try PMappe.min_key v_idcondvar
-	  with Not_found -> (-1)
-	in
-	v_bddindex <- begin
-	  if firstbool = -1
-	  then 0
-	  else v_bddindex - firstbool
-	end
-	;
-	if firstbool<=0 then
-	  None
-	else begin
-	  let perm = Array.init v_bddindex
-	    (begin fun i ->
-	      if i*v_bddincr < firstbool then
-		i + firstbool
-	      else
-		i - firstbool
-	    end)
-	  in
-	  self#permute perm;
-	  Some perm
-	end
-      end
-	
-    method compute_careset
-      ~(normalized:bool)
-      :
-      unit
-      =
-      v_careset <- (Cudd.Bdd.dtrue v_cudd);
-      let list =
-	PMappe.fold
-	  (begin fun cons (id,b) res ->
-	    if b then (cons,id) :: res else res
-	  end)
-	  (PDMappe.mapx v_cond)
-	  []
-      in
-      let list =
-	if normalized then list
-	else
-	  List.fast_sort
-	    (fun (cons2,id2) (cons1,id1) -> self#compare_cond cons1 cons2)
-	    list
-      in
-      let rec parcours = function
-	| (cons2,id2)::( ((cons1,id1)::_) as t) ->
-	    let cmp = self#compare_cond cons1 cons2 in
-	    if cmp = (-1) then begin
-	      v_careset <-
-		Cudd.Bdd.dand v_careset
-		(Cudd.Bdd.dor (Cudd.Bdd.ithvar v_cudd id2)
-		  (Cudd.Bdd.dnot (Cudd.Bdd.ithvar v_cudd id1)))
-	    end;
-	    parcours t
-	| _ -> ()
-      in
-      parcours list;
-      ()
-
-    method pair : unit =
-      assert(v_bddindex mod 2 = 0 && v_bddincr=2);
-      if not v_paired then begin
-	let nb = Cudd.Man.get_bddvar_nb v_cudd in
-	for i=0 to max (nb/2) ((nb-1)/2) do
-	  Cudd.Man.group v_cudd (i*2) 2 Cudd.Man.MTR_FIXED
-	done;
-	v_paired <- true;
-      end
-
-    method cond_of_idb idb = PDMappe.x_of_y idb v_cond
-    method idb_of_cond (cond:'c) : int*bool =
-      try PDMappe.y_of_x cond self#cond
-      with Not_found ->
-	let (ncond:'c) = self#negate_cond cond in
-	let id = v_bddindex in
-	let b = (v_compare_cond cond ncond) < 0 in
-	v_cond <-
-	  (PDMappe.add
-	    cond (id,b)
-	    (PDMappe.add
-	      ncond (id,not b)
-	      v_cond));
-	v_paired <- false;
-	v_bddindex <- v_bddindex + v_bddincr;
-	let bdd = (Cudd.Bdd.ithvar v_cudd id) in
-	v_cond_supp <- Cudd.Bdd.dand bdd v_cond_supp;
-	(id,b)
-
+(*
+  method pair : unit =
+  assert(v_bddindex mod 2 = 0 && v_bddincr=2);
+  if not v_paired then begin
+  let nb = Cudd.Man.get_bddvar_nb v_cudd in
+  for i=0 to max (nb/2) ((nb-1)/2) do
+  Cudd.Man.group v_cudd (i*2) 2 Cudd.Man.MTR_FIXED
+  done;
+  v_paired <- true;
+  end
+*)
     method print_idcondb fmt ((id,b) as idb) =
       try
 	let var = PMappe.find id v_idcondvar in
@@ -664,17 +490,12 @@ module O = struct
 	    end;
 	end
       with Not_found ->
-	begin try
-	  let cond = PDMappe.x_of_y idb v_cond in
-	  (print_cond (self:>('a,'b,'c,'d) t)) fmt cond
-	with Not_found ->
-	  v_print_external_idcondb fmt idb
-	end
+	v_print_external_idcondb fmt idb
 
     method print_order (fmt:Format.formatter) : unit
       =
       let cudd = v_cudd in
-      let nb = Cudd.Man.get_bddvar_nb cudd in
+      let nb = Cudd.Man.get_bddvar_nb v_cudd in
       let tab =
 	Array.init nb
 	  (begin fun var ->
@@ -698,20 +519,15 @@ module O = struct
 
   end
 
-  let print print_typ print_typdef fmt (env:('a,'b,'c,'d) #t) =
+  let print print_typ print_typdef fmt (env:('a,'b,'c) #t) =
     fprintf fmt
-      "{@[<v>typdef = %a;@ vartyp = %a;@ bddindex = %i; bddincr = %i;@ idcondvar = %a;@ vartid = %a;@ cond = %a;@ cond_supp = %a@ careset = %a@]}"
+      "{@[<v>typdef = %a;@ vartyp = %a;@ bddindex0 = %i;@ bddindex = %i; bddincr = %i;@ idcondvar = %a;@ vartid = %a;@]}"
       (PMappe.print pp_print_string print_typdef) env#typdef
       (PMappe.print ~first:"[@[" pp_print_string print_typ) env#vartyp
-      env#bddindex env#bddincr
+      env#bddindex0 env#bddindex env#bddincr
       (PMappe.print pp_print_int pp_print_string) env#idcondvar
       (PMappe.print pp_print_string print_tid) env#vartid
-      (PDMappe.print
-	env#print_cond
-	(fun fmt (id,b) -> fprintf fmt "(%i,%b)" id b))
-      env#cond
-      (Cudd.Bdd.print_minterm pp_print_int) env#cond_supp
-      (Cudd.Bdd.print_minterm pp_print_int) env#careset
+
 end
 
 
@@ -719,15 +535,11 @@ end
 (** {2 Closed signature} *)
 (*  ********************************************************************** *)
 
-class type ['a] t = [typ, typdef, [`Unit], 'a] O.t
-class ['a] make ?boolfirst ?relational man =
-  [typ,typdef,[`Unit],'a] O.make
+class type ['a] t = [typ, typdef, 'a] O.t
+class ['a] make ?bddindex0 ?bddsize ?relational man =
+  [typ,typdef,'a] O.make
     man
-    ?boolfirst ?relational
-    ~compare_cond:(fun _ _ -> 0)
-    ~negate_cond:(fun _ x -> x)
-    ~support_cond:(fun _ x -> (PSette.empty String.compare))
-    ~print_cond:(fun _ _ _ -> ())
+    ?bddindex0 ?bddsize ?relational
 
 let make = new make
 
@@ -735,21 +547,24 @@ let make = new make
 (** {3 Iterator on variables} *)
 (*  ====================================================================== *)
 
-let iter_ordered (env:('a,'b,'c,'d) #O.t) (f:(string -> int array -> unit))
+let iter_ordered (env:('a,'b,'c) #O.t) (f:(string -> int array -> unit))
   :
   unit
   =
   let cudd = env#cudd in
   let processed = ref (PSette.empty String.compare) in
-  let size = Cudd.Man.get_bddvar_nb cudd in
+  let size = Cudd.Man.get_bddvar_nb env#cudd in
   for level=0 to size-1 do
     let (id:int) = Cudd.Man.var_of_level cudd level in
-    let (var:string) = PMappe.find id env#idcondvar in
-    if not (PSette.mem var !processed) then begin
-      let tid = PMappe.find var env#vartid in
-      f var tid;
-      processed := PSette.add var !processed;
-    end;
+    try
+      let (var:string) = PMappe.find id env#idcondvar in
+      if not (PSette.mem var !processed) then begin
+	let tid = PMappe.find var env#vartid in
+	f var tid;
+	processed := PSette.add var !processed;
+      end
+    with Not_found ->
+      ()
   done;
   ()
 
@@ -789,10 +604,10 @@ let permute_expr (expr:'d expr) (permutation:int array) : 'd expr
   | `Bint(x) -> `Bint(Int.permute x permutation)
   | `Benum(x) -> `Benum(Enum.permute x permutation)
 
-let check_normalized (env:('a,'b,'c,'d) #O.t) : bool
-  =
-  let index = ref 0 in
-  let bddvar () =
+let check_normalized (env:('a,'b,'c) #O.t) : bool
+    =
+  try
+    let index = ref env#bddindex0 in
     PMappe.iter
       (begin fun var tid ->
 	Array.iter
@@ -801,7 +616,7 @@ let check_normalized (env:('a,'b,'c,'d) #O.t) : bool
 	      printf
 		"Bdd.Env.check_normalized: not normalized at index %i@.env=%a@."
 		!index
-		print (env:>('a,'b,'c,'d) O.t)
+		print (env:>('a,'b,'c) O.t)
 	      ;
 	      raise Exit
 	    end;
@@ -810,27 +625,8 @@ let check_normalized (env:('a,'b,'c,'d) #O.t) : bool
 	  tid
       end)
       env#vartid
-  and bddcond () =
-    PDMappe.iter
-      (begin fun cond (id,b) ->
-	if b then begin
-	  if id <> !index then begin
-	    printf
-	      "Bdd.Env.check_normalized: not normalized at index %i@.env=%a@."
-	      !index
-	      print (env:>('a,'b,'c,'d) O.t)
-	    ;
-	    raise Exit
-	  end;
-	  index := !index + env#bddincr;
-	end
-      end)
-      env#cond
-  in
-  try
-    if env#boolfirst
-    then (bddvar (); bddcond (); true)
-    else (bddcond (); bddvar (); true)
+    ;
+    true
   with Exit ->
     false
 
@@ -847,9 +643,9 @@ let compose_permutation (perm1:int array) (perm2:int array) : int array =
   done;
   perm
 
-let compose_opermutation (operm1:int array option) (operm2:int array option) 
-    : 
-    int array option 
+let compose_opermutation (operm1:int array option) (operm2:int array option)
+    :
+    int array option
     =
   match operm1 with
   | None -> operm2
@@ -859,37 +655,59 @@ let compose_opermutation (operm1:int array option) (operm2:int array option)
       | Some perm2 ->
 	  Some (compose_permutation perm1 perm2)
 
-let is_leq (env1:('a,'b,'c,'d) #O.t) (env2:('a,'b,'c,'d) #O.t) : bool =
-  env1==(Obj.magic env2) ||
-  begin
-    env1#cudd = env2#cudd &&
-    env1#boolfirst == env2#boolfirst &&
-    env1#bddindex <= env2#bddindex &&
-    env1#bddincr == env2#bddincr &&
-    PMappe.equal (=) env1#typdef env2#typdef &&
-    (PMappe.subset (=) env1#vartyp env2#vartyp) &&
-    (PMappe.subset (fun _ _ -> true)
-      (PDMappe.mapx env1#cond)
-      (PDMappe.mapx env2#cond))
-  end
+let permutation_of_offset (length:int) (offset:int) : int array =
+  let perm = Array.create length 0 in
+  for i=0 to pred length do
+    perm.(i) <- i+offset
+  done;
+  perm
 
-let is_eq (env1:('a,'b,'c,'d) #O.t) (env2:('a,'b,'c,'d) #O.t) : bool =
-  env1==(Obj.magic env2) ||
-  begin
-    env1#cudd = env2#cudd &&
-    env1#boolfirst == env2#boolfirst &&
-    env1#bddindex == env2#bddindex &&
-    env1#bddincr == env2#bddincr &&
-    (env1#typdef==Obj.magic env2#typdef || (PMappe.equal (=) env1#typdef env2#typdef)) &&
-    (env1#vartyp==Obj.magic env2#vartyp || (PMappe.equal (=) env1#vartyp env2#vartyp)) &&
-    (env1#cond==Obj.magic env2#cond || (PDMappe.equaly env1#cond env2#cond))
-  end
+(* 2 cas pour lesquels not (e1 = e2):
 
-let lce (env1:(('a,'b,'c,'d) #O.t as 'e)) (env2:'e) : 'e =
+   a) l'ens des variables n'est pas égal
+   ou
+   b) bddincr ou bddindex0 est différent 
+
+   Peut-être faut-il distinguer c'est deux cas ?
+
+   Idem pour l'égalité
+*)
+
+let is_leq (env1:('a,'b,'c) #O.t) (env2:('a,'b,'c) #O.t) : bool =
+  env1==(Obj.magic env2) ||
+    env1#cudd = env2#cudd &&
+      (env1#bddindex - env1#bddindex0 <= env2#bddindex - env2#bddindex0) &&
+      (env1#typdef==Obj.magic env2#typdef || PMappe.subset (=) env1#typdef env2#typdef) &&
+      (env1#vartyp==Obj.magic env2#vartyp || PMappe.subset (=) env1#vartyp env2#vartyp)
+      
+let is_eq (env1:('a,'b,'c) #O.t) (env2:('a,'b,'c) #O.t) : bool =
+  env1==(Obj.magic env2) ||
+    env1#cudd = env2#cudd &&
+      env1#bddincr = env2#bddincr &&
+      (env1#bddindex - env1#bddindex0 = env2#bddindex - env2#bddindex0) &&
+      (env1#typdef==Obj.magic env2#typdef || PMappe.equal (=) env1#typdef env2#typdef) &&
+      (env1#vartyp==Obj.magic env2#vartyp || (PMappe.equal (=) env1#vartyp env2#vartyp))
+    
+let shift (env:(('a,'b,'c) #O.t as 'd)) (offset:int) : 'd =
+  let perm = permutation_of_offset env#bddindex offset in
+  let nenv = Oo.copy env in
+  nenv#set_bddindex0 (nenv#bddindex0 + offset);
+  nenv#permute perm;
+  nenv
+
+let lce (env1:(('a,'b,'c) #O.t as 'd)) (env2:'d) : 'd =
   if is_leq env2 env1 then
-    env1
+    let offset = env1#bddindex0 - env2#bddindex0 in
+    if offset>=0 then 
+      env1 
+    else  
+      shift env1 (-offset)
   else if is_leq env1 env2 then
-    env2
+    let offset = env2#bddindex0 - env1#bddindex0 in
+    if offset>=0 then 
+      env2
+    else  
+      shift env2 (-offset)
   else begin
     let typdef =
       PMappe.mergei
@@ -921,63 +739,31 @@ let lce (env1:(('a,'b,'c,'d) #O.t as 'e)) (env2:'e) : 'e =
 	  match typ with
 	  | `Benum _ ->
 	      not
-	      ((PMappe.mem varlabel env1#vartid) ||
-	      (PMappe.mem varlabel env2#vartid))
+		((PMappe.mem varlabel env1#vartid) ||
+		  (PMappe.mem varlabel env2#vartid))
 	  | _ -> false
 	end)
 	vartyp
     in
-    let setcond =
-      let add cond (id,b) res =
-	if b then PSette.add cond res else res
-      in
-      let setcond1 =
-	PDMappe.fold add env1#cond (PSette.empty env1#compare_cond)
-      in
-      let setcond12 =
-	PDMappe.fold add env2#cond setcond1
-      in
-      setcond12
-    in
     let env = Oo.copy env1 in
     env#set_typdef typdef;
     env#set_vartyp labeltyp;
-    env#set_bddindex 0;
+    env#set_bddindex0 (Pervasives.max env1#bddindex0 env2#bddindex0);
+    env#set_bddsize (Pervasives.max env1#bddsize env2#bddsize);
+    env#set_bddindex env#bddindex0;
     env#set_vartid (PMappe.empty String.compare);
     env#set_varset (PMappe.empty String.compare);
     env#set_idcondvar (PMappe.empty (-));
-    env#set_cond (PDMappe.empty env#compare_cond compare_idb);
-    env#set_cond_supp (Cudd.Bdd.dtrue env#cudd);
-    env#set_careset (Cudd.Bdd.dtrue env#cudd);
-    let bddindex = ref 0 in
-    if not env#boolfirst then
-      env#set_bddindex ((PSette.cardinal setcond)*env#bddincr)
-    ;
     PMappe.iter
       (begin fun var typ ->
 	env#add_var var typ
       end)
       vartyp
     ;
-    if not env#boolfirst then begin
-      bddindex := env#bddindex;
-      env#set_bddindex 0;
-    end
-    ;
-    PSette.iter
-      (begin fun cond ->
-	ignore(env#idb_of_cond cond)
-      end)
-      setcond
-    ;
-    if not env#boolfirst then
-      env#set_bddindex !bddindex
-    ;
-    env#compute_careset ~normalized:true;
     env
-  end
-
-let lce2 (env1:(('a,'b,'c,'d) #O.t as 'e)) (env2:('a,'b,'c,'d) #O.t) : 'e =
+    end
+(*
+let lce2 (env1:(('a,'b,'c) #O.t as 'd)) (env2:('a,'b,'c) #O.t) : 'd =
   if is_leq env2 env1 then
     env1
   else if is_leq env1 env2 then
@@ -988,9 +774,6 @@ let lce2 (env1:(('a,'b,'c,'d) #O.t as 'e)) (env2:('a,'b,'c,'d) #O.t) : 'e =
     nenv#set_idcondvar env2#idcondvar;
     nenv#set_vartid env2#vartid;
     nenv#set_varset env2#varset;
-    nenv#set_cond env2#cond;
-    nenv#set_cond_supp env2#cond_supp;
-    nenv#set_careset env2#careset;
     nenv
   else begin
     let typdef =
@@ -1029,158 +812,89 @@ let lce2 (env1:(('a,'b,'c,'d) #O.t as 'e)) (env2:('a,'b,'c,'d) #O.t) : 'e =
 	end)
 	vartyp
     in
-    let setcond =
-      let add cond (id,b) res =
-	if b then PSette.add cond res else res
-      in
-      let setcond1 =
-	PDMappe.fold add env1#cond (PSette.empty env1#compare_cond)
-      in
-      let setcond12 =
-	PDMappe.fold add env2#cond setcond1
-      in
-      setcond12
-    in
     let env = Oo.copy env1 in
     env#set_typdef typdef;
     env#set_vartyp labeltyp;
-    env#set_bddindex 0;
+    env#set_bddindex0 (Pervasives.max (env1#bddindex0 env2#bddindex0);
+    env#set_bddindex env#bddindex0;
     env#set_vartid (PMappe.empty String.compare);
     env#set_varset (PMappe.empty String.compare);
     env#set_idcondvar (PMappe.empty (-));
-    env#set_cond (PDMappe.empty env#compare_cond compare_idb);
-    env#set_cond_supp (Cudd.Bdd.dtrue env#cudd);
-    env#set_careset (Cudd.Bdd.dtrue env#cudd);
-    let bddindex = ref 0 in
-    if not env#boolfirst then
-      env#set_bddindex ((PSette.cardinal setcond)*env#bddincr)
-    ;
     PMappe.iter
       (begin fun var typ ->
 	env#add_var var typ
       end)
       vartyp
     ;
-    if not env#boolfirst then begin
-      bddindex := env#bddindex;
-      env#set_bddindex 0;
-    end
-    ;
-    PSette.iter
-      (begin fun cond ->
-	ignore(env#idb_of_cond cond)
-      end)
-      setcond
-    ;
-    if not env#boolfirst then
-      env#set_bddindex !bddindex
-    ;
-    env#compute_careset ~normalized:true;
     env
   end
-
-let permutation12 (env1:('a,'b,'c,'d) #O.t) (env2:('a,'b,'c,'d) #O.t) : int array
-  =
+*)
+let permutation12 (env1:('a,'b,'c) #O.t) (env2:('a,'b,'c) #O.t) : int array
+    =
   assert(
     if is_leq env1 env2 then true
     else begin
-      printf "env1=%a@.envé=%a@."
+      printf "env1=%a@.env2=%a@."
 	print env1
 	print env2
       ;
       false
     end
   );
-  let perm = Array.init env2#bddindex (fun i -> i) in
-  let offset = ref 0 in
-  let bddvar () =
-    PMappe.iter
-      (begin fun var2 tid2 ->
-	try
-	  let tid1 = PMappe.find var2 env1#vartid in
-	  Array.iter
-	    (fun id -> perm.(id) <- id + !offset)
-	    tid1;
-	with Not_found ->
-	  offset := !offset + ((Array.length tid2)*env2#bddincr)
-      end)
-      env2#vartid
-  in
-  let bddcond () =
-    PMappe.iter
-      (begin fun cons2 (id2,b2) ->
-	if b2 then begin
-	  try
-	    let (id1,b1) = PDMappe.y_of_x cons2 env1#cond in
-	    assert b1;
-	    perm.(id1) <- id1 + !offset
-	  with Not_found ->
-	    offset := !offset + env2#bddincr
-	end
-      end)
-      (PDMappe.mapx env2#cond)
-  in
-  if env2#boolfirst then
-    (bddvar(); bddcond())
-  else
-    (bddcond(); bddvar())
+  let perm = Array.init (Cudd.Man.get_bddvar_nb env1#cudd) (fun i -> i) in
+  let offset = ref (env2#bddindex0 - env1#bddindex0) in
+  PMappe.iter
+    (begin fun var2 tid2 ->
+      try
+	let tid1 = PMappe.find var2 env1#vartid in
+	Array.iter
+	  (fun id -> perm.(id) <- id + !offset)
+	  tid1;
+      with Not_found ->
+	offset := !offset + ((Array.length tid2)*env2#bddincr)
+    end)
+    env2#vartid
   ;
   perm
 
-let permutation21 (env2:('a,'b,'c,'d) #O.t) (env1:('a,'b,'c,'d) #O.t) : int array
-  =
-  assert(is_leq env1 env2);
-  if false then
-    printf "permutation21:@.env2=%a@.env1=%a@."
-	print env2
+let permutation21 (env2:('a,'b,'c) #O.t) (env1:('a,'b,'c) #O.t) : int array
+    =
+  assert(
+    if is_leq env1 env2 then true
+    else begin
+      printf "env1=%a@.env2=%a@."
 	print env1
-  ;
-  let perm = Array.init env2#bddindex (fun i -> i) in
-  let offset = ref 0 in
-  let bddvar () =
-    PMappe.iter
-      (begin fun var2 tid2 ->
-	try
-	  let tid1 = PMappe.find var2 env1#vartid in
-	  Array.iter
-	    (fun id -> perm.(id + !offset) <- id)
-	    tid1;
-	with Not_found ->
-	  offset := !offset + (Array.length tid2)*env2#bddincr;
-      end)
-      env2#vartid
-  in
-  let bddcond () =
-    PMappe.iter
-      (begin fun cons2 (id2,b2) ->
-	if b2 then begin
-	  try
-	    let (id1,b1) = PDMappe.y_of_x cons2 env1#cond in
-	    assert b1;
-	    perm.(id1 + !offset) <- id1
-	  with Not_found ->
-	    offset := !offset + env2#bddincr;
-	end
-      end)
-      (PDMappe.mapx env2#cond)
-  in
-  if env2#boolfirst then
-    (bddvar(); bddcond())
-  else
-    (bddcond(); bddvar())
+	print env2
+      ;
+      false
+    end
+  );
+  let perm = Array.init (Cudd.Man.get_bddvar_nb env2#cudd) (fun i -> i) in
+  let offset = ref (env2#bddindex0 - env1#bddindex0) in
+  PMappe.iter
+    (begin fun var2 tid2 ->
+      try
+	let tid1 = PMappe.find var2 env1#vartid in
+	Array.iter
+	  (fun id -> perm.(id + !offset) <- id)
+	  tid1;
+      with Not_found ->
+	offset := !offset + (Array.length tid2)*env2#bddincr;
+    end)
+    env2#vartid
   ;
   perm
 
 type ('a,'b) value = {
   env : 'a;
-  value : 'b
+  val0 : 'b
 }
 
-let make_value env value =
+let make_value env val0 =
   assert(
     let env = Obj.magic env in
-    if (PMappe.cardinal env#idcondvar) + (PDMappe.cardinal env#cond)/2 =
-      (env#bddindex/env#bddincr)
+    if (PMappe.cardinal env#idcondvar) =
+      ((env#bddindex - env#bddindex0)/env#bddincr)
     then
       check_normalized env
     else begin
@@ -1191,19 +905,22 @@ let make_value env value =
       false
     end
   );
-  { env=env; value=value }
-
+  { env=env; val0=val0 }
+    
 let extend_environment
   (permute:'a -> int array -> 'a)
   value
   nenv
   =
   if is_eq value.env nenv then
-    value
-  else begin
-    if not (is_leq value.env nenv) then
-      failwith "Bdd.Env.extend_environment: the given environment is not a superenvironment "
-    ;
+    let offset = nenv#bddindex0 - value.env#bddindex0 in
+    if offset=0 then
+      value
+    else
+      let perm = permutation_of_offset value.env#bddindex offset in
+      make_value nenv (permute value.val0 perm)
+  else if is_leq value.env nenv then
     let perm = permutation12 value.env nenv in
-    make_value nenv (permute value.value perm)
-  end
+    make_value nenv (permute value.val0 perm)
+  else
+    failwith "Bdd.Env.extend_environment: the given environment is not a superenvironment "

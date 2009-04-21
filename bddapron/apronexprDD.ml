@@ -14,8 +14,6 @@ let table = Cudd.PWeakke.create Apronexpr.hash Apronexpr.equal 23
 
 type t = Apronexpr.t Cudd.Mtbdd.t
 
-type cond = [`Apron of Apronexpr.Condition.t]
-
 let of_expr = function
 | `Apron x -> x
 | _ -> failwith "ApronexprDD.of_expr: Arithmetical expression expected"
@@ -271,19 +269,19 @@ let substitute
   | Apronexpr.Tree x -> substitute_treeexpr cudd x substitution
 
 module Condition = struct
-  let make env typ e =
+  let make env cond typ e =
     let manager = Cudd.Mtbdd.manager e in
     let guardleafs = Cudd.Mtbdd.guardleafs e in
     let bdd =
       Array.fold_left
 	(begin fun res (guard,e) ->
 	  let atom =
-	    let cond = Apronexpr.Condition.make env typ e in
-	    match cond with
+	    let condition = Apronexpr.Condition.make env typ e in
+	    match condition with
 	    | `Bool b ->
 		if b then Cudd.Bdd.dtrue manager else Cudd.Bdd.dfalse manager
 	    | `Cond x ->
-		let (id,b) = env#idb_of_cond (`Apron x) in
+		let (id,b) = cond#idb_of_cond env (`Apron x) in
 		let bdd = Cudd.Bdd.ithvar manager id in
 		if b then bdd else Cudd.Bdd.dnot bdd
 	  in
@@ -294,20 +292,21 @@ module Condition = struct
     in
     bdd
 
-  let supeq env expr = make env Apronexpr.Condition.SUPEQ expr
-  let sup env expr = make env Apronexpr.Condition.SUP expr
-  let eq env expr = make env Apronexpr.Condition.EQ expr
+  let supeq env cond expr = make env cond Apronexpr.Condition.SUPEQ expr
+  let sup env cond expr = make env cond Apronexpr.Condition.SUP expr
+  let eq env cond expr = make env cond Apronexpr.Condition.EQ expr
 
   let substitute
    cudd
    env
-   (cond:Apronexpr.Condition.t)
+   cond
+   (condition:Apronexpr.Condition.t)
    (substitution:(string,[>`Apron of t]) PMappe.t)
    :
    Cudd.Man.v Cudd.Bdd.t
     =
-    let (typ,expr) = cond in
+    let (typ,expr) = condition in
     let nexpr = substitute cudd expr substitution in
-    make env typ nexpr
+    make env cond typ nexpr
 
 end

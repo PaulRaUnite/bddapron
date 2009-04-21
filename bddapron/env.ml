@@ -5,12 +5,13 @@
 
 open Format
 
+exception Bddindex = Bdd.Env.Bddindex
+
 type typ = [
   | Bdd.Env.typ
   | Apronexpr.typ
 ]
 type typdef = Bdd.Env.typdef
-type cond = ApronexprDD.cond
 type expr = [
   | Cudd.Man.v Bdd.Expr0.expr
   | `Apron of ApronexprDD.t
@@ -23,23 +24,10 @@ let print_typ fmt (typ:[< typ]) =
 
 let print_typdef fmt (x:[< typdef]) = Bdd.Env.print_typdef fmt (x:>typdef)
 
-let print_cond env fmt (cond:[< cond]) =
-  match cond with
-  | `Apron x -> Apronexpr.Condition.print fmt x
-
-let compare_cond c1 c2 = match (c1,c2) with
-  (`Apron c1, `Apron c2) -> Apronexpr.Condition.compare c1 c2
-    
-let negate_cond env (c:cond) : cond = match c with
-  | `Apron x -> `Apron (Apronexpr.Condition.negate env x)
-      
-let cond_support env cond = match cond with
-  | `Apron x -> Apronexpr.Condition.support x
-      
 module O = struct
-  class type ['a,'b,'c] t = object
-    inherit [[> typ] as 'a,[> typdef] as 'b,[> cond] as 'c, Cudd.Man.v] Bdd.Env.O.t
-      
+  class type ['a,'b] t = object
+    inherit [[> typ] as 'a,[> typdef] as 'b, Cudd.Man.v] Bdd.Env.O.t
+
     val mutable v_apron_env : Apron.Environment.t
     method apron_env : Apron.Environment.t
     method set_apron_env : Apron.Environment.t -> unit
@@ -47,17 +35,17 @@ module O = struct
     method rename_vars_apron : (string * string) list -> int array option * Apron.Dim.perm option
   end
 
-  let print fmt (env:('a,'b,'c) #t) =
+  let print fmt (env:('a,'b) #t) =
     Format.fprintf fmt "{@[<v>%a;@ apron_env = %a@]}"
-      (Bdd.Env.O.print print_typ print_typdef) (env:>('a,'b,'c,Cudd.Man.v) Bdd.Env.O.t)
+      (Bdd.Env.O.print print_typ print_typdef) (env:>('a,'b,Cudd.Man.v) Bdd.Env.O.t)
       (fun fmt x -> Apron.Environment.print fmt x) env#apron_env
-      
-  class ['a,'b] make ?boolfirst ?relational man : ['a,'b,cond] t = object(self)
-    inherit ['a,'b,cond,Cudd.Man.v] Bdd.Env.O.make ?boolfirst ?relational man ~compare_cond ~negate_cond ~support_cond:cond_support ~print_cond as super
+
+  class ['a,'b] make ?bddindex0 ?bddsize ?relational man : ['a,'b] t = object(self)
+    inherit ['a,'b,Cudd.Man.v] Bdd.Env.O.make ?bddindex0 ?bddsize ?relational man as super
     val mutable v_apron_env = Apron.Environment.make [||] [||]
     method apron_env = v_apron_env
     method set_apron_env apron_env = v_apron_env <- apron_env
-      
+
     method vars : string PSette.t =
       let vars = PMappe.maptoset v_vartid in
       let (ivar,qvar) = Apron.Environment.vars v_apron_env in
@@ -65,7 +53,7 @@ module O = struct
       let vars = Array.fold_right add ivar vars in
       let vars = Array.fold_right add qvar vars in
       vars
-	
+
     method add_vars (lvartyp:(string*'a) list) : int array option =
       let (integer,real) =
 	List.fold_left
@@ -84,7 +72,7 @@ module O = struct
 	    (Array.of_list integer) (Array.of_list real))
       end;
       operm
-	
+
     method remove_vars (lvar:string list) : int array option =
       let arith =
 	List.fold_left
@@ -103,9 +91,9 @@ module O = struct
 	    (Array.of_list arith))
       end;
       operm
-	
-    method rename_vars_apron (lvarvar:(string*string) list) 
-      : 
+
+    method rename_vars_apron (lvarvar:(string*string) list)
+      :
       int array option * Apron.Dim.perm option
       =
       let (lvar1,lvar2) =
@@ -120,9 +108,7 @@ module O = struct
 	  end)
 	  ([],[]) lvarvar
       in
-      let operm1 = self#clear_cond in
-      let operm2 = super#rename_vars lvarvar in
-      let operm = Bdd.Env.compose_opermutation operm1 operm2 in
+      let operm = super#rename_vars lvarvar in
       let oapronperm =
 	if lvar1<>[] then begin
 	  let (n_apron_env,perm) =
@@ -137,15 +123,15 @@ module O = struct
 	  None
       in
       (operm,oapronperm)
-	
+
     method rename_vars (lvarvar:(string*string) list) : int array option
       =
       fst (self#rename_vars_apron lvarvar)
   end
 
-  let make ?boolfirst ?relational man =
-    new make ?boolfirst ?relational man
-      
+  let make ?bddindex0 ?bddsize ?relational man =
+    new make ?bddindex0 ?bddsize ?relational man
+
   let unify env1 env2 =
     let nenv = Bdd.Env.lce env1 env2 in
     if nenv!=env1 && nenv!=env2 then
@@ -153,7 +139,7 @@ module O = struct
     nenv
 end
 
-type t = (typ,typdef,cond) O.t
+type t = (typ,typdef) O.t
 let make = O.make
 let print = O.print
 let unify = O.unify
@@ -169,7 +155,8 @@ let rename_vars = Bdd.Env.rename_vars
 
 type ('a,'b) value = ('a,'b) Bdd.Env.value = {
   env : 'a;
-  value : 'b
+  val0 : 'b
 }
 
 let make_value = Bdd.Env.make_value
+
