@@ -35,7 +35,6 @@ BDDMOD = \
 	bdd/expr0 bdd/expr1 \
 	bdd/domain0 bdd/domain1
 
-
 BDDAPRONMOD = \
 	bddapron/apronexpr \
 	bddapron/apronexprDD \
@@ -103,12 +102,14 @@ bdd.cmxa: bdd.cmx
 	$(OCAMLOPT) -a $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ $^
 	$(RANLIB) bdd.a
 
+bddapron.cmi: bddapron.cmo
 bddapron.cmo: $(BDDAPRONMOD:%=%.cmo)
 	$(OCAMLC) $(OCAMLFLAGS) $(OCAMLINC) -pack -o $@ $^
 
 bddapron.cmx: $(BDDAPRONMOD:%=%.cmx)
 	$(OCAMLOPT) $(OCAMLOPTFLAGS) -pack -o $@ $^
 
+bdd.cmi: bdd.cmo
 bdd.cmo: $(BDDMOD:%=%.cmo)
 	$(OCAMLC) $(OCAMLFLAGS) $(OCAMLINC) -pack -o $@ $^
 
@@ -173,7 +174,7 @@ example2.opt: bddapron/example2.ml bddapron.cmxa
 #--------------------------------------------------------------
 
 .SUFFIXES: .ml .mli .cmi .cmo .cmx .tex
-.PRECIOUS: $(BDDMOD:%=%.cmi) $(BDDMOD:%=%.cmo) $(BDDMOD:%=%.cmx) $(BDDAPRONMOD:%=%.cmi) $(BDDAPRONMOD:%=%.cmo) $(BDDAPRONMOD:%=%.cmx) 
+.PRECIOUS: $(BDDMOD:%=%.cmi) $(BDDMOD:%=%.cmo) $(BDDMOD:%=%.cmx) $(BDDAPRONMOD:%=%.cmi) $(BDDAPRONMOD:%=%.cmo) $(BDDAPRONMOD:%=%.cmx)
 
 #-----------------------------------
 # CAML
