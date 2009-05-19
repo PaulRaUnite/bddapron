@@ -922,6 +922,10 @@ let typ_of_expr (env:'a #env) expr =
 let to_texpr1 (env:Apron.Environment.t) expr =
   Apron.Texpr1.of_expr env (to_tree expr)
 
+let to_texpr0 (env:Apron.Environment.t) expr =
+  let texpr1 = to_texpr1 env expr in
+  texpr1.Apron.Texpr1.texpr0
+
 let to_apron (env:Apron.Environment.t) expr = match expr with
    | Lin e -> `Linexpr1 (Lin.to_linexpr1 env e)
    | _ -> `Texpr1 (to_texpr1 env expr)
@@ -1054,6 +1058,9 @@ module Condition = struct
 
   let to_tcons1 env (typ,expr) =
     Apron.Tcons1.make (to_texpr1 env expr) typ
+
+  let to_tcons0 env (typ,expr) =
+    Apron.Tcons0.make (to_texpr0 env expr) typ
 
   let to_apron env (typ,expr) =
     match expr with

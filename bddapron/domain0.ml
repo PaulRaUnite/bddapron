@@ -101,15 +101,16 @@ module O = struct
   (*  ==================================================================== *)
 
   module Descend = struct
-    let texpr_cofactor (texpr:Expr0.t array) bdd =
-      Array.map (fun expr -> Expr0.cofactor expr bdd) texpr
+    let texpr_cofactor cofactor (texpr:Expr0.t array) bdd =
+      Array.map (fun expr -> cofactor expr bdd) texpr
 
     let texpr_support cond (texpr: Expr0.t array) =
+      let cond_supp = cond#cond_supp in
       Array.fold_left
 	(fun res expr ->
 	  let supp =
 	    Cudd.Bdd.support_inter
-	      cond#cond_supp
+	      cond_supp
 	      (Expr0.O.support_cond cond expr)
 	  in
 	  Cudd.Bdd.support_union res supp
@@ -124,10 +125,11 @@ module O = struct
       let t2 = Array.map (fun e -> Expr0.cofactor e nbdd) texpr in
       (t1,t2)
 
-  (** Performs a recursive descend of MTBDDs [t],[tbdd], [tmtbdd] and [odest],
-      until there is no arithmetic conditions in [tbdd] and [tmtbdd], in which case
-      calls [f t tbdd tmtbdd odest]. Returns [bottom] if [t] or [odest] is
-      bottom. *)
+    (** Performs a recursive descend of MTBDDs [t],[tbdd],
+	[tmtbdd] and [odest], until there is no arithmetic
+	conditions in [tbdd] and [tmtbdd], in which case calls [f t
+	tbdd tmtbdd odest]. Returns [bottom] if [t] or [odest] is
+	bottom. *)
     let rec descend_arith
 	(man:'a man)
 	(env:(('b,'c) #Env.O.t as 'd))

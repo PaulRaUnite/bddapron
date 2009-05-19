@@ -27,46 +27,62 @@ type 'a t = {
   mutable exclusive : bool;
 }
 
-
-(*  ********************************************************************** *)
-(** {2 Trees} *)
-(*  ********************************************************************** *)
-
-type 'a tree =
-  | Nil
-  | Node of Cudd.Bdd.vt * 'a node
-and 'a node =
-  | Leaf of 'a
-  | Tree of int * 'a tree * 'a tree
-
-let rec tree_iter_leaf f = function
-  | Nil -> ()
-  | Node(_, node) ->
-      begin match node with
-      | Leaf x -> f x
-      | Tree(_,ta,tb) ->
-	  tree_iter_leaf f ta;
-	  tree_iter_leaf f tb;
-      end
-
-let rec tree_fold_leaf f res = function
-  | Nil -> res
-  | Node(_, node) ->
-      begin match node with
-      | Leaf x -> f res x
-      | Tree(_,ta,tb) ->
-	  let res = tree_fold_leaf f res ta in
-	  tree_fold_leaf f res tb
-      end
-
 (*  ********************************************************************** *)
 (** {2 Utilities} *)
 (*  ********************************************************************** *)
 
 let bdd_diff a b = Cudd.Bdd.dand a (Cudd.Bdd.dnot b)
 
+let descend
+    ~(cudd: Cudd.Man.vt)
+    ~(maxdepth:int)
+    ~(nocare:('a -> bool))
+    ~(cube_of_down:('a -> Cudd.Bdd.vt))
+    ~(cofactor:('a -> Cudd.Bdd.vt -> 'a)) 
+    ~(select:('a -> int))
+    ~(terminal:(depth:int -> newcube:Cudd.Bdd.vt -> cube:Cudd.Bdd.vt -> down:'a -> 'b option))
+    ~(ite:(depth:int -> newcube:Cudd.Bdd.vt -> cond:int -> dthen:'b option -> delse:'b option -> 'b option))
+    ~(down:'a) 
+    :
+    'b option
+    =
+  let rec map depth cube down =
+    if nocare down then
+      None
+    else begin
+      let newcube = cube_of_down down in
+      let (cube,down) = 
+	if Cudd.Bdd.is_true newcube then
+	  (cube,down)
+	else
+	  (Cudd.Bdd.dand cube newcube, cofactor down newcube)
+      in
+      if nocare down then 
+	None
+      else begin
+	let cond = select down in
+	if (cond<0) || depth<=0 then begin 
+            (* End case *)
+	  terminal ~depth ~newcube ~cube ~down
+	end
+	else begin
+	    (* Recursive case *)
+	  let var = Cudd.Bdd.ithvar cudd cond in
+	  let nvar = Cudd.Bdd.dnot var in
+	  let dthen =
+	    map (depth-1) (Cudd.Bdd.dand cube var) (cofactor down var)
+	  and delse =
+	    map (depth-1) (Cudd.Bdd.dand cube nvar) (cofactor down nvar)
+	  in
+	  ite ~depth ~newcube ~cond ~dthen ~delse
+	end
+      end
+    end
+  in
+  map maxdepth (Cudd.Bdd.dtrue cudd) down
+
 (*  ====================================================================== *)
-(** {3 Iterators} *)
+(** {3 Iterators on lists} *)
 (*  ====================================================================== *)
 
 let fold2 f res list1 list2 =
@@ -155,114 +171,85 @@ module Elt = struct
     Cudd.Bdd.is_false elt.guard || Apron.Abstract0.is_bottom man.apron elt.abs
 
   (* bdd may contain constraints. *)
-
-  let meet_bdd ~depth man env cond elt bdd =
-    let cudd = cond#cudd in
+  let descend_elt_bdd ~join ~maxdepth ~terminal man env cond elt bdd =
+    let cudd = env#cudd in
     let cond_supp = cond#cond_supp in
-
-    let rec descend depth elt bdd =
-      if Cudd.Bdd.is_inter_empty elt.guard bdd then
-	Nil
-      else begin
-	let cube = Cudd.Bdd.cube_of_bdd bdd in
-	let (elt,bdd) =
-	  if Cudd.Bdd.is_cst cube then
-	    (elt,bdd)
-	  else
-	    (meet_cube man env cond elt cube, Cudd.Bdd.cofactor bdd cube)
-	in
-	if is_bottom man elt then
-	  Nil
-	else begin
-	  let supp = Cudd.Bdd.support bdd in
-	  let suppcond = Cudd.Bdd.support_inter supp cond_supp in
-	  if Cudd.Bdd.is_cst suppcond then begin
-	    let elt = { elt with guard = Cudd.Bdd.dand elt.guard bdd } in
-	    Node(cube,Leaf(elt))
-	  end
-	  else if depth<=0 then begin
-	    let bdd = Cudd.Bdd.exist cond_supp bdd in
-	    let elt = { elt with guard = Cudd.Bdd.dand elt.guard bdd } in
-	    Node(cube,Leaf(elt))
-	  end
-	  else begin
-	    let topcond = Cudd.Bdd.topvar suppcond in
-	    let conda = Cudd.Bdd.ithvar cudd topcond in
-	    let condb = Cudd.Bdd.dnot conda in
-	    let bdda = Cudd.Bdd.dand bdd conda in
-	    let bddb = Cudd.Bdd.dand bdd condb in
-	    let resa = descend (depth-1) elt bdda in
-	    let resb = descend (depth-1) elt bddb in
-	    match (resa,resb) with
-	    | (Nil, x) | (x,Nil) -> x
-	    | (Node(cubea,nodea), Node(cubeb,nodeb)) ->
-		let nodea = Node( (Cudd.Bdd.cofactor cubea conda), nodea ) in
-		let nodeb = Node( (Cudd.Bdd.cofactor cubeb condb), nodeb ) in
-		Node(cube,Tree(topcond,nodea,nodeb))
-	  end
-	end
-      end
-    in
-    let res = descend depth elt bdd in
-    res
-
-(*
-  let descend_texpr ~depth man env cond elt texpr =
-    let cudd = cond#cudd in
-    let cond_supp = cond#cond_supp in
-
-    let rec descend depth elt texpr =
-      if is_bottom man elt then
-	Nil
-      else begin
-	let supp = Domain0.O.Descend.texpr_support cond texpr in
+    descend
+      ~cudd ~maxdepth
+      ~nocare:(fun (elt,bdd) -> Cudd.Bdd.is_false bdd || is_bottom man elt)
+      ~cube_of_down:(fun (elt,bdd) -> Cudd.Bdd.cube_of_bdd bdd)
+      ~cofactor:(fun (elt,bdd) cube ->
+	let nelt = meet_cube man env cond elt cube in
+	(nelt, Cudd.Bdd.cofactor bdd cube)
+      )
+      ~select:(fun (elt,bdd) ->
+	let supp = Cudd.Bdd.support bdd in
+	let suppcond = Cudd.Bdd.support_inter supp cond_supp in
+	if Cudd.Bdd.is_cst suppcond 
+	then -1
+	else Cudd.Bdd.topvar suppcond
+      )
+      ~terminal
+      ~ite:(fun ~depth ~newcube ~cond ~dthen ~delse ->
+	match (dthen,delse) with
+	| None,x | x,None -> x
+	| Some(ga,lista),Some(gb,listb) ->
+	    let list = List.fold_left join lista listb in
+	    Some(Cudd.Bdd.dor ga gb, list)
+      )
 	
-
-      if Cudd.Bdd.is_inter_empty elt.guard bdd then
-	Nil
-      else begin
-	let cube = Cudd.Bdd.cube_of_bdd bdd in
-	let (elt,bdd) =
-	  if Cudd.Bdd.is_cst cube then
-	    (elt,bdd)
-	  else
-	    (meet_cube man env cond elt cube, Cudd.Bdd.cofactor bdd cube)
-	in
-	if is_bottom man elt then
-	  Nil
-	else begin
-	  let supp = Cudd.Bdd.support bdd in
-	  let suppcond = Cudd.Bdd.support_inter supp cond_supp in
-	  if Cudd.Bdd.is_cst suppcond then begin
-	    let elt = { elt with guard = Cudd.Bdd.dand elt.guard bdd } in
-	    Node(cube,Leaf(elt))
-	  end
-	  else if depth<=0 then begin
-	    let bdd = Bdd.exist cond_supp bdd in
-	    let elt = { elt with guard = Cudd.Bdd.dand elt.guard bdd } in
-	    Node(cube,Leaf(elt))
-	  end
-	  else begin
-	    let topcond = Cudd.Bdd.topvar suppcond in
-	    let conda = Cudd.Bdd.ithvar cudd topcond in
-	    let condb = Cudd.Bdd.dnot conda in
-	    let bdda = Cudd.Bdd.dand bdd conda in
-	    let bddb = Cudd.Bdd.dand bdd condb in
-	    let resa = descend (depth-1) elt bdda in
-	    let resb = descend (depth-1) elt bddb in
-	    match (resa,resb) with
-	    | (Nil, x) | (x,Nil) -> x
-	    | (Node(cubea,nodea), Node(cubeb,nodeb)) ->
-		let nodea = Node( (Cudd.Bdd.cofactor cubea conda), nodea ) in
-		let nodeb = Node( (Cudd.Bdd.cofactor cubeb condb), nodeb ) in
-		Node(cube,Tree(topcond,nodea,nodeb)
-	  end
-	end
-      end
+  let meet_bdd ~join ~maxdepth man env cond elt bdd =
+    let cudd = cond#cudd in
+    let dtrue = Cudd.Bdd.dtrue cudd in
+    let cond_supp = cond#cond_supp in
+    let ores = 
+      descend_elt_bdd 
+	~join ~maxdepth man env cond elt bdd
+	~terminal:(fun ~depth ~newcube ~cube ~down ->
+	  let (elt,bdd) = down in
+	  let nbdd = if depth<=0 then Cudd.Bdd.exist cond_supp bdd else bdd in
+	  let nelt = { elt with guard = Cudd.Bdd.dand elt.guard nbdd } in
+	  if is_bottom man nelt then None else Some(dtrue,[elt])
+	)
+	~down:(elt,bdd)
     in
-    let res = descend depth elt bdd in
-    res
-*)
+    begin match ores with
+    | None -> []
+    | Some(guard,list) -> list
+    end
+
+  let descend_elt_texpr ~join ~maxdepth ~terminal man env cond elt texpr = 
+    let cudd = cond#cudd in
+    let dtrue = Cudd.Bdd.dtrue cudd in
+    let cond_supp = cond#cond_supp in
+    let ores =
+      descend
+	~cudd ~maxdepth
+	~nocare:(fun (elt,texpr) -> is_bottom man elt)
+	~cube_of_down:(fun (elt,texpr) -> Cudd.Bdd.cube_of_bdd elt.guard)
+	~cofactor:(fun (elt,texpr) cube ->
+	  let nelt = meet_cube man env cond elt cube in
+	  (nelt, Domain0.O.Descend.texpr_cofactor Expr0.cofactor texpr cube)
+	)
+	~select:(fun (elt,texpr) ->
+	  let suppcond = Domain0.O.Descend.texpr_support cond texpr in
+	  if Cudd.Bdd.is_cst suppcond 
+	  then -1
+	  else Cudd.Bdd.topvar suppcond
+	)
+	~terminal
+	~ite:(fun ~depth ~newcube ~cond ~dthen ~delse ->
+	  match (dthen,delse) with
+	  | None,x | x,None -> x
+	  | Some(ga,lista),Some(gb,listb) ->
+	      let g = Cudd.Bdd.dor ga gb in
+	      let list = List.fold_left join lista listb in
+	      Some(g,list)
+	)
+	~down:(elt,texpr)
+    in
+    ores
+      
 end
 
 (*  ====================================================================== *)
@@ -709,7 +696,7 @@ let join man t1 t2 =
 (** {3 Meet with a guard } *)
 (*  ====================================================================== *)
 
-let meet_cond_internal ~nodoublon ~exclusive ~depth man env cond t bdd =
+let meet_cond_internal ~nodoublon ~exclusive ~maxdepth (man:'a man) env cond (t:'a t) bdd =
   assert(if exclusive then nodoublon else true);
   let nlist =
     List.fold_left
@@ -718,15 +705,16 @@ let meet_cond_internal ~nodoublon ~exclusive ~depth man env cond t bdd =
 	  res
 	else begin
 	  let bdd = man.bddrestrict bdd elt.guard in
-	  let tree = Elt.meet_bdd ~depth man env cond elt bdd in
-	  if exclusive then
-	    if t.exclusive then
-	      let list = tree_fold_leaf (ListE.join_exclusive man) [] tree in
-	      List.fold_left (ListE.join_nodoublon man) res list
-	    else
-	      tree_fold_leaf (ListE.join_exclusive man) res tree
+	  let list =
+	    Elt.meet_bdd
+	      ~maxdepth
+	      ~join:(ListE.join ~nodoublon ~exclusive man)
+	      man env cond elt bdd
+	  in
+	  if t.exclusive && exclusive then
+	    List.fold_left (ListE.join_nodoublon man) res list
 	  else
-	    tree_fold_leaf (ListE.join ~nodoublon ~exclusive:false man) res tree
+	    List.fold_left (ListE.join ~nodoublon ~exclusive man) res list
 	end
       end)
       []
@@ -753,7 +741,7 @@ let meet_cond man (env:('b,'c) #Env.O.t as 'd) (cond:(Cond.cond,'d) #Cond.O.t) t
     meet_cond_internal
       ~nodoublon:man.meet_cond_nodoublon
       ~exclusive:man.meet_cond_exclusive
-      ~depth:man.meet_cond_depth
+      ~maxdepth:man.meet_cond_depth
       man env cond t bdd
   in
   assert(check_wellformed man res);
@@ -762,3 +750,48 @@ let meet_cond man (env:('b,'c) #Env.O.t as 'd) (cond:(Cond.cond,'d) #Cond.O.t) t
 (*  ====================================================================== *)
 (** {3 Assignement/Substitution} *)
 (*  ====================================================================== *)
+
+(*
+let assign_lexpr_internal 
+    ~nodoublon ~exclusive ~maxdepth 
+    ?relational ?nodependency
+    (man:'a man)
+    (env:(('b,'c) #Env.O.t as 'd))
+    (cond:(Cond.cond,'d) #Cond.O.t)
+    (t:'a t)
+    (lvar : string list) (lexpr: Expr0.t list)
+    (odest:'a t option)
+    :
+    'a t
+    =
+  assert(if exclusive then nodoublon else true);
+  assert(List.length lvar = List.length lexpr);
+  let texpr = Array.of_list lexpr in
+  let nlist =
+    List.fold_left
+      (begin fun res elt ->
+	let texpr = Array.map (fun texpr -> man.texpr_restrict texpr elt.guard) texpr in
+	let ores =
+	  Elt.descend_elt_texpr
+	    ~join:(ListE.join ~nodoublon ~exclusive man)
+	    ~maxdepth
+	    man env cond elt 
+	    (Array.map (fun texpr -> man.texpr_restrict texpr bdd) texpr)
+	    man env cond
+	    (elt,texpr)
+	    ~terminal:(fun ~depth ~newcube ~cube ~down ->
+	      let lexpr = Array.to_list texpr in
+	      let (lbvar,lbexpr,tavar,taexpr) = split_lvarlexpr lvar lexpr in
+	      let res =
+		ApronDD.asssub_texpr_array
+	  ~asssub_bdd:(fun bdd ->
+	    Bdd.Domain0.O.assign_lexpr ?relational ?nodependency
+	      env bdd lbvar lbexpr
+	  )
+	  Apron.Abstract1.assign_texpr_array
+	  man t tavar taexpr odest
+      in
+      res
+    end)
+    t texpr
+*)

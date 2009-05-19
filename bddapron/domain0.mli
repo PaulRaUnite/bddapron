@@ -69,6 +69,7 @@ module O : sig
 
   module Descend : sig
     val texpr_cofactor :
+      (Expr0.t -> Expr0.Bool.t -> Expr0.t) -> 
       Expr0.t array ->
       Expr0.Bool.t -> Expr0.t array
     val texpr_support :

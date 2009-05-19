@@ -153,6 +153,7 @@ val typ_of_expr : 'a #env -> t -> [`Int | `Real]
 val print : Format.formatter -> t -> unit
 val print_typ : Format.formatter -> [>typ] -> unit
 
+val to_texpr0 : Apron.Environment.t -> t -> Apron.Texpr0.t
 val to_texpr1 : Apron.Environment.t -> t -> Apron.Texpr1.t
 val to_apron : 
   Apron.Environment.t -> t -> 
@@ -175,6 +176,7 @@ module Condition :
     val support : t -> string PSette.t
     val print : Format.formatter -> t -> unit
     val compare : t -> t -> int
+    val to_tcons0 : Apron.Environment.t -> t -> Apron.Tcons0.t
     val to_tcons1 : Apron.Environment.t -> t -> Apron.Tcons1.t
     val to_apron : 
       Apron.Environment.t -> t -> 
