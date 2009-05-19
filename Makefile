@@ -102,16 +102,16 @@ bdd.cmxa: bdd.cmx
 	$(OCAMLOPT) -a $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ $^
 	$(RANLIB) bdd.a
 
-bddapron.cmi: bddapron.cmo
-bddapron.cmo: $(BDDAPRONMOD:%=%.cmo)
-	$(OCAMLC) $(OCAMLFLAGS) $(OCAMLINC) -pack -o $@ $^
+bddapron.cmo: bddapron.cmi
+bddapron.cmi: $(BDDAPRONMOD:%=%.cmo)
+	$(OCAMLC) $(OCAMLFLAGS) $(OCAMLINC) -pack -o bddapron.cmo $^
 
 bddapron.cmx: $(BDDAPRONMOD:%=%.cmx)
 	$(OCAMLOPT) $(OCAMLOPTFLAGS) -pack -o $@ $^
 
-bdd.cmi: bdd.cmo
-bdd.cmo: $(BDDMOD:%=%.cmo)
-	$(OCAMLC) $(OCAMLFLAGS) $(OCAMLINC) -pack -o $@ $^
+bdd.cmo: bdd.cmi
+bdd.cmi: $(BDDMOD:%=%.cmo)
+	$(OCAMLC) $(OCAMLFLAGS) $(OCAMLINC) -pack -o bdd.cmo $^
 
 bdd.cmx: $(BDDMOD:%=%.cmx)
 	$(OCAMLOPT) $(OCAMLOPTFLAGS) -pack -o $@ $^
