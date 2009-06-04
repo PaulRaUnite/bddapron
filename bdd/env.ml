@@ -87,10 +87,14 @@ module O = struct
 	permutation. *)
     method mem_var : string -> bool
     (** Is the label/var defined in the database ? *)
+    method mem_label : string -> bool
+    (** Is the label a label defined in the database ? *)
     method typ_of_var : string -> 'a
     (** Return the type of the label/variable *)
     method vars : string PSette.t
-    (** Return the list of variables *)
+    (** Return the list of variables (not labels) *)
+    method labels : string PSette.t
+    (** Return the list of labels (not variables) *)
 
     method permutation : int array
     (** Compute the permutation for normalizing the environment *)
@@ -287,6 +291,12 @@ module O = struct
     method mem_var (label:string) : bool =
       PMappe.mem label v_vartyp
 
+    method mem_label (label:string) : bool =
+      let typ = PMappe.find label v_vartyp in
+      match typ with
+      | `Benum _ when not (PMappe.mem label v_vartid) -> true
+      | _ -> false
+	  
     method typ_of_var (label:string) : 'a
       =
       try
@@ -297,6 +307,17 @@ module O = struct
     method vars =
       PMappe.maptoset v_vartid
 
+    method labels =
+      PMappe.fold
+	(begin fun typ def res ->
+	  match def with
+	  | `Benum tlabel ->
+	      Array.fold_right PSette.add tlabel res
+	  | _ -> res
+	end)
+	v_typdef
+	(PSette.empty String.compare)
+	
     method add_var var typ : unit
       =
       if PMappe.mem var v_vartyp then

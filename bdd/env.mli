@@ -62,10 +62,14 @@ module O : sig
 	permutation. *)
     method mem_var : string -> bool
     (** Is the label/var defined in the database ? *)
+    method mem_label : string -> bool
+    (** Is the label a label defined in the database ? *)
     method typ_of_var : string -> 'a
     (** Return the type of the label/variable *)
     method vars : string PSette.t
-    (** Return the list of variables *)
+    (** Return the list of variables (not labels) *)
+    method labels : string PSette.t
+    (** Return the list of labels (not variables) *)
 
     method permutation : int array
     (** Compute the permutation for normalizing the environment *)
