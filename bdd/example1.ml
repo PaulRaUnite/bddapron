@@ -1,5 +1,5 @@
 (*
-formulatop -I $CAMLLIB_INSTALL/lib -I $MLCUDDIDL_INSTALL/lib
+bddtop -I $CAMLLIB_INSTALL/lib -I $MLCUDDIDL_INSTALL/lib
 *)
 
 open Format;;
@@ -10,7 +10,7 @@ Cudd.Man.set_gc 10000
   (begin fun () -> printf "@.CUDD GC@." end)
   (begin fun () -> printf "@.CUDD REORDER@." end)
 ;;
-let env = BdddomainE.make_env cudd;;
+let env = Bdd.Env.make cudd;;
 env#add_typ "enum2" (`Benum [|"l1"; "l2"; "l3"|]);;
 env;;
 env#add_vars [
@@ -24,5 +24,5 @@ env#add_vars [
 ];;
 env;;
 
-let expr = BddexprE.Bool.var env "b0";;
-printf "%a@." BddexprE.Bool.print expr;;
+let expr = Bdd.Expr1.Bool.var env "b0";;
+printf "%a@." Bdd.Expr1.Bool.print expr;;
