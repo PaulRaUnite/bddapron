@@ -8,24 +8,72 @@
 (*  ********************************************************************** *)
 
 type 'a man = 'a Domain0.man
+  (** BDDAPRON Manager. The type parameter ['a] indicates the
+      underlying APRON abstract domain, as in type {!'a
+      Apron.Abstract0.t} *)
+
 type 'a t = (Env.t, 'a Domain0.t) Env.value
+  (** BDDAPRON Abstract value. *)
 
 val make_man : ?global:bool -> 'a Apron.Manager.t -> 'a man
+  (** Makes a BDDAPRON manager from an APRON manager.
+      If [global=true] (default: [false]), uses a global (persistent)
+      BDD cache for the operations [is_leq], [join], [meet] 
+      and [exist] (internal).
+  *)
 
 val size : 'a man -> 'a t -> int
+  (** Size of an abstract value in terms of number of nodes of the MTBDD. *)
 val print : Format.formatter -> 'a t -> unit
+  (** Printing function *)
+
+
+(*  ====================================================================== *)
+(** {3 Constructors, accessors, tests and property extraction} *)
+(*  ====================================================================== *)
+
+(*  ---------------------------------------------------------------------- *)
+(** {4 Basic constructor} *)
+(*  ---------------------------------------------------------------------- *)
+
 val bottom : 'a man -> Env.t -> 'a t
 val top: 'a man -> Env.t -> 'a t
+val of_apron : 'a man -> Env.t -> 'a Apron.Abstract1.t -> 'a t
+
+(*  ---------------------------------------------------------------------- *)
+(** {4 Tests} *)
+(*  ---------------------------------------------------------------------- *)
+
 val is_bottom : 'a man -> 'a t -> bool
 val is_top : 'a man -> 'a t -> bool
+  (** Emtpiness and Universality tests *)
+
 val is_leq : 'a man -> 'a t -> 'a t -> bool
 val is_eq : 'a man -> 'a t -> 'a t -> bool
+  (** Inclusion and equality tests *)
+
+(*  ---------------------------------------------------------------------- *)
+(** {4 Extraction of properties} *)
+(*  ---------------------------------------------------------------------- *)
+
+val to_bddapron : 
+  'a man -> 'a t -> (Expr1.Bool.t * 'a Apron.Abstract1.t) list
+  (** Conversion to a disjunction of a conjunction of pair of a
+      purely Boolean formula (without numerical constraints) and an
+      APRON abstract value *)
+
+(*  ====================================================================== *)
+(** {3 Operations} *)
+(*  ====================================================================== *)
 
 val meet : 'a man -> 'a t -> 'a t -> 'a t
 val join : 'a man -> 'a t -> 'a t -> 'a t
+  (** Meet and join *)
 
 val meet_condition : 'a man -> Cond.t -> 'a t -> Expr1.Bool.t -> 'a t
 val meet_condition2 : 'a man -> 'a t -> Expr2.Bool.t -> 'a t
+  (** Intersection with a Boolean expression (that may involve
+      numerical constraints) *)
 
 val assign_lexpr :
   ?relational:bool -> ?nodependency:bool ->
@@ -43,13 +91,34 @@ val substitute_lexpr :
 val substitute_listexpr2 :
   'a man ->
   'a t -> string list -> Expr2.List.t -> 'a t option -> 'a t
+  (** Parallel assignement/substitution of a list of variables by
+      a list of expressions *)
 val forget_list :
   'a man -> 'a t -> string list -> 'a t
+  (** Forget (existential quantification) a list of variables *)
+val widening : 'a man -> 'a t -> 'a t -> 'a t
+  (** Widening *)
+
+(*  ====================================================================== *)
+(** {3 Change of environments and renaming} *)
+(*  ====================================================================== *)
 
 val change_environment : 'a man -> 'a t -> Env.t -> 'a t
+  (** Change the environement (eliminates (forget) variables not
+      belonging to the new environment, and introduces new variables)
+  *)
+
 val rename : 'a man -> 'a t -> (string*string) list -> 'a t
-val widening : 'a man -> 'a t -> 'a t -> 'a t
+  (** Rename a list of variables (thus changing the
+      environment). *)
+
 val unify : 'a man -> 'a t -> 'a t -> 'a t
+  (** Unifies two abstract values on their least common
+      environment (lce, that should exist, which implies that no variable
+      is defined with different types in the two initial environments).
+
+      This is equivalent to change the environment to the lce, and
+      to perform meet.  *)
 
 (*  ********************************************************************** *)
 (** {2 Opened signature and Internal functions} *)
@@ -69,11 +138,12 @@ module O : sig
   val print : Format.formatter -> ('a,'b) t -> unit
   val bottom : 'b man -> 'a -> ('a,'b) t
   val top : 'b man -> 'a -> ('a,'b) t
+  val of_apron : 'b man -> 'a -> 'b Apron.Abstract1.t -> ('a,'b) t
   val is_bottom : 'b man -> ('a,'b) t -> bool
   val is_top : 'b man -> ('a,'b) t -> bool
   val is_leq : 'b man -> ('a,'b) t -> ('a,'b) t -> bool
   val is_eq : 'b man -> ('a,'b) t -> ('a,'b) t -> bool
-
+  val to_bddapron : 'b man -> ('a,'b) t -> ('a Expr1.O.Bool.t * 'b Apron.Abstract1.t) list
   val meet : 'b man -> ('a,'b) t -> ('a,'b) t -> ('a,'b) t
   val join : 'b man -> ('a,'b) t -> ('a,'b) t -> ('a,'b) t
 

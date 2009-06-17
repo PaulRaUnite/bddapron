@@ -29,6 +29,7 @@ module O = struct
   let size man t = Domain0.size man t.val0
   let bottom man env = make_value env (Domain0.O.bottom man env)
   let top man env = make_value env (Domain0.O.top man env)
+  let of_apron man env abs1 = make_value env (Domain0.O.of_apron man env abs1)
   let is_bottom man t = Domain0.O.is_bottom man t.val0
   let is_top man t = Domain0.O.is_top man t.val0
   let is_leq man t1 t2 =
@@ -37,6 +38,11 @@ module O = struct
   let is_eq man t1 t2 =
     Bdd.Expr1.O.check_value2 t1 t2;
     Domain0.O.is_eq man t1.val0 t2.val0
+  let to_bddapron man t =
+    let list0 = Domain0.to_bddapron man t.val0 in
+    List.map
+      (fun (bdd,abs1) -> (Env.make_value t.Env.env bdd, abs1))
+      list0
 
   let meet man (t1:('a,'b) t) (t2:('a,'b) t) : ('a,'b) t =
     Bdd.Expr1.O.check_value2 t1 t2;
@@ -253,10 +259,12 @@ let size = O.size
 let print = O.print
 let bottom = O.bottom
 let top= O.top
+let of_apron = O.of_apron
 let is_bottom = O.is_bottom
 let is_top = O.is_top
 let is_leq = O.is_leq
 let is_eq = O.is_eq
+let to_bddapron = O.to_bddapron
 let meet = O.meet
 let join = O.join
 let meet_condition = O.meet_condition

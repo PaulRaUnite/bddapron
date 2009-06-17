@@ -34,10 +34,27 @@ module O = struct
     ApronDD.bottom ~cudd:(env#cudd) man env#apron_env
   let top man env =
     ApronDD.top ~cudd:(env#cudd) man env#apron_env
+  let of_apron man env abs1 =
+    let apron_env = env#apron_env in
+    if not (Apron.Environment.equal apron_env abs1.Apron.Abstract1.env) then
+      failwith "Bddapron.Domain0.of_apron: the APRON environment of the APRON abstract value is different from the numerical part of the BDDAPRON environment"
+    ;
+    ApronDD.cst ~cudd:(env#cudd) man abs1
+
   let is_bottom = ApronDD.is_bottom
   let is_top = ApronDD.is_top
   let is_leq = ApronDD.is_leq
   let is_eq = ApronDD.is_eq
+  let to_bddapron (man:'a man) (x:'a t) = 
+    let tab = Cudd.Mtbdd.guardleafs x in
+    Array.fold_left 
+      (begin fun res ((bdd,abs) as pair) ->
+	if Apron.Abstract1.is_bottom man.apron abs 
+	then res
+	else pair::res
+      end)
+      [] tab
+
   let meet = ApronDD.meet
   let join = ApronDD.join
   let widening = ApronDD.widening
@@ -69,99 +86,13 @@ module O = struct
       ApronDD.meet_tcons_array man t tcons
     end
 
-  let cofactors
-      (man:'a man)
-      (env:(('b,'c) #Env.O.t as 'd))
-      (cond:(Cond.cond,'d) #Cond.O.t)
-      (t:'a t)
-      (idcond:int)
-      :
-      ('a t * 'a t)
-      =
-    if PMappe.mem idcond env#idcondvar then begin
-      let bdd = Cudd.Bdd.ithvar env#cudd idcond in
-      (Cudd.Mtbdd.cofactor t bdd,
-      Cudd.Mtbdd.cofactor t (Cudd.Bdd.dnot bdd))
-    end
-    else begin
-      let `Apron cond1 = cond#cond_of_idb (idcond,true) in
-      let `Apron cond2 = cond#cond_of_idb (idcond,false) in
-      let tcons1 = Apronexpr.Condition.to_tcons1 env#apron_env cond1 in
-      let tcons2 = Apronexpr.Condition.to_tcons1 env#apron_env cond2 in
-      let tcons = Apron.Tcons1.array_make env#apron_env 1 in
-      Apron.Tcons1.array_set tcons 0 tcons1;
-      let t1 = ApronDD.meet_tcons_array man t tcons in
-      Apron.Tcons1.array_set tcons 0 tcons2;
-      let t2 = ApronDD.meet_tcons_array man t tcons in
-      (t1,t2)
-    end
-
-  (*  ==================================================================== *)
-  (** {3 Module Descend} *)
-  (*  ==================================================================== *)
-
-  module Descend = struct
-    let texpr_cofactor cofactor (texpr:Expr0.t array) bdd =
-      Array.map (fun expr -> cofactor expr bdd) texpr
-
-    let texpr_support cond (texpr: Expr0.t array) =
-      let cond_supp = cond#cond_supp in
-      Array.fold_left
-	(fun res expr ->
-	  let supp =
-	    Cudd.Bdd.support_inter
-	      cond_supp
-	      (Expr0.O.support_cond cond expr)
-	  in
-	  Cudd.Bdd.support_union res supp
-	)
-	(Cudd.Bdd.dtrue cond#cudd)
-	texpr
-
-    let texpr_cofactors env (texpr: Expr0.t array) topvar =
-      let bdd = Cudd.Bdd.ithvar env#cudd topvar in
-      let nbdd = Cudd.Bdd.dnot bdd in
-      let t1 = Array.map (fun e -> Expr0.cofactor e bdd) texpr in
-      let t2 = Array.map (fun e -> Expr0.cofactor e nbdd) texpr in
-      (t1,t2)
-
-    (** Performs a recursive descend of MTBDDs [t],[tbdd],
-	[tmtbdd] and [odest], until there is no arithmetic
-	conditions in [tbdd] and [tmtbdd], in which case calls [f t
-	tbdd tmtbdd odest]. Returns [bottom] if [t] or [odest] is
-	bottom. *)
-    let rec descend_arith
-	(man:'a man)
-	(env:(('b,'c) #Env.O.t as 'd))
-	(cond:(Cond.cond,'d) #Cond.O.t)
-	(f:'a t -> Expr0.t array -> 'a t)
-	(t:'a t)
-	(texpr:Expr0.t array)
-	=
-      if is_bottom man t then t
-      else begin
-	let supp = texpr_support cond texpr in
-	if Cudd.Bdd.is_cst supp then
-	  f t texpr
-	else begin
-	  let topvar = Cudd.Bdd.topvar supp in
-	  let (texpr1,texpr2) = texpr_cofactors env texpr topvar in
-	  let (t1,t2) = cofactors man env cond t topvar in
-	  let res1 = descend_arith man env cond f t1 texpr1 in
-	  let res2 = descend_arith man env cond f t2 texpr2 in
-	  join man res1 res2
-	end
-      end
-
-  end
-
   (*  ==================================================================== *)
   (** {3 Meet with Boolean formula} *)
   (*  ==================================================================== *)
 
   let meet_condition man env cond (t:'a t) (condition:Expr0.Bool.t) : 'a t =
     let bottom = bottom man env in
-    Descend.descend_arith man env cond
+    Descend.descend_mtbdd man env cond
       (begin fun t texpr ->
 	match texpr.(0) with
 	| `Bool bdd ->
@@ -173,33 +104,6 @@ module O = struct
   (*  ==================================================================== *)
   (** {3 Assignement/Substitution} *)
   (*  ==================================================================== *)
-
-  let split_lvarlexpr
-      (lvar:string list)
-      (lexpr:Expr0.t list)
-      :
-      string list * Cudd.Man.v Bdd.Expr0.t list *
-      Apron.Var.t array * ApronexprDD.t array
-      =
-
-    let lbvar = ref [] in
-    let lbexpr = ref [] in
-    let lavar = ref [] in
-    let laexpr = ref [] in
-    List.iter2
-      (begin fun var expr ->
-	match expr with
-	| (#Bdd.Expr0.t) as e ->
-	    lbvar := var :: !lbvar;
-	    lbexpr := e :: !lbexpr
-	| `Apron e ->
-	    let var = Apron.Var.of_string var in
-	    lavar := var :: !lavar;
-	    laexpr := e :: !laexpr
-      end)
-      lvar lexpr
-    ;
-    (!lbvar, !lbexpr, Array.of_list !lavar, Array.of_list !laexpr)
 
   let assign_lexpr
       ?relational ?nodependency
@@ -214,10 +118,10 @@ module O = struct
       =
     assert(List.length lvar = List.length lexpr);
     let texpr = Array.of_list lexpr in
-    Descend.descend_arith man env cond
+    Descend.descend_mtbdd man env cond
       (begin fun t texpr ->
 	let lexpr = Array.to_list texpr in
-	let (lbvar,lbexpr,tavar,taexpr) = split_lvarlexpr lvar lexpr in
+	let (lbvar,lbexpr,tavar,taexpr) = Descend.split_lvarlexpr lvar lexpr in
 	let res =
 	  ApronDD.asssub_texpr_array
 	    ~asssub_bdd:(fun bdd ->
@@ -247,10 +151,10 @@ module O = struct
       | None -> top man env
     in
     let texpr = Array.of_list lexpr in
-    Descend.descend_arith man env cond
+    Descend.descend_mtbdd man env cond
       (begin fun dest texpr ->
 	let lexpr = Array.to_list texpr in
-	let (lbvar,lbexpr,tavar,taexpr) = split_lvarlexpr lvar lexpr in
+	let (lbvar,lbexpr,tavar,taexpr) = Descend.split_lvarlexpr lvar lexpr in
 	if tavar=[||] then
 	  let compose = Bdd.Expr0.O.composition_of_lvarlexpr env lbvar lbexpr in
 	  let res = Cudd.Mtbdd.vectorcompose compose t in
@@ -319,10 +223,12 @@ end
 let print = O.print
 let bottom = O.bottom
 let top = O.top
+let of_apron = O.of_apron
 let is_bottom = O.is_bottom
 let is_top = O.is_top
 let is_leq = O.is_leq
 let is_eq = O.is_eq
+let to_bddapron = O.to_bddapron
 let meet = O.meet
 let join = O.join
 let meet_condition = O.meet_condition
@@ -330,4 +236,3 @@ let assign_lexpr = O.assign_lexpr
 let substitute_lexpr = O.substitute_lexpr
 let forget_list = O.forget_list
 let widening = O.widening
-let cofactors = O.cofactors
