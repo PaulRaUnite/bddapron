@@ -176,10 +176,10 @@ module O : sig
   val forget_list :
     'b man -> ('a,'b) t -> string list -> ('a,'b) t
 
-  val change_environment : 'b man -> ('a,'b) t -> 'a -> ('a,'b) t
+  val change_environment : 'a man -> (Env.t,'a) t -> Env.t -> (Env.t,'a) t
   val rename :
     'b man -> ('a,'b) t -> (string*string) list -> ('a,'b) t
   val widening : 'b man -> ('a,'b) t -> ('a,'b) t -> ('a,'b) t
-  val unify : 'b man -> ('a,'b) t -> ('a,'b) t -> ('a,'b) t
+  val unify : 'a man -> (Env.t,'a) t -> (Env.t,'a) t -> (Env.t,'a) t
 
 end

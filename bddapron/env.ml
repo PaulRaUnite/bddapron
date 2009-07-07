@@ -150,6 +150,24 @@ let remove_vars = Bdd.Env.remove_vars
 let rename_vars = Bdd.Env.rename_vars
 
 (*  ********************************************************************** *)
+(** {2 Precomputing change of environments} *)
+(*  ********************************************************************** *)
+
+type change = {
+  bdd : Cudd.Man.v Bdd.Env.change;
+  apron : Apron.Dim.change2;
+}
+
+let compute_change env1 env2 =
+  let bdd = Bdd.Env.compute_change env1 env2 in
+  let apron_env1 = env1#apron_env in
+  let apron_env2 = env2#apron_env in
+  let apron =
+    Apron.Environment.dimchange2 apron_env1 apron_env2
+  in
+  { bdd = bdd; apron = apron; }
+
+(*  ********************************************************************** *)
 (** {2 Utilities} *)
 (*  ********************************************************************** *)
 
@@ -159,4 +177,3 @@ type ('a,'b) value = ('a,'b) Bdd.Env.value = {
 }
 
 let make_value = Bdd.Env.make_value
-

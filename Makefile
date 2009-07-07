@@ -44,6 +44,7 @@ BDDAPRONMOD = \
 	bddapron/expr0 bddapron/expr1 bddapron/expr2 \
         bddapron/descend \
 	bddapron/domain0 bddapron/domain1 \
+	bddapron/bddleaf bddapron/bdddomain0 bddapron/bdddomain1 \
 	bddapron/syntax bddapron/yacc bddapron/lex bddapron/parser
 
 MLMOD = $(BDDMOD) $(BDDAPRONMOD)
@@ -155,7 +156,7 @@ bddtop: bdd.cma
 bddaprontop: bddapron.cma
 	$(OCAMLMKTOP) -g -verbose $(OCAMLFLAGS) $(OCAMLINC) -o $@ \
 	-custom -cc "$(CC)" cudd.cma camllib.cma \
-	bigarray.cma gmp.cma apron.cma box.cma polka.cma bddapron.cma -cclib "-lboxMPQ -lpolkaMPQ"
+	bigarray.cma gmp.cma apron.cma box.cma polka.cma bddapron.cma
 
 example1.byte: bdd/example1.ml bdd.cma
 	$(OCAMLC) -g $(OCAMLFLAGS) $(OCAMLINC) -o $@ -custom cudd.cma camllib.cma bdd.cma $<
@@ -168,6 +169,20 @@ example1.opt: bddapron/example2.ml bddapron.cmxa
 
 example2.opt: bddapron/example2.ml bddapron.cmxa
 	$(OCAMLOPT) -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ cudd.cmxa camllib.cmxa bigarray.cmxa gmp.cmxa apron.cmxa box.cmxa polka.cmxa bddapron.cmxa -cclib "-lboxMPQ -lpolkaMPQ" $<
+
+LCFLAGS = \
+-L$(GMP_PREFIX)/lib \
+-L$(MPFR_PREFIX)/lib \
+-L$(MLGMPIDL_PREFIX)/lib \
+-L$(APRON_PREFIX)/lib \
+-L$(PPL_PREFIX)/lib \
+-L$(MLCUDDIDL_PREFIX)/lib \
+-L$(CUDD_PREFIX)/lib \
+-L$(CAML_PREFIX)/lib/ocaml \
+-L$(CAMLIDL_PREFIX)/lib/ocaml
+
+test2.opt: bddapron/test2.ml bddapron.cmxa
+	$(OCAMLOPT) -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -g -o $@ cudd.cmxa camllib.cmxa bigarray.cmxa gmp.cmxa apron.cmxa box.cmxa polka.cmxa bddapron.cmxa -ccopt "$(LCFLAGS)" -noautolink -cclib "-lpolkaGrid_caml -lap_pkgrid -lap_ppl_caml -lap_ppl -lppl -lgmpxx -lpolka_caml_debug -lpolkaMPQ_debug -loct_caml -loctMPQ -lbox_caml -lboxMPQ -lapron_caml_debug -lapron_debug -lgmp_caml -lmpfr -lgmp -lcamlidl_debug -lcudd_caml_debug -lcudd_debug -lmtr -lst -lutil -lepd -lbigarray -lunix -lasmrun_debug" $<
 
 #--------------------------------------------------------------
 # IMPLICIT RULES AND DEPENDENCIES

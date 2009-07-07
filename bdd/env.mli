@@ -224,6 +224,22 @@ val print :
     (** Print an environment *)
 
 (*  ********************************************************************** *)
+(** {2 Precomputing change of environments} *)
+(*  ********************************************************************** *)
+
+(** Contain the computed information to switch from one
+    environment to another one. *)
+type 'a change = {
+  intro : int array option;
+    (** Permutation to apply for making space for new BDD
+	variables *)
+  remove : ('a Cudd.Bdd.t * int array) option;
+    (** BDD variables to existentially quantify out, and
+	permutation to apply *)
+}
+val compute_change : (('a,'b,'c) #O.t as 'd) -> 'd -> 'c change
+
+(*  ********************************************************************** *)
 (** {2 Utilities} *)
 (*  ********************************************************************** *)
 

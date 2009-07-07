@@ -118,7 +118,7 @@ let relation_supp_compose_of_lvarlexpr
   let relation = ref (Cudd.Bdd.dtrue manager) in
   let supp = ref (!relation) in
   let tbdd =
-    Array.init env#bddindex
+    Array.init (Cudd.Man.get_bddvar_nb manager)
       (fun i -> Cudd.Bdd.ithvar manager i)
   in
   List.iter2
@@ -197,6 +197,20 @@ let substitute_lexpr env abs lvar lexpr =
 
 let forget_list env abs lvar =
   Expr0.O.Bool.exist env lvar abs
+
+let apply_change abs change =
+  let nabs = match change.Env.intro with
+    | None -> abs
+    | Some perm -> Cudd.Bdd.permute abs perm
+  in
+  let nnabs = match change.Env.remove with
+      | None -> nabs
+      | Some(supp,perm) ->
+	  let res = Cudd.Bdd.exist supp nabs in
+	  Cudd.Bdd.permute res perm
+  in
+  nnabs
+
 end
 
 (*  ********************************************************************** *)

@@ -95,56 +95,9 @@ module O = struct
 	| Some perm -> Cudd.Bdd.permute t.val0 perm
 	)
 
-  type 'a change_environment = {
-    intro : int array option;
-    remove : ('a Cudd.Bdd.t * int array) option;
-  }
-
-  let compute_change_environment env nenv =
-    let lce = Env.lce env nenv in
-
-    let intro =
-      if Env.is_eq env lce
-      then None
-      else Some (Env.permutation12 env lce)
-    in
-    let remove =
-      if Env.is_eq nenv lce
-      then None
-      else
-	let setvar =
-	  PSette.diff
-	    (PMappe.maptoset lce#vartid)
-	    (PMappe.maptoset nenv#vartid)
-	in
-	let supp = Expr0.O.bddsupport lce (PSette.elements setvar) in
-	Some(supp, Env.permutation21 lce nenv)
-    in
-    { intro = intro; remove = remove }
-
-  let apply_change_environment
-      (value:'a Cudd.Bdd.t)
-      (change_environment:'a change_environment)
-      :
-      'a Cudd.Bdd.t
-      =
-    let nvalue = match change_environment.intro with
-      | None -> value
-      | Some perm -> Cudd.Bdd.permute value perm
-    in
-    let nnvalue = match change_environment.remove with
-      | None -> nvalue
-      | Some(supp,perm) ->
-	  let res = Cudd.Bdd.exist supp nvalue in
-	  Cudd.Bdd.permute res perm
-    in
-    nnvalue
-
   let change_environment abs nenv =
-    let change_environment = compute_change_environment abs.Env.env nenv in
-    make_value
-      nenv
-      (apply_change_environment abs.Env.val0 change_environment)
+    let change = Env.compute_change abs.Env.env nenv in
+    make_value nenv (Domain0.O.apply_change abs.Env.val0 change)
 end
 
 (*  ********************************************************************** *)

@@ -112,19 +112,17 @@ let cofactors
     =
   if PMappe.mem idcond env#idcondvar then begin
     let bdd = Cudd.Bdd.ithvar env#cudd idcond in
-    (Cudd.Mtbdd.cofactor t bdd,
-    Cudd.Mtbdd.cofactor t (Cudd.Bdd.dnot bdd))
+    (Cudd.Mtbddc.cofactor t bdd,
+    Cudd.Mtbddc.cofactor t (Cudd.Bdd.dnot bdd))
   end
   else begin
+    let apron_env = env#apron_env in
     let `Apron cond1 = cond#cond_of_idb (idcond,true) in
     let `Apron cond2 = cond#cond_of_idb (idcond,false) in
-    let tcons1 = Apronexpr.Condition.to_tcons1 env#apron_env cond1 in
-    let tcons2 = Apronexpr.Condition.to_tcons1 env#apron_env cond2 in
-    let tcons = Apron.Tcons1.array_make env#apron_env 1 in
-    Apron.Tcons1.array_set tcons 0 tcons1;
-    let t1 = ApronDD.meet_tcons_array man t tcons in
-    Apron.Tcons1.array_set tcons 0 tcons2;
-    let t2 = ApronDD.meet_tcons_array man t tcons in
+    let tcons1 = Apronexpr.Condition.to_tcons0 apron_env cond1 in
+    let tcons2 = Apronexpr.Condition.to_tcons0 apron_env cond2 in
+    let t1 = ApronDD.meet_tcons_array man t [|tcons1|] in
+    let t2 = ApronDD.meet_tcons_array man t [|tcons2|] in
     (t1,t2)
   end
 

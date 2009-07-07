@@ -111,18 +111,9 @@ module O : sig
   val forget_list : ('a,'b) t -> string list -> ('a,'b) t
   (** Eliminating variables *)
     
-  type 'a change_environment = {
-    intro : int array option;
-    remove : ('a Cudd.Bdd.t * int array) option;
-  }
-  val compute_change_environment :
-    (('a,'b,'d) #Env.O.t as 'e) ->
-    'e -> 'd change_environment
-  val apply_change_environment :
-    'a Cudd.Bdd.t -> 'a change_environment -> 'a Cudd.Bdd.t
   val change_environment : ('a,'b) t -> 'a -> ('a,'b) t
   val rename :('a,'b) t -> (string*string) list -> ('a,'b) t
-  (** Change of environments *)
+    (** Change of environments *)
     
 end
   

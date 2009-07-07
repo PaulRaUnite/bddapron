@@ -568,16 +568,15 @@ module O = struct
 
   let bddsupport (env:('a,'b,'d) #Env.O.t) (set:string list)  : 'd Cudd.Bdd.t
       =
-    let dtrue = Cudd.Bdd.dtrue env#cudd in
+    let cudd = env#cudd in
+    let dtrue = Cudd.Bdd.dtrue cudd in
     let res = ref dtrue in
-    let bdd = ref dtrue in
     List.iter
       (begin fun var ->
 	let tid = tid_of_var env var in
 	Array.iter
-	  (fun id -> bdd := Cudd.Bdd.dand !bdd (Cudd.Bdd.ithvar env#cudd id))
+	  (fun id -> res := Cudd.Bdd.dand !res (Cudd.Bdd.ithvar cudd id))
 	  tid;
-	res := Cudd.Bdd.dand !res !bdd;
       end)
       set;
     !res

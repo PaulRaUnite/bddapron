@@ -73,6 +73,17 @@ val print_typdef : Format.formatter -> [< typdef ] -> unit
 val print : Format.formatter -> t -> unit
 
 (*  ********************************************************************** *)
+(** {2 Precomputing change of environments} *)
+(*  ********************************************************************** *)
+
+type change = {
+  bdd : Cudd.Man.v Bdd.Env.change;
+  apron : Apron.Dim.change2;
+}
+
+val compute_change : (('a,'b) #O.t as 'c) -> 'c -> change
+
+(*  ********************************************************************** *)
 (** {2 Utilities} *)
 (*  ********************************************************************** *)
 

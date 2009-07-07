@@ -123,4 +123,5 @@ val relation_supp_compose_of_lvarlexpr :
   string list -> 'd Expr0.expr list ->
   'd Cudd.Bdd.t * 'd Cudd.Bdd.t * 'd Cudd.Bdd.t array
 
+val apply_change : 'a t -> 'a Env.change -> 'a t
 end

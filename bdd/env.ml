@@ -296,7 +296,7 @@ module O = struct
       match typ with
       | `Benum _ when not (PMappe.mem label v_vartid) -> true
       | _ -> false
-	  
+
     method typ_of_var (label:string) : 'a
       =
       try
@@ -317,7 +317,7 @@ module O = struct
 	end)
 	v_typdef
 	(PSette.empty String.compare)
-	
+
     method add_var var typ : unit
       =
       if PMappe.mem var v_vartyp then
@@ -687,7 +687,7 @@ let permutation_of_offset (length:int) (offset:int) : int array =
 
    a) l'ens des variables n'est pas égal
    ou
-   b) bddincr ou bddindex0 est différent 
+   b) bddincr ou bddindex0 est différent
 
    Peut-être faut-il distinguer c'est deux cas ?
 
@@ -700,7 +700,7 @@ let is_leq (env1:('a,'b,'c) #O.t) (env2:('a,'b,'c) #O.t) : bool =
       (env1#bddindex - env1#bddindex0 <= env2#bddindex - env2#bddindex0) &&
       (env1#typdef==Obj.magic env2#typdef || PMappe.subset (=) env1#typdef env2#typdef) &&
       (env1#vartyp==Obj.magic env2#vartyp || PMappe.subset (=) env1#vartyp env2#vartyp)
-      
+
 let is_eq (env1:('a,'b,'c) #O.t) (env2:('a,'b,'c) #O.t) : bool =
   env1==(Obj.magic env2) ||
     env1#cudd = env2#cudd &&
@@ -708,7 +708,7 @@ let is_eq (env1:('a,'b,'c) #O.t) (env2:('a,'b,'c) #O.t) : bool =
       (env1#bddindex - env1#bddindex0 = env2#bddindex - env2#bddindex0) &&
       (env1#typdef==Obj.magic env2#typdef || PMappe.equal (=) env1#typdef env2#typdef) &&
       (env1#vartyp==Obj.magic env2#vartyp || (PMappe.equal (=) env1#vartyp env2#vartyp))
-    
+
 let shift (env:(('a,'b,'c) #O.t as 'd)) (offset:int) : 'd =
   let perm = permutation_of_offset env#bddindex offset in
   let nenv = Oo.copy env in
@@ -719,15 +719,15 @@ let shift (env:(('a,'b,'c) #O.t as 'd)) (offset:int) : 'd =
 let lce (env1:(('a,'b,'c) #O.t as 'd)) (env2:'d) : 'd =
   if is_leq env2 env1 then
     let offset = env1#bddindex0 - env2#bddindex0 in
-    if offset>=0 then 
-      env1 
-    else  
+    if offset>=0 then
+      env1
+    else
       shift env1 (-offset)
   else if is_leq env1 env2 then
     let offset = env2#bddindex0 - env1#bddindex0 in
-    if offset>=0 then 
+    if offset>=0 then
       env2
-    else  
+    else
       shift env2 (-offset)
   else begin
     let typdef =
@@ -783,73 +783,7 @@ let lce (env1:(('a,'b,'c) #O.t as 'd)) (env2:'d) : 'd =
     ;
     env
     end
-(*
-let lce2 (env1:(('a,'b,'c) #O.t as 'd)) (env2:('a,'b,'c) #O.t) : 'd =
-  if is_leq env2 env1 then
-    env1
-  else if is_leq env1 env2 then
-    let nenv = Oo.copy env1 in
-    nenv#set_vartyp env2#vartyp;
-    nenv#set_bddindex env2#bddindex;
-    nenv#set_bddincr env2#bddincr;
-    nenv#set_idcondvar env2#idcondvar;
-    nenv#set_vartid env2#vartid;
-    nenv#set_varset env2#varset;
-    nenv
-  else begin
-    let typdef =
-      PMappe.mergei
-	(begin fun typ typdef1 typdef2 ->
-	  if typdef1<>typdef2 then
-	    failwith
-	      (Format.sprintf
-		"Bdd.Env.lce: two different definitions for (enumerated) type %s" typ)
-	  ;
-	  typdef1
-	end)
-	env1#typdef env2#typdef
-    in
-    let vartyp =
-      PMappe.mergei
-	(begin fun var typ1 typ2 ->
-	  if typ1<>typ2 then
-	    failwith
-	      (Format.sprintf
-		"Bdd.Env.lce: two different types for label/variable %s" var)
-	  ;
-	  typ1
-	end)
-	env1#vartyp env2#vartyp
-    in
-    let (labeltyp,vartyp) =
-      PMappe.partition
-	(begin fun varlabel typ ->
-	  match typ with
-	  | `Benum _ ->
-	      not
-	      ((PMappe.mem varlabel env1#vartid) ||
-	      (PMappe.mem varlabel env2#vartid))
-	  | _ -> false
-	end)
-	vartyp
-    in
-    let env = Oo.copy env1 in
-    env#set_typdef typdef;
-    env#set_vartyp labeltyp;
-    env#set_bddindex0 (Pervasives.max (env1#bddindex0 env2#bddindex0);
-    env#set_bddindex env#bddindex0;
-    env#set_vartid (PMappe.empty String.compare);
-    env#set_varset (PMappe.empty String.compare);
-    env#set_idcondvar (PMappe.empty (-));
-    PMappe.iter
-      (begin fun var typ ->
-	env#add_var var typ
-      end)
-      vartyp
-    ;
-    env
-  end
-*)
+
 let permutation12 (env1:('a,'b,'c) #O.t) (env2:('a,'b,'c) #O.t) : int array
     =
   assert(
@@ -906,6 +840,49 @@ let permutation21 (env2:('a,'b,'c) #O.t) (env1:('a,'b,'c) #O.t) : int array
   ;
   perm
 
+(*  ********************************************************************** *)
+(** {2 Precomputing change of environments} *)
+(*  ********************************************************************** *)
+
+type 'a change = {
+  intro : int array option;
+  remove : ('a Cudd.Bdd.t * int array) option;
+}
+
+let compute_change env1 env2 =
+  let lce = lce env1 env2 in
+  let intro =
+    if is_eq env1 lce
+    then None
+    else Some (permutation12 env1 lce)
+  in
+  let remove =
+    if is_eq env2 lce
+    then None
+    else
+      let mapvarid =
+	PMappe.diffset
+	  lce#vartid
+	  (PMappe.maptoset env2#vartid)
+      in
+      let cudd = env1#cudd in
+      let supp = ref (Cudd.Bdd.dtrue cudd) in
+      PMappe.iter
+	(begin fun var tid ->
+	  Array.iter
+	    (fun id -> supp := Cudd.Bdd.dand !supp (Cudd.Bdd.ithvar cudd id))
+	    tid
+	end)
+	mapvarid
+      ;
+      Some(!supp, permutation21 lce env2)
+  in
+  { intro = intro; remove = remove }
+
+(*  ********************************************************************** *)
+(** {2 Utilities} *)
+(*  ********************************************************************** *)
+
 type ('a,'b) value = {
   env : 'a;
   val0 : 'b
@@ -927,7 +904,7 @@ let make_value env val0 =
     end
   );
   { env=env; val0=val0 }
-    
+
 let extend_environment
   (permute:'a -> int array -> 'a)
   value

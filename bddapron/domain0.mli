@@ -1,8 +1,4 @@
-(** Combined Boolean/Numerical domain *)
-
-(*  ********************************************************************** *)
-(** {2 Abstract domain} *)
-(*  ********************************************************************** *)
+(** Combined Boolean/Numerical domain with MTBDDs over APRON abstract values *)
 
 type 'a man =
   'a ApronDD.man = {
@@ -29,21 +25,21 @@ val size : 'a man -> 'a t -> int
 val print : ('a,'b) #Env.O.t -> Format.formatter -> 'c t -> unit
   (** Printing function *)
 
-(*  ====================================================================== *)
-(** {3 Constructors, accessors, tests and property extraction} *)
-(*  ====================================================================== *)
+(*  ********************************************************************** *)
+(** {2 Constructors, accessors, tests and property extraction} *)
+(*  ********************************************************************** *)
 
-(*  ---------------------------------------------------------------------- *)
-(** {4 Basic constructor} *)
-(*  ---------------------------------------------------------------------- *)
+(*  ====================================================================== *)
+(** {3 Basic constructor} *)
+(*  ====================================================================== *)
 
 val bottom : 'a man -> Env.t -> 'a t
 val top : 'a man -> Env.t -> 'a t
-val of_apron : 'a man -> Env.t -> 'a Apron.Abstract1.t -> 'a t
+val of_apron : 'a man -> Env.t -> 'a Apron.Abstract0.t -> 'a t
 
-(*  ---------------------------------------------------------------------- *)
-(** {4 Tests} *)
-(*  ---------------------------------------------------------------------- *)
+(*  ====================================================================== *)
+(** {3 Tests} *)
+(*  ====================================================================== *)
 
 val is_bottom : 'a man -> 'a t -> bool
 val is_top : 'a man -> 'a t -> bool
@@ -53,19 +49,19 @@ val is_leq : 'a man -> 'a t -> 'a t -> bool
 val is_eq : 'a man -> 'a t -> 'a t -> bool
   (** Inclusion and equality tests *)
 
-(*  ---------------------------------------------------------------------- *)
-(** {4 Extraction of properties} *)
-(*  ---------------------------------------------------------------------- *)
+(*  ====================================================================== *)
+(** {3 Extraction of properties} *)
+(*  ====================================================================== *)
 
 val to_bddapron : 
-  'a man -> 'a t -> (Expr0.Bool.t * 'a Apron.Abstract1.t) list
+  'a man -> 'a t -> (Expr0.Bool.t * 'a Apron.Abstract0.t) list
   (** Conversion to a disjunction of a conjunction of pair of a
       purely Boolean formula (without numerical constraints) and an
       APRON abstract value *)
 
-(*  ====================================================================== *)
-(** {3 Operations} *)
-(*  ====================================================================== *)
+(*  ********************************************************************** *)
+(** {2 Operations} *)
+(*  ********************************************************************** *)
 
 val meet : 'a man -> 'a t -> 'a t -> 'a t
 val join : 'a man -> 'a t -> 'a t -> 'a t
@@ -108,13 +104,13 @@ module O : sig
     Format.formatter -> 'd t -> unit
   val bottom : 'a man -> ('b,'c) #Env.O.t -> 'a t
   val top : 'a man -> ('b,'c) #Env.O.t -> 'a t
-  val of_apron : 'a man -> ('b,'c) #Env.O.t -> 'a Apron.Abstract1.t -> 'a t
+  val of_apron : 'a man -> ('b,'c) #Env.O.t -> 'a Apron.Abstract0.t -> 'a t
 
   val is_bottom : 'a man -> 'a t -> bool
   val is_top : 'a man -> 'a t -> bool
   val is_leq : 'a man -> 'a t -> 'a t -> bool
   val is_eq : 'a man -> 'a t -> 'a t -> bool
-  val to_bddapron : 'a man -> 'a t -> (Expr0.Bool.t * 'a Apron.Abstract1.t) list
+  val to_bddapron : 'a man -> 'a t -> (Expr0.Bool.t * 'a Apron.Abstract0.t) list
   val meet : 'a man -> 'a t -> 'a t -> 'a t
   val join : 'a man -> 'a t -> 'a t -> 'a t
   val widening : 'a man -> 'a t -> 'a t -> 'a t
@@ -138,4 +134,9 @@ module O : sig
     'd man ->
     ('a,'b) #Env.O.t ->
     'd t -> string list -> 'd t
+  val apply_change :
+    bottom:'a t -> 'a man -> 'a ApronDD.t -> Env.change -> 'a t
+  val apply_permutation :
+    'a man -> 'a t -> int array option * Apron.Dim.perm option -> 'a t
+    
 end
