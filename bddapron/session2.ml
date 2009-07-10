@@ -184,13 +184,13 @@ printf "After nabs@.";;
 printf "abs=%a@." Domain1.print abs;;
 Gc.full_major();;
 printf "nabs=%a@." Domain1.print nabs;;
-printf "env=%a@." Domain1.print_env nabs.Bddenv.env;;
-let env = nabs.Bddenv.env;;
-let env2 = Domain1.rename_vars env [("x1","y"); ("b0","c");("q","r")];;
+printf "env=%a@." Env.print nabs.Env.env;;
+let env = nabs.Env.env;;
+let env2 = Env.rename_vars env [("x1","y"); ("b0","c");("q","r")];;
 let nabs2 = Domain1.rename bddapron nabs [("x1","y"); ("b0","c");("q","r")];;
 printf "After nabs2@.";;
 printf "nabs2=%a@." Domain1.print nabs2;;
-printf "env=%a@." Domain1.print_env nabs2.Bddenv.env;;
+printf "env=%a@." Env.print nabs2.Env.env;;
 
 
 (*

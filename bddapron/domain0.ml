@@ -220,7 +220,7 @@ module O = struct
 	    Cudd.Mtbddc.unique man.table
 	      (Apron.Abstract0.forget_array man.apron (Cudd.Mtbddc.get tu) tadim false))
 	  in
-	  Cudd.Mtbddc.map_existop1 mop1 (ApronDD.make_fun man)
+	  Cudd.User.map_existop1 mop1 (ApronDD.make_fun man)
 	    ~supp t
       end
     end
@@ -246,7 +246,7 @@ module O = struct
 	  Cudd.Mtbddc.permute t perm
     end
     else begin
-      let mtbdd = Cudd.Mtbddc.expansivemapleaf1
+      let mtbdd = Cudd.Mapleaf.expansivemapleaf1
 	~default:bottom
 	~merge:(ApronDD.join man)
 	(begin fun guard absu ->

@@ -26,37 +26,37 @@ type 'a bdd = {
 }
 
 (** MTBDD node *)
-type 'a mnode = 
-  | MIte of int * int * int 
-      (** MIte(idcond,idnodeThen,idnodeElse) *)
-  | MCst of 'a
+type 'a vnode = 
+  | VIte of int * int * int 
+      (** VIte(idcond,idnodeThen,idnodeElse) *)
+  | VCst of 'a
       (** Leaf *)
 
 (** Database *)
-type 'a mtbdd = {
+type 'a vdd = {
   cond : int PSette.t ref;
     (** Reachable conditions *)
-  mutable mdef : (int, 'a mnode) PMappe.t;
+  mutable vdef : (int, 'a vnode) PMappe.t;
     (** Global MTBDDs graph *)
-  lhash : ('a Cudd.Mtbdd.unique, unit) PHashhe.t;
-  mhash : ('a Cudd.Mtbdd.t, int) Hashhe.t;
-  mutable mlastid : int;
+  lhash : ('a, unit) PHashhe.t;
+  vhash : ('a Cudd.Vdd.t, int) Hashhe.t;
+  mutable vlastid : int;
     (** Hashtables and Counters for MTBDD nodes. *)
 }
 
-(** RDD node *)
-type rnode = 
-  | RIte of int * int * int 
-      (** RIte(idcond,idnodeThen,idnodeElse) *)
-  | RCst of float
+(** ADD node *)
+type anode = 
+  | AIte of int * int * int 
+      (** AIte(idcond,idnodeThen,idnodeElse) *)
+  | ACst of float
 
 (** Database *)
-type rdd = {
+type add = {
   cond : int PSette.t ref;
-  mutable rdef : (int, rnode) PMappe.t;
+  mutable adef : (int, anode) PMappe.t;
   mutable lset : float Sette.t;
-  rhash : (Cudd.Rdd.t, int) Hashhe.t;
-  mutable rlastid : int;
+  ahash : (Cudd.Add.t, int) Hashhe.t;
+  mutable alastid : int;
 }
 
 (*  ********************************************************************** *)
@@ -71,16 +71,24 @@ val make_bdd : cond:int PSette.t ref -> 'a bdd
 val signid_of_bdd : 'a bdd -> 'a Cudd.Bdd.t -> bool * int
       (** Output the BDD and return its identifier *)
 
-val make_mtbdd :
-  table:'a Cudd.Mtbdd.unique Cudd.Mtbdd.table -> 
+val make_vdd :
+  compare:'a Cudd.PWeakke.compare -> 
   cond:int PSette.t ref -> 
-  'a mtbdd
+  'a vdd
+val make_mtbdd :
+  table:'a Cudd.Mtbdd.table -> 
+  cond:int PSette.t ref -> 
+  'a Cudd.Mtbdd.unique vdd
+val make_mtbddc :
+  table:'a Cudd.Mtbddc.table -> 
+  cond:int PSette.t ref -> 
+  'a Cudd.Mtbddc.unique vdd
       (** Create a database for printing MTBDDs
 	  
 	  [cond] allows to share the same set of conditions between
 	  BDDs and MTBDDs. *)
 
-val id_of_mtbdd : 'a mtbdd -> 'a Cudd.Mtbdd.t -> int
+val id_of_vdd : 'a vdd -> 'a Cudd.Vdd.t -> int
       (** Output the MTBDD and return its identifier *)
 
 val iter_cond_ordered : int PSette.t -> 'a Cudd.Man.t -> (int -> unit) -> unit
@@ -88,5 +96,5 @@ val iter_cond_ordered : int PSette.t -> 'a Cudd.Man.t -> (int -> unit) -> unit
       to higher levels. *)
 val iter_bdef_ordered : 'a bdd -> (int -> bnode -> unit) -> unit
       (** Iterate on definitions of BDD identifiers, in a topological order. *)
-val iter_mdef_ordered : 'a mtbdd -> (int -> 'a mnode -> unit) -> unit
+val iter_vdef_ordered : 'a vdd -> (int -> 'a vnode -> unit) -> unit
       (** Iterate on definitions of MTBDD identifiers, in a topological order. *)

@@ -70,125 +70,130 @@ let signid_of_bdd (db:'a bdd) (bdd:'a Cudd.Bdd.t)
   iter bdd
 
 (*  ********************************************************************** *)
-(** {2 MTBDDs} *)
+(** {2 VDDs} *)
 (*  ********************************************************************** *)
 
-(** MTBDD node *)
-type 'a mnode =
-  | MIte of int * int * int
+(** VDD node *)
+type 'a vnode =
+  | VIte of int * int * int
       (** VIte(idcond,idnodeThen,idnodeElse) *)
-  | MCst of 'a
+  | VCst of 'a
       (** Leaf *)
 
 (** Database *)
-type 'a mtbdd = {
+type 'a vdd = {
   cond : int PSette.t ref;
     (** Reachable conditions *)
-  mutable mdef : (int, 'a mnode) PMappe.t;
+  mutable vdef : (int, 'a vnode) PMappe.t;
     (** Global MTBDDs graph *)
-  lhash : ('a Cudd.Mtbdd.unique, unit) PHashhe.t;
-  mhash : ('a Cudd.Mtbdd.t, int) Hashhe.t;
-  mutable mlastid : int;
+  lhash : ('a, unit) PHashhe.t;
+  vhash : ('a Cudd.Vdd.t, int) Hashhe.t;
+  mutable vlastid : int;
     (** Hashtables and Counters for MTBDD nodes. *)
 }
 
-let make_mtbdd ~(table:'a Cudd.Mtbdd.table) ~cond = 
-  let compare = table.Cudd.PWeakke.compare in
+let make_vdd ~(compare:'a Cudd.PWeakke.compare) ~cond = 
   let hash = compare.Cudd.PWeakke.hash in
   let equal = compare.Cudd.PWeakke.equal in
   {
     cond = cond;
-    mdef = PMappe.empty (-);
+    vdef = PMappe.empty (-);
     lhash = PHashhe.create hash equal 23;
-    mhash = Hashhe.create 23;
-    mlastid = -1;
+    vhash = Hashhe.create 23;
+    vlastid = -1;
   }
 
-let id_of_mtbdd 
-    (db:'a mtbdd) (mtbdd:'a Cudd.Mtbdd.t)
+let make_mtbdd ~(table:'a Cudd.Mtbdd.table) ~cond = 
+  make_vdd ~compare:table.Cudd.PWeakke.compare ~cond
+
+let make_mtbddc ~(table:'a Cudd.Mtbddc.table) ~cond = 
+  make_vdd ~compare:table.Cudd.PWeakke.compare ~cond
+
+let id_of_vdd 
+    (db:'a vdd) (vdd:'a Cudd.Vdd.t)
     :
     int
     =
-  let rec iter (mtbdd:'a Cudd.Mtbdd.t) : int
+  let rec iter (vdd:'a Cudd.Vdd.t) : int
       =
     try
-      Hashhe.find db.mhash mtbdd
+      Hashhe.find db.vhash vdd
     with Not_found ->
       let mdef =
-	begin match Cudd.Mtbdd.inspect mtbdd with
-	| Cudd.Mtbdd.Ite(cond,dthen,delse) ->
+	begin match Cudd.Vdd.inspect vdd with
+	| Cudd.Vdd.Ite(cond,dthen,delse) ->
 	    db.cond := PSette.add cond !(db.cond);
 	    let idthen = iter dthen in
 	    let idelse = iter delse in
-	    MIte(cond,idthen,idelse)
-	| Cudd.Mtbdd.Leaf(cst) ->
+	    VIte(cond,idthen,idelse)
+	| Cudd.Vdd.Leaf(cst) ->
 	    PHashhe.replace db.lhash cst ();
-	    MCst(Cudd.Mtbdd.get cst)
+	    VCst(cst)
 	end
       in
-      db.mlastid <- db.mlastid + 1;
-      Hashhe.add db.mhash mtbdd db.mlastid;
-      db.mdef <- PMappe.add db.mlastid mdef db.mdef;
-      db.mlastid
+      db.vlastid <- db.vlastid + 1;
+      Hashhe.add db.vhash vdd db.vlastid;
+      db.vdef <- PMappe.add db.vlastid mdef db.vdef;
+      db.vlastid
   in
-  iter mtbdd
+  iter vdd
 
 (*  ********************************************************************** *)
-(** {3 RDDs} *)
+(** {3 ADDs} *)
 (*  ********************************************************************** *)
 
-(** RDD node *)
-type rnode = 
-  | RIte of int * int * int 
+(** ADD node *)
+type anode = 
+  | AIte of int * int * int 
       (** RIte(idcond,idnodeThen,idnodeElse) *)
-  | RCst of float
+  | ACst of float
 
 (** Database *)
-type rdd = {
+type add = {
   cond : int PSette.t ref;
-  mutable rdef : (int, rnode) PMappe.t;
+  mutable adef : (int, anode) PMappe.t;
   mutable lset : float Sette.t;
-  rhash : (Cudd.Rdd.t, int) Hashhe.t;
-  mutable rlastid : int;
+  ahash : (Cudd.Add.t, int) Hashhe.t;
+  mutable alastid : int;
 }
 
-let make_rdd ~cond = 
+let make_add ~cond = 
   {
     cond = cond;
-    rdef = PMappe.empty (-);
+    adef = PMappe.empty (-);
     lset = Sette.empty;
-    rhash = Hashhe.create 23;
-    rlastid = -1;
+    ahash = Hashhe.create 23;
+    alastid = -1;
   }
 
-let id_of_rdd 
-    (db:rdd) (rdd:Cudd.Rdd.t)
+let id_of_add 
+    (db:add) (add:Cudd.Add.t)
     :
     int
     =
-  let rec iter (rdd:Cudd.Rdd.t) : int
+  let rec iter (add:Cudd.Add.t) : int
       =
     try
-      Hashhe.find db.rhash rdd
+      Hashhe.find db.ahash add
     with Not_found ->
       let mdef =
-	begin match Cudd.Rdd.inspect rdd with
-	| Cudd.Rdd.Ite(cond,dthen,delse) ->
+	begin match Cudd.Add.inspect add with
+	| Cudd.Add.Ite(cond,dthen,delse) ->
 	    db.cond := PSette.add cond !(db.cond);
 	    let idthen = iter dthen in
 	    let idelse = iter delse in
-	    RIte(cond,idthen,idelse)
-	| Cudd.Rdd.Leaf(cst) ->
+	    AIte(cond,idthen,idelse)
+	| Cudd.Add.Leaf(cst) ->
 	    db.lset <- Sette.add cst db.lset;
-	    RCst(cst)
+	    ACst(cst)
 	end
       in
-      db.rlastid <- db.rlastid + 1;
-      Hashhe.add db.rhash rdd db.rlastid;
-      db.rdef <- PMappe.add db.rlastid mdef db.rdef;
-      db.rlastid
+      db.alastid <- db.alastid + 1;
+      Hashhe.add db.ahash add db.alastid;
+      db.adef <- PMappe.add db.alastid mdef db.adef;
+      db.alastid
   in
-  iter rdd
+  iter add
 
 (*  ********************************************************************** *)
 (** {2 Iterators} *)
@@ -208,6 +213,6 @@ let iter_bdef_ordered (db:'a bdd) (f:int -> bnode -> unit) : unit
   =
   PMappe.iter f db.bdef
 
-let iter_mdef_ordered (db:'a mtbdd) (f:int -> 'a mnode -> unit) : unit
+let iter_vdef_ordered (db:'a vdd) (f:int -> 'a vnode -> unit) : unit
   =
-  PMappe.iter f db.mdef
+  PMappe.iter f db.vdef

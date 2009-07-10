@@ -4,12 +4,15 @@ type 'a leaf = 'a Apron.Abstract0.t
 type 'a t = 'a leaf Cudd.Mtbddc.t
 type 'a table = 'a leaf Cudd.Mtbddc.table
 
+type 'a leaf_u = 'a leaf Cudd.Mtbddc.unique
+
 type 'a global = {
-  op_is_leq : (('a leaf, 'a leaf) Cudd.Mtbddc.test2,  Cudd.Mtbddc.global) Cudd.Mtbddc.op;
-  op_join : (('a leaf, 'a leaf, 'a leaf) Cudd.Mtbddc.op2, Cudd.Mtbddc.global) Cudd.Mtbddc.op;
-  op_meet : (('a leaf, 'a leaf, 'a leaf) Cudd.Mtbddc.op2, Cudd.Mtbddc.global) Cudd.Mtbddc.op;
-  op_exist : (('a leaf, Cudd.Mtbddc.global) Cudd.Mtbddc.exist, Cudd.Mtbddc.global) Cudd.Mtbddc.op;
+  op_is_leq : (('a leaf_u, 'a leaf_u) Cudd.User.test2,  Cudd.User.global) Cudd.User.op;
+  op_join : (('a leaf_u, 'a leaf_u, 'a leaf_u) Cudd.User.op2, Cudd.User.global) Cudd.User.op;
+  op_meet : (('a leaf_u, 'a leaf_u, 'a leaf_u) Cudd.User.op2, Cudd.User.global) Cudd.User.op;
+  op_exist : (('a leaf_u, Cudd.User.global) Cudd.User.exist, Cudd.User.global) Cudd.User.op;
 }
+
 type 'a man = {
   apron : 'a Apron.Manager.t;
   table : 'a table;
@@ -69,9 +72,9 @@ val substitute_texpr_array :
   'a t -> Apron.Dim.t array -> ApronexprDD.t array -> 'a t option -> 'a t
 
 val make_fun :
-  'a man -> ('a Apron.Abstract0.t, Cudd.Mtbddc.global) Cudd.Mtbddc.mexist
+  'a man -> ('a leaf_u, Cudd.User.global) Cudd.User.mexist
 val make_funop :
-  'a man -> 'a t -> ('a Apron.Abstract0.t, Cudd.Mtbddc.global) Cudd.Mtbddc.mexist
+  'a man -> 'a t -> ('a leaf_u, Cudd.User.global) Cudd.User.mexist
 val exist : 'a man -> supp:Cudd.Man.v Cudd.Bdd.t -> 'a t -> 'a t
 val existand :
   'a man ->

@@ -10,7 +10,7 @@ open Format
 (*  ********************************************************************** *)
 
 
-let table = Cudd.PWeakke.create Apronexpr.hash Apronexpr.equal 23
+let table = Cudd.Mtbdd.make_table ~hash:Apronexpr.hash ~equal:Apronexpr.equal
 
 type t = Apronexpr.t Cudd.Mtbdd.t
 
@@ -44,7 +44,7 @@ let cst cudd coeff =
 let var cudd env v =
   Cudd.Mtbdd.cst cudd table (Apronexpr.var env v)
 let add ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-  Cudd.Mtbdd.map_op2
+  Cudd.User.map_op2
     ~commutative:true
     ~special:(fun dd1 dd2 ->
       if Cudd.Mtbdd.is_cst dd1 then
@@ -58,7 +58,7 @@ let add ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
     e1 e2
 
 let sub ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-  Cudd.Mtbdd.map_op2
+  Cudd.User.map_op2
     ~special:(fun dd1 dd2 ->
       if Cudd.Mtbdd.is_cst dd2 && is_zero (Cudd.Mtbdd.dval dd2) then Some dd1
       else None
@@ -69,7 +69,7 @@ let sub ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
     e1 e2
 
 let mul ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-  Cudd.Mtbdd.map_op2
+  Cudd.User.map_op2
     ~commutative:true
     ~special:(fun dd1 dd2 ->
       if Cudd.Mtbdd.is_cst dd1 then
@@ -89,7 +89,7 @@ let mul ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
     e1 e2
 
 let div ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-  Cudd.Mtbdd.map_op2
+  Cudd.User.map_op2
     ~special:(fun dd1 dd2 ->
       if Cudd.Mtbdd.is_cst dd1 then 
 	if is_zero (Cudd.Mtbdd.dval dd1) then Some dd1 else None
@@ -102,23 +102,23 @@ let div ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
     e1 e2
 
 let gmod ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-  Cudd.Mtbdd.map_op2
+  Cudd.User.map_op2
     (fun e1 e2 ->
       Cudd.Mtbdd.unique table
 	(Apronexpr.gmod ~typ ~round (Cudd.Mtbdd.get e1) (Cudd.Mtbdd.get e2)))
     e1 e2
 let negate e =
-  Cudd.Mtbdd.map_op1
+  Cudd.User.map_op1
     (fun e -> Cudd.Mtbdd.unique table (Apronexpr.negate (Cudd.Mtbdd.get e)))
     e
 
 let cast ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e =
-  Cudd.Mtbdd.map_op1
+  Cudd.User.map_op1
     (fun e -> Cudd.Mtbdd.unique table (Apronexpr.cast ~typ ~round (Cudd.Mtbdd.get e)))
     e
 
 let sqrt ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e =
-  Cudd.Mtbdd.map_op1
+  Cudd.User.map_op1
     (fun e -> Cudd.Mtbdd.unique table (Apronexpr.sqrt ~typ ~round (Cudd.Mtbdd.get e)))
     e
 

@@ -5,11 +5,13 @@ type 'a leaf = 'a Apron.Abstract0.t
 type 'a t = 'a leaf Cudd.Mtbddc.t
 type 'a table = 'a leaf Cudd.Mtbddc.table
 
+type 'a leaf_u = 'a leaf Cudd.Mtbddc.unique
+
 type 'a global = {
-  op_is_leq : (('a leaf, 'a leaf) Cudd.Mtbddc.test2,  Cudd.Mtbddc.global) Cudd.Mtbddc.op;
-  op_join : (('a leaf, 'a leaf, 'a leaf) Cudd.Mtbddc.op2, Cudd.Mtbddc.global) Cudd.Mtbddc.op;
-  op_meet : (('a leaf, 'a leaf, 'a leaf) Cudd.Mtbddc.op2, Cudd.Mtbddc.global) Cudd.Mtbddc.op;
-  op_exist : (('a leaf, Cudd.Mtbddc.global) Cudd.Mtbddc.exist, Cudd.Mtbddc.global) Cudd.Mtbddc.op;
+  op_is_leq : (('a leaf_u, 'a leaf_u) Cudd.User.test2,  Cudd.User.global) Cudd.User.op;
+  op_join : (('a leaf_u, 'a leaf_u, 'a leaf_u) Cudd.User.op2, Cudd.User.global) Cudd.User.op;
+  op_meet : (('a leaf_u, 'a leaf_u, 'a leaf_u) Cudd.User.op2, Cudd.User.global) Cudd.User.op;
+  op_exist : (('a leaf_u, Cudd.User.global) Cudd.User.exist, Cudd.User.global) Cudd.User.op;
 }
 type 'a man = {
   apron : 'a Apron.Manager.t;
@@ -53,29 +55,29 @@ let special_meet apron dd1 dd2 =
 
 let make_global (apron:'a Apron.Manager.t) (table:'a table) : 'a global =
   let op_is_leq =
-    Cudd.Mtbddc.register_test2
-      ~cachetyp:Cudd.Mtbddc.global
+    Cudd.User.register_test2
+      ~cachetyp:Cudd.User.global
       ~commutative:false ~reflexive:true
       ~special:(special_is_leq apron)
       (fun x y -> (Apron.Abstract0.is_leq apron (Cudd.Mtbddc.get x) (Cudd.Mtbddc.get y)))
   in
   let op_join =
-    Cudd.Mtbddc.register_op2
-      ~cachetyp:Cudd.Mtbddc.global
+    Cudd.User.register_op2
+      ~cachetyp:Cudd.User.global
       ~commutative:true ~idempotent:true
       ~special:(special_join apron)
       (fun x y -> Cudd.Mtbddc.unique table (Apron.Abstract0.join apron (Cudd.Mtbddc.get x) (Cudd.Mtbddc.get y)))
   in
   let op_meet =
-    Cudd.Mtbddc.register_op2
-      ~cachetyp:Cudd.Mtbddc.global
+    Cudd.User.register_op2
+      ~cachetyp:Cudd.User.global
       ~commutative:true ~idempotent:true
       ~special:(special_meet apron)
       (fun x y -> Cudd.Mtbddc.unique table (Apron.Abstract0.meet apron (Cudd.Mtbddc.get x) (Cudd.Mtbddc.get y)))
   in
   let op_exist =
-    Cudd.Mtbddc.register_exist
-      ~cachetyp:Cudd.Mtbddc.global
+    Cudd.User.register_exist
+      ~cachetyp:Cudd.User.global
       op_join
   in {
     op_is_leq = op_is_leq;
@@ -152,38 +154,38 @@ let is_eq (man:'a man) =
 let is_leq man (x:'a t) (y:'a t) =
   match man.oglobal with
   | None ->
-      Cudd.Mtbddc.map_test2
+      Cudd.User.map_test2
 	~commutative:false ~reflexive:true
 	~special:(special_is_leq man.apron)
 	(fun x y -> Apron.Abstract0.is_leq man.apron (Cudd.Mtbddc.get x) (Cudd.Mtbddc.get y))
 	x y
   | Some global ->
-      Cudd.Mtbddc.apply_test2 global.op_is_leq x y
+      Cudd.User.apply_test2 global.op_is_leq x y
 
 let join man (x:'a t) (y:'a t) : 'a t  =
   match man.oglobal with
   | None ->
-      Cudd.Mtbddc.map_op2
+      Cudd.User.map_op2
 	~commutative:true ~idempotent:true
 	~special:(special_join man.apron)
 	(fun x y -> Cudd.Mtbddc.unique man.table (Apron.Abstract0.join man.apron (Cudd.Mtbddc.get x) (Cudd.Mtbddc.get y)))
 	x y
   | Some global ->
-      Cudd.Mtbddc.apply_op2 global.op_join x y
+      Cudd.User.apply_op2 global.op_join x y
 
 let meet man (x:'a t) (y:'a t) : 'a t  =
   match man.oglobal with
   | None ->
-      Cudd.Mtbddc.map_op2
+      Cudd.User.map_op2
 	~commutative:true ~idempotent:true
 	~special:(special_meet man.apron)
 	(fun x y -> Cudd.Mtbddc.unique man.table (Apron.Abstract0.meet man.apron (Cudd.Mtbddc.get x) (Cudd.Mtbddc.get y)))
 	x y
   | Some global ->
-      Cudd.Mtbddc.apply_op2 global.op_meet x y
+      Cudd.User.apply_op2 global.op_meet x y
 
 let widening man (x:'a t) (y:'a t) : 'a t  =
-  Cudd.Mtbddc.map_op2
+  Cudd.User.map_op2
     ~commutative:false ~idempotent:true
     ~special:(fun dd1 dd2 ->
       if Cudd.Mtbddc.is_cst dd1 && Apron.Abstract0.is_bottom man.apron (Cudd.Mtbddc.dval dd1) 
@@ -193,33 +195,33 @@ let widening man (x:'a t) (y:'a t) : 'a t  =
     x y
 
 let meet_tcons_array man (x:'a t) tcons :'a t =
-  Cudd.Mtbddc.map_op1
+  Cudd.User.map_op1
     (fun x -> Cudd.Mtbddc.unique man.table (Apron.Abstract0.meet_tcons_array man.apron (Cudd.Mtbddc.get x) tcons))
     x
 
 let forget_array man (x:'a t) tdim : 'a t =
-  Cudd.Mtbddc.map_op1
+  Cudd.User.map_op1
     (fun x -> Cudd.Mtbddc.unique man.table (Apron.Abstract0.forget_array man.apron (Cudd.Mtbddc.get x) tdim false))
     x
 
 let permute_dimensions man (x:'a t) perm : 'a t =
-  Cudd.Mtbddc.map_op1
+  Cudd.User.map_op1
     (fun x -> Cudd.Mtbddc.unique man.table (Apron.Abstract0.permute_dimensions man.apron (Cudd.Mtbddc.get x) perm))
     x
 
 let add_dimensions  man (x:'a t) change project : 'a t =
-  Cudd.Mtbddc.map_op1
+  Cudd.User.map_op1
     (fun x -> 
       Cudd.Mtbddc.unique man.table (Apron.Abstract0.add_dimensions man.apron (Cudd.Mtbddc.get x) change project))
     x
 let remove_dimensions man (x:'a t) change : 'a t =
-  Cudd.Mtbddc.map_op1
+  Cudd.User.map_op1
     (fun x -> 
       Cudd.Mtbddc.unique man.table (Apron.Abstract0.remove_dimensions man.apron (Cudd.Mtbddc.get x) change))
     x
 
 let apply_dimchange2 man (x:'a t) change2 project =
-  Cudd.Mtbddc.map_op1
+  Cudd.User.map_op1
     (fun x -> 
       Cudd.Mtbddc.unique man.table (Apron.Abstract0.apply_dimchange2 man.apron (Cudd.Mtbddc.get x) change2 project))
     x
@@ -235,7 +237,7 @@ let asssub_texpr
   let varexpr = Apronexpr.Lin(Apronexpr.Lin.var (Apron.Var.to_string var)) in
   match odest with
   | None ->
-      Cudd.Vdd.map_op2
+      Cudd.User.map_op2
 	~special:(fun ddx ddexpr ->
 	  if Cudd.Mtbddc.is_cst ddx then
 	    if Apron.Abstract0.is_bottom man.apron (Cudd.Mtbddc.dval ddx) then Some ddx else None
@@ -252,7 +254,7 @@ let asssub_texpr
 	)
 	x expr
   | Some y ->
-      Cudd.Vdd.map_op3
+      Cudd.User.map_op3
 	~special:(fun ddx ddy ddexpr ->
 	  if Cudd.Mtbddc.is_cst ddx && Apron.Abstract0.is_bottom man.apron (Cudd.Mtbddc.dval ddx) then Some ddx
 	  else if Cudd.Mtbddc.is_cst ddy && Apron.Abstract0.is_bottom man.apron (Cudd.Mtbddc.dval ddy) then Some ddy
@@ -346,7 +348,7 @@ let asssub_texpr_array
 	      | Some y ->
 		  let y = Cudd.Mtbddc.ite nguard y default in
 		  let res =
-		    Cudd.Mtbddc.mapleaf1
+		    Cudd.Mapleaf.mapleaf1
 		      (fun y ->
 			if y==bottom_u then y
 			else
@@ -384,11 +386,11 @@ let make_fun (man:'a man)
 let exist man ~(supp:Cudd.Man.v Cudd.Bdd.t) (t:'a t) : 'a t =
   match man.oglobal with
   | None ->
-      Cudd.Mtbddc.map_exist (make_fun man) ~supp t
+      Cudd.User.map_exist (make_fun man) ~supp t
   | Some global ->
-      Cudd.Mtbddc.apply_exist global.op_exist ~supp t
+      Cudd.User.apply_exist global.op_exist ~supp t
 
-let make_funop man bottomdd : ('a,'b) Cudd.Mtbddc.mexist
+let make_funop man bottomdd : ('a,'b) Cudd.User.mexist
     =
   let special = 
     Some (fun dd1 dd2 -> 
@@ -407,9 +409,9 @@ let existand (man:'a man)
   match man.oglobal with
   | None ->
       let bottomdd = Cudd.Mtbddc.cst_u (Cudd.Bdd.manager supp) bottom in
-      Cudd.Mtbddc.map_existand ~bottom (make_funop man bottomdd) ~supp guard t
+      Cudd.User.map_existand ~bottom (make_funop man bottomdd) ~supp guard t
   | Some global ->
-      let (mexist:('a Apron.Abstract0.t, Cudd.Mtbddc.global) Cudd.Mtbddc.mexist) =
+      let (mexist:('a leaf_u, Cudd.User.global) Cudd.User.mexist) =
 	(`Op global.op_join)
       in
-      Cudd.Mtbddc.map_existand ~bottom mexist ~supp guard t
+      Cudd.User.map_existand ~bottom mexist ~supp guard t
