@@ -57,14 +57,6 @@ module O = struct
       make_value t.env (Domain0.O.assign_lexpr ?relational ?nodependency t.env t.val0 lvar lexpr0)
     end
 
-  let substitute_lexpr (t:('a,'b) t) lvar lexpr =
-    if lvar=[] && lexpr=[] then t
-    else begin
-      Expr1.O.check_lvar t.env lvar;
-      let lexpr0 = check_lvalue Expr0.O.permute lexpr t.env in
-      make_value t.env (Domain0.O.substitute_lexpr t.env t.val0 lvar lexpr0)
-    end
-      
   let assign_listexpr ?relational ?nodependency (t:('a,'b) t) lvar lexpr =
     let lexpr0 = check_value Expr0.O.permute_list lexpr t.env in
     if lvar=[] && lexpr0=[] then t
@@ -73,6 +65,14 @@ module O = struct
       make_value t.env (Domain0.O.assign_lexpr ?relational ?nodependency t.env t.val0 lvar lexpr0)
     end
 
+  let substitute_lexpr (t:('a,'b) t) lvar lexpr =
+    if lvar=[] && lexpr=[] then t
+    else begin
+      Expr1.O.check_lvar t.env lvar;
+      let lexpr0 = check_lvalue Expr0.O.permute lexpr t.env in
+      make_value t.env (Domain0.O.substitute_lexpr t.env t.val0 lvar lexpr0)
+    end
+      
   let substitute_listexpr (t:('a,'b) t) lvar lexpr =
     let lexpr0 = check_value Expr0.O.permute_list lexpr t.env in
     if lvar=[] && lexpr.val0=[] then t

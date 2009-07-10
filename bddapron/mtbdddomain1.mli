@@ -7,12 +7,12 @@
 (** {2 Abstract domain} *)
 (*  ********************************************************************** *)
 
-type 'a man = 'a Domain0.man
+type 'a man = 'a Mtbdddomain0.man
   (** BDDAPRON Manager. The type parameter ['a] indicates the
       underlying APRON abstract domain, as in type {!'a
       Apron.Abstract0.t} *)
 
-type 'a t = (Env.t, 'a Domain0.t) Env.value
+type 'a t = (Env.t, 'a Mtbdddomain0.t) Env.value
   (** BDDAPRON Abstract value. *)
 
 val make_man : ?global:bool -> 'a Apron.Manager.t -> 'a man
@@ -131,7 +131,7 @@ val unify : 'a man -> 'a t -> 'a t -> 'a t
 
 module O : sig
 
-  type ('a,'b) t = ('a,'b Domain0.t) Bdd.Env.value
+  type ('a,'b) t = ('a,'b Mtbdddomain0.t) Bdd.Env.value
   constraint 'a = ('c,'d) #Env.O.t
 
   val size : 'b man -> ('a,'b) t -> int

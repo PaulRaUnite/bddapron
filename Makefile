@@ -43,7 +43,7 @@ BDDAPRONMOD = \
 	bddapron/cond \
 	bddapron/expr0 bddapron/expr1 bddapron/expr2 \
         bddapron/descend \
-	bddapron/domain0 bddapron/domain1 \
+	bddapron/mtbdddomain0 bddapron/mtbdddomain1 \
 	bddapron/bddleaf bddapron/bdddomain0 bddapron/bdddomain1 \
 	bddapron/syntax bddapron/yacc bddapron/lex bddapron/parser
 

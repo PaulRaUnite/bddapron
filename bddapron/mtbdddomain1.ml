@@ -17,35 +17,35 @@ type 'a man = 'a ApronDD.man = {
 
 module O = struct
 
-  type ('a,'b) t = ('a,'b Domain0.t) Env.value
+  type ('a,'b) t = ('a,'b Mtbdddomain0.t) Env.value
   constraint 'a = ('c,'d) #Env.O.t
 
-  let print fmt (t:('a,'b) t) : unit = Domain0.O.print t.env fmt t.val0
+  let print fmt (t:('a,'b) t) : unit = Mtbdddomain0.O.print t.env fmt t.val0
 
   (*  ******************************************************************** *)
   (** {2 Expressions and conditions} *)
   (*  ******************************************************************** *)
 
-  let size man t = Domain0.size man t.val0
-  let bottom man env = make_value env (Domain0.O.bottom man env)
-  let top man env = make_value env (Domain0.O.top man env)
+  let size man t = Mtbdddomain0.size man t.val0
+  let bottom man env = make_value env (Mtbdddomain0.O.bottom man env)
+  let top man env = make_value env (Mtbdddomain0.O.top man env)
   let of_apron man env abs1 = 
     let apron_env = env#apron_env in
     if not (Apron.Environment.equal apron_env abs1.Apron.Abstract1.env) then
-      failwith "Bddapron.Domain0.of_apron: the APRON environment of the APRON abstract value is different from the numerical part of the BDDAPRON environment"
+      failwith "Bddapron.Mtbdddomain0.of_apron: the APRON environment of the APRON abstract value is different from the numerical part of the BDDAPRON environment"
     ;
-    make_value env (Domain0.O.of_apron man env abs1.Apron.Abstract1.abstract0)
+    make_value env (Mtbdddomain0.O.of_apron man env abs1.Apron.Abstract1.abstract0)
 
-  let is_bottom man t = Domain0.O.is_bottom man t.val0
-  let is_top man t = Domain0.O.is_top man t.val0
+  let is_bottom man t = Mtbdddomain0.O.is_bottom man t.val0
+  let is_top man t = Mtbdddomain0.O.is_top man t.val0
   let is_leq man t1 t2 =
     Bdd.Expr1.O.check_value2 t1 t2;
-    Domain0.O.is_leq man t1.val0 t2.val0
+    Mtbdddomain0.O.is_leq man t1.val0 t2.val0
   let is_eq man t1 t2 =
     Bdd.Expr1.O.check_value2 t1 t2;
-    Domain0.O.is_eq man t1.val0 t2.val0
+    Mtbdddomain0.O.is_eq man t1.val0 t2.val0
   let to_bddapron man t =
-    let list0 = Domain0.to_bddapron man t.val0 in
+    let list0 = Mtbdddomain0.to_bddapron man t.val0 in
     let env = t.Env.env in
     let apron_env = env#apron_env in
     List.map
@@ -60,15 +60,15 @@ module O = struct
 
   let meet man (t1:('a,'b) t) (t2:('a,'b) t) : ('a,'b) t =
     Bdd.Expr1.O.check_value2 t1 t2;
-    Bdd.Expr1.O.mapbinop (Domain0.O.meet man) t1 t2
+    Bdd.Expr1.O.mapbinop (Mtbdddomain0.O.meet man) t1 t2
 
   let join man (t1:('a,'b) t) (t2:('a,'b) t) : ('a,'b) t =
     Bdd.Expr1.O.check_value2 t1 t2;
-    Bdd.Expr1.O.mapbinop (Domain0.O.join man) t1 t2
+    Bdd.Expr1.O.mapbinop (Mtbdddomain0.O.join man) t1 t2
 
   let widening man (t1:('a,'b) t) (t2:('a,'b) t) : ('a,'b) t =
     Bdd.Expr1.O.check_value2 t1 t2;
-    Bdd.Expr1.O.mapbinop (Domain0.O.widening man) t1 t2
+    Bdd.Expr1.O.mapbinop (Mtbdddomain0.O.widening man) t1 t2
 
   let meet_condition
       man 
@@ -82,7 +82,7 @@ module O = struct
 	condition t.env
     in
     make_value t.env
-      (Domain0.O.meet_condition man t.env cond t.val0 condition0)
+      (Mtbdddomain0.O.meet_condition man t.env cond t.val0 condition0)
       
   let meet_condition2
       (man:'b man)
@@ -95,7 +95,7 @@ module O = struct
 	condition2.Cond.val1 t.env
     in
     make_value t.env
-      (Domain0.O.meet_condition man t.env condition2.Cond.cond
+      (Mtbdddomain0.O.meet_condition man t.env condition2.Cond.cond
 	t.val0 condition0)
       
   let assign_lexpr
@@ -109,7 +109,7 @@ module O = struct
     let lexpr0 = Bdd.Domain1.O.check_lvalue Expr0.O.permute lexpr t.env in
     let odest0 = Bdd.Expr1.O.check_ovalue t.env odest in
     make_value t.env
-      (Domain0.O.assign_lexpr ?relational ?nodependency man
+      (Mtbdddomain0.O.assign_lexpr ?relational ?nodependency man
 	t.env cond t.val0 lvar lexpr0 odest0)
 
   let assign_listexpr2
@@ -124,7 +124,7 @@ module O = struct
     in
     let odest0 = Bdd.Expr1.O.check_ovalue t.env odest in
     make_value t.env
-      (Domain0.O.assign_lexpr ?relational ?nodependency man
+      (Mtbdddomain0.O.assign_lexpr ?relational ?nodependency man
 	t.env listexpr2.Cond.cond t.val0 lvar lexpr0 odest0)
 
   let substitute_lexpr
@@ -137,7 +137,7 @@ module O = struct
     let lexpr0 = Bdd.Domain1.O.check_lvalue Expr0.O.permute lexpr t.env in
     let odest0 = Bdd.Expr1.O.check_ovalue t.env odest in
     make_value t.env
-      (Domain0.O.substitute_lexpr man
+      (Mtbdddomain0.O.substitute_lexpr man
 	t.env cond t.val0 lvar lexpr0 odest0)
 
   let substitute_listexpr2
@@ -151,12 +151,12 @@ module O = struct
     in
     let odest0 = Bdd.Expr1.O.check_ovalue t.env odest in
     make_value t.env
-      (Domain0.O.substitute_lexpr man
+      (Mtbdddomain0.O.substitute_lexpr man
 	t.env listexpr2.Cond.cond t.val0 lvar lexpr0 odest0)
 
   let forget_list man (t:('a,'b) t) (lvar:string list) : ('a,'b) t =
     make_value t.env
-      (Domain0.O.forget_list man t.env t.val0 lvar)
+      (Mtbdddomain0.O.forget_list man t.env t.val0 lvar)
 
   let change_environment man t nenv =
     if Bdd.Env.is_eq t.env nenv then
@@ -164,8 +164,8 @@ module O = struct
     else begin
       let change = Env.compute_change t.env nenv in
       make_value nenv 
-	(Domain0.O.apply_change 
-	  ~bottom:(Domain0.bottom man nenv)
+	(Mtbdddomain0.O.apply_change 
+	  ~bottom:(Mtbdddomain0.bottom man nenv)
 	  man t.val0 change)
     end
   
@@ -184,7 +184,7 @@ module O = struct
     let nenv = Oo.copy t.env in
     let perm = nenv#rename_vars_apron lvarvar in
     make_value nenv 
-      (Domain0.O.apply_permutation man t.val0 perm)
+      (Mtbdddomain0.O.apply_permutation man t.val0 perm)
 
 end
 
@@ -192,9 +192,9 @@ end
   (** {2 Closed signature} *)
   (*  ******************************************************************** *)
 
-let make_man = Domain0.make_man
+let make_man = Mtbdddomain0.make_man
 
-type 'a t = (Env.t, 'a Domain0.t) Env.value
+type 'a t = (Env.t, 'a Mtbdddomain0.t) Env.value
 
 let size = O.size
 let print = O.print

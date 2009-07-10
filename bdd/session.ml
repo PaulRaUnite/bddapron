@@ -20,7 +20,7 @@ Cudd.Man.set_gc 10000
   (begin fun () -> printf "@.CUDD GC@." end)
   (begin fun () -> printf "@.CUDD REORDER@." end)
 ;;
-let env = Bdd.Domain1.make_env cudd;;
+let env = Bdd.Env.make cudd;;
 env#add_typ "enum2" (`Benum [|"l1"; "l2"; "l3"|]);;
 env;;
 env#add_vars [
@@ -60,7 +60,7 @@ let expr1 =
 
 let expr2 = Bdd.Expr1.Bool.eq expr0 expr1;;
 
-let disj = Bdd.Expr0.O.Expr.disjunction_of_bdd expr2.Bdd.Env.env expr2.Bdd.Env.value;;
+let disj = Bdd.Expr0.O.Expr.disjunction_of_bdd expr2.Bdd.Env.env expr2.Bdd.Env.val0;;
 
 Format.printf "%a@." (Bdd.Expr0.O.Expr.print_disjunction expr2.Bdd.Env.env) disj;;
 
@@ -93,6 +93,6 @@ let expr3 = Bdd.Expr1.Bint.to_expr expr3;;
 let expr4 = Bdd.Expr1.Bint.to_expr expr4;;
 
 let abs = Bdd.Domain1.top env;;
-let abs2 = Bdd.Domain1.assign_list abs [("q1",expr3)];;;
-let abs2 = Bdd.Domain1.assign_list abs [("q2",expr4)];;;
-let abs2 = Bdd.Domain1.assign_list abs [("q1",expr3);("q2",expr4)];;;
+let abs2 = Bdd.Domain1.assign_lexpr abs ["q1"] [expr3];;
+let abs2 = Bdd.Domain1.assign_lexpr abs ["q2"] [expr4];;
+let abs2 = Bdd.Domain1.assign_lexpr abs ["q1"; "q2"] [expr3;expr4];;

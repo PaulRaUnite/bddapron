@@ -62,7 +62,7 @@ val of_apron : 'a man -> Env.t -> 'a Apron.Abstract0.t -> 'a t
 (** {3 Tests} *)
 (*  ====================================================================== *)
 
-val is_bottom : 'a -> 'a t -> bool
+val is_bottom : 'a man -> 'a t -> bool
 val is_top : 'a man -> 'a t -> bool
 val is_leq : 'a man -> 'a t -> 'a t -> bool
 val is_eq : 'a man -> 'a t -> 'a t -> bool
@@ -107,7 +107,7 @@ module O : sig
   val bottom : 'a man -> ('b,'c) #Env.O.t -> 'a t
   val top : 'a man -> ('b,'c) #Env.O.t -> 'a t
   val of_apron : 'a man -> ('b,'c) #Env.O.t -> 'a Apron.Abstract0.t -> 'a t
-  val is_bottom : 'a -> 'a t -> bool
+  val is_bottom : 'a man -> 'a t -> bool
   val is_top : 'a man -> 'a t -> bool
   val is_leq : 'a man -> 'a t -> 'a t -> bool
   val is_eq : 'a man -> 'a t -> 'a t -> bool
