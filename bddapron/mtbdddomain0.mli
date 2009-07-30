@@ -22,7 +22,7 @@ val make_man : ?global:bool -> 'a Apron.Manager.t -> 'a man
 
 val size : 'a man -> 'a t -> int
   (** Size of an abstract value in terms of number of nodes of the MTBDD. *)
-val print : ('a,'b) #Env.O.t -> Format.formatter -> 'c t -> unit
+val print : Env.t -> Format.formatter -> 'c t -> unit
   (** Printing function *)
 
 (*  ********************************************************************** *)

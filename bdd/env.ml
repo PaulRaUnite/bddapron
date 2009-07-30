@@ -922,3 +922,73 @@ let extend_environment
     make_value nenv (permute value.val0 perm)
   else
     failwith "Bdd.Env.extend_environment: the given environment is not a superenvironment "
+
+let check_var (env:('a,'b,'d) #O.t) (var:string) : unit =
+  try
+    let typ = env#typ_of_var var in
+    let ok =
+      match typ with
+      | #Enum.typ -> PMappe.mem var env#vartid
+      | _ -> true
+    in
+    if not ok then raise Not_found
+  with Not_found ->
+    failwith (Format.sprintf "The variable %s is unknown or has a wrong type in the environement of the value" var)
+
+let check_lvar env (lvar:string list) : unit =
+  List.iter (check_var env) lvar
+
+let mapunop f e =
+  make_value e.env (f e.val0)
+
+let check_value env t =
+  if not (
+    is_eq env t.env &&
+      env#bddindex0 = t.env#bddindex0
+  )
+  then
+    failwith (Print.sprintf "Bdd.Expr1: value does not have the expected environement@.env=%a@.t.env=%a@." print env print t.env);
+  ()
+
+let check_value2 t1 t2 =
+  if not (
+    is_eq t1.env t2.env &&
+      t1.env#bddindex0 = t2.env#bddindex0
+  )
+  then
+    failwith (Print.sprintf "Bdd.Expr1: operation called with non-equal environments:@.env1=%a@.env2=%a@." print t1.env print t2.env);
+  ()
+
+let mapbinop f t1 t2 =
+  check_value2 t1 t2;
+  make_value t1.env (f t1.val0 t2.val0)
+
+let mapbinope f t1 t2 =
+  check_value2 t1 t2;
+  make_value t1.env (f t2.env t1.val0 t2.val0)
+
+let check_value3 t1 t2 t3 =
+  check_value2 t1 t2;
+  check_value2 t1 t3
+
+let mapterop f t1 t2 t3 =
+  check_value3 t1 t2 t3;
+  make_value t1.env (f t1.val0 t2.val0 t3.val0)
+
+let check_lvarvalue env lvarexpr =
+  List.map
+    (fun (var,e) ->
+      check_var env var;
+      check_value env e;
+      (var,e.val0)
+    )
+    lvarexpr
+
+let check_lvalue env lexpr =
+  List.map
+    (fun e -> check_value env e; e.val0)
+    lexpr
+
+let check_ovalue env = function
+  | None -> None
+  | Some x -> check_value env x; Some x.val0

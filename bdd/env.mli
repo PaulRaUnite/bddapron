@@ -153,6 +153,7 @@ module O : sig
     (Format.formatter -> 'b -> unit) ->
     Format.formatter -> ('a,'b,'c) #t -> unit
     (** Print an environment *)
+
 end
 
 (*  ********************************************************************** *)
@@ -169,6 +170,8 @@ val make :
   'a Cudd.Man.t -> 'a t
       (** Create a new database.
 	  [bddindex] and [bddincr] initalized to 0 and 1. *)
+
+val print : Format.formatter -> ([>typ ], [>typdef ], 'a) #O.t -> unit
 
 (** {3 Functional version of some methods} *)
 
@@ -258,3 +261,51 @@ val extend_environment :
     (** [extend_environment permute value env] embed [value] in the new
       (super)environment [env], by computing the permutation transformation and
       using [permute] to apply it to the value. *)
+
+
+val check_var :
+  ([> typ ], [> typdef ], 'a) #O.t -> string -> unit
+val check_lvar :
+  ([> typ ], [> typdef ], 'a) #O.t ->
+  string list -> unit
+val mapunop :
+  ('a -> 'b) -> ('c, 'a) value -> ('c, 'b) value
+val check_value :
+  ([> typ ] as 'a, [> typdef ] as 'b, 'c) #O.t ->
+  (('a, 'b, 'c) #O.t, 'd) value -> unit
+val check_value2 :
+  (([> typ ] as 'a, [> typdef ] as 'b, 'c) #O.t, 'd)
+  value -> (('a, 'b, 'c) #O.t, 'e) value -> unit
+val mapbinop :
+  ('a -> 'b -> 'c) ->
+  (([> typ ] as 'e, [> typdef ] as 'f, 'g) #O.t as 'd,
+  'a) value ->
+  (('e, 'f, 'g) #O.t, 'b) value -> ('d, 'c) value
+val mapbinope :
+  ((([> typ ] as 'b, [> typdef ] as 'c, 'd) #O.t as 'a) ->
+    'e -> 'f -> 'g) ->
+  (('b, 'c, 'd) #O.t as 'h, 'e) value ->
+  ('a, 'f) value -> ('h, 'g) value
+val check_value3 :
+  (([> typ ] as 'a, [> typdef ] as 'b, 'c) #O.t, 'd)
+  value ->
+  (('a, 'b, 'c) #O.t, 'e) value ->
+  (('a, 'b, 'c) #O.t, 'f) value -> unit
+val mapterop :
+  ('a -> 'b -> 'c -> 'd) ->
+  (([> typ ] as 'f, [> typdef ] as 'g, 'h) #O.t as 'e,
+  'a)
+    value ->
+  (('f, 'g, 'h) #O.t, 'b) value ->
+  (('f, 'g, 'h) #O.t, 'c) value -> ('e, 'd) value
+val check_lvarvalue :
+  ([> typ ] as 'a, [> typdef ] as 'b, 'c) #O.t ->
+  (string * (('a, 'b, 'c) #O.t, 'd) value) list ->
+  (string * 'd) list
+val check_lvalue :
+  ([> typ ] as 'a, [> typdef ] as 'b, 'c) #O.t ->
+  (('a, 'b, 'c) #O.t, 'd) value list -> 'd list
+val check_ovalue :
+  ([> typ ] as 'a, [> typdef ] as 'b, 'c) #O.t ->
+  (('a, 'b, 'c) #O.t, 'd) value option -> 'd option
+  

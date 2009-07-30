@@ -434,60 +434,6 @@ module O : sig
 
   end
 
-  (*  ==================================================================== *)
-  (** {3 Internal} *)
-  (*  ==================================================================== *)
-    
-  val print_env :
-    Format.formatter ->
-      ([> Env.typ ], [> Env.typdef ], 'a) #Env.O.t -> unit
-
-  val check_var :
-    ([> Env.typ ], [> Env.typdef ], 'a) #Env.O.t -> string -> unit
-  val check_lvar :
-    ([> Env.typ ], [> Env.typdef ], 'a) #Env.O.t ->
-    string list -> unit
-  val mapunop :
-    ('a -> 'b) -> ('c, 'a) Env.value -> ('c, 'b) Env.value
-  val check_value :
-    ([> Env.typ ] as 'a, [> Env.typdef ] as 'b, 'c) #Env.O.t ->
-    (('a, 'b, 'c) #Env.O.t, 'd) Env.value -> unit
-  val check_value2 :
-    (([> Env.typ ] as 'a, [> Env.typdef ] as 'b, 'c) #Env.O.t, 'd)
-    Env.value -> (('a, 'b, 'c) #Env.O.t, 'e) Env.value -> unit
-  val mapbinop :
-    ('a -> 'b -> 'c) ->
-    (([> Env.typ ] as 'e, [> Env.typdef ] as 'f, 'g) #Env.O.t as 'd,
-    'a) Env.value ->
-    (('e, 'f, 'g) #Env.O.t, 'b) Env.value -> ('d, 'c) Env.value
-  val mapbinope :
-    ((([> Env.typ ] as 'b, [> Env.typdef ] as 'c, 'd) #Env.O.t as 'a) ->
-      'e -> 'f -> 'g) ->
-    (('b, 'c, 'd) #Env.O.t as 'h, 'e) Env.value ->
-    ('a, 'f) Env.value -> ('h, 'g) Env.value
-  val check_value3 :
-    (([> Env.typ ] as 'a, [> Env.typdef ] as 'b, 'c) #Env.O.t, 'd)
-    Env.value ->
-    (('a, 'b, 'c) #Env.O.t, 'e) Env.value ->
-    (('a, 'b, 'c) #Env.O.t, 'f) Env.value -> unit
-  val mapterop :
-    ('a -> 'b -> 'c -> 'd) ->
-    (([> Env.typ ] as 'f, [> Env.typdef ] as 'g, 'h) #Env.O.t as 'e,
-    'a)
-      Env.value ->
-    (('f, 'g, 'h) #Env.O.t, 'b) Env.value ->
-    (('f, 'g, 'h) #Env.O.t, 'c) Env.value -> ('e, 'd) Env.value
-  val check_lvarvalue :
-    ([> Env.typ ] as 'a, [> Env.typdef ] as 'b, 'c) #Env.O.t ->
-    (string * (('a, 'b, 'c) #Env.O.t, 'd) Env.value) list ->
-    (string * 'd) list
-  val check_lvalue :
-    ([> Env.typ ] as 'a, [> Env.typdef ] as 'b, 'c) #Env.O.t ->
-    (('a, 'b, 'c) #Env.O.t, 'd) Env.value list -> 'd list
-  val check_ovalue :
-    ([> Env.typ ] as 'a, [> Env.typdef ] as 'b, 'c) #Env.O.t ->
-    (('a, 'b, 'c) #Env.O.t, 'd) Env.value option -> 'd option
-    
 end
   
   

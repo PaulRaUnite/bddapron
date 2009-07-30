@@ -34,13 +34,13 @@ module O = struct
 
   let check_value permute t nenv =
     if Env.is_eq t.env nenv &&
-      t.env#bddindex0 = nenv#bddindex0  then
+      t.env#bddindex0 = nenv#bddindex0 then
       t.val0
     else if Env.is_leq t.env nenv &&
       t.env#bddindex0 = nenv#bddindex0 then
 	permute t.val0 (Env.permutation12 t.env nenv)
     else
-      failwith (Print.sprintf "Bdd.Domain1: the environment of the argument is not a subenvironment of the expected environment@. t.env=%a@.nenv=%a@." Expr1.O.print_env t.env Expr1.O.print_env nenv)
+      failwith (Print.sprintf "Bdd.Domain1: the environment of the argument is not a subenvironment of the expected environment@. t.env=%a@.nenv=%a@." Env.print t.env Env.print nenv)
 	
   let check_lvalue permute lt nenv =
     List.map (fun t -> check_value permute t nenv) lt
@@ -52,7 +52,7 @@ module O = struct
   let assign_lexpr ?relational ?nodependency (t:('a,'b) t) lvar lexpr =
     if lvar=[] && lexpr=[] then t
     else begin
-      Expr1.O.check_lvar t.env lvar;
+      Env.check_lvar t.env lvar;
       let lexpr0 = check_lvalue Expr0.O.permute lexpr t.env in
       make_value t.env (Domain0.O.assign_lexpr ?relational ?nodependency t.env t.val0 lvar lexpr0)
     end
@@ -61,14 +61,14 @@ module O = struct
     let lexpr0 = check_value Expr0.O.permute_list lexpr t.env in
     if lvar=[] && lexpr0=[] then t
     else begin
-      Expr1.O.check_lvar t.env lvar;
+      Env.check_lvar t.env lvar;
       make_value t.env (Domain0.O.assign_lexpr ?relational ?nodependency t.env t.val0 lvar lexpr0)
     end
 
   let substitute_lexpr (t:('a,'b) t) lvar lexpr =
     if lvar=[] && lexpr=[] then t
     else begin
-      Expr1.O.check_lvar t.env lvar;
+      Env.check_lvar t.env lvar;
       let lexpr0 = check_lvalue Expr0.O.permute lexpr t.env in
       make_value t.env (Domain0.O.substitute_lexpr t.env t.val0 lvar lexpr0)
     end
@@ -77,12 +77,12 @@ module O = struct
     let lexpr0 = check_value Expr0.O.permute_list lexpr t.env in
     if lvar=[] && lexpr.val0=[] then t
     else begin
-      Expr1.O.check_lvar t.env lvar;
+      Env.check_lvar t.env lvar;
       make_value t.env (Domain0.O.substitute_lexpr t.env t.val0 lvar lexpr0)
     end
 
   let forget_list t lvar =
-    Expr1.O.check_lvar t.env lvar;
+    Env.check_lvar t.env lvar;
     make_value t.env (Domain0.O.forget_list t.env t.val0 lvar)
 
   let rename t lvarvar =

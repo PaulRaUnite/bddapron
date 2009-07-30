@@ -13,82 +13,6 @@ open Env
 module O = struct
 
   (*  ==================================================================== *)
-  (** {3 Internal} *)
-  (*  ==================================================================== *)
-
-  let print_env fmt env = Env.O.print Env.print_typ Env.print_typdef fmt env
-
-  let check_var (env:('a,'b,'d) #Env.O.t) (var:string) : unit =
-    try
-      let typ = env#typ_of_var var in
-      let ok =
-	match typ with
-	| #Enum.typ -> PMappe.mem var env#vartid
-	| _ -> true
-      in
-      if not ok then raise Not_found
-    with Not_found ->
-      failwith (Format.sprintf "The variable %s is unknown or has a wrong type in the environement of the value" var)
-
-  let check_lvar env (lvar:string list) : unit =
-    List.iter (check_var env) lvar
-
-  let mapunop f e =
-    make_value e.env (f e.val0)
-
-  let check_value env t =
-    if not (
-      Env.is_eq env t.env &&
-	env#bddindex0 = t.env#bddindex0
-    )
-    then 
-      failwith (Print.sprintf "Bdd.Expr1: value does not have the expected environement@.env=%a@.t.env=%a@." print_env env print_env t.env);
-    ()
-
-  let check_value2 t1 t2 = 
-    if not (
-      Env.is_eq t1.env t2.env &&
-	t1.env#bddindex0 = t2.env#bddindex0
-    )
-    then
-      failwith (Print.sprintf "Bdd.Expr1: operation called with non-equal environments:@.env1=%a@.env2=%a@." print_env t1.env print_env t2.env);
-    ()
-
-  let mapbinop f t1 t2 =
-    check_value2 t1 t2;
-    make_value t1.env (f t1.val0 t2.val0)
-      
-  let mapbinope f t1 t2 =
-    check_value2 t1 t2;
-    make_value t1.env (f t2.env t1.val0 t2.val0)
-
-  let check_value3 t1 t2 t3 =
-    check_value2 t1 t2;
-    check_value2 t1 t3
-
-  let mapterop f t1 t2 t3 =
-    check_value3 t1 t2 t3;
-    make_value t1.env (f t1.val0 t2.val0 t3.val0)
-      
-  let check_lvarvalue env lvarexpr =
-    List.map
-      (fun (var,e) ->
-	check_var env var;
-	check_value env e;
-	(var,e.val0)
-      )
-      lvarexpr
-
-  let check_lvalue env lexpr =
-    List.map
-      (fun e -> check_value env e; e.val0)
-      lexpr
-	
-  let check_ovalue env = function
-    | None -> None
-    | Some x -> check_value env x; Some x.val0
-	
-  (*  ==================================================================== *)
   (** {3 Datatypes} *)
   (*  ==================================================================== *)
 
@@ -108,19 +32,19 @@ module O = struct
     Env.extend_environment Expr0.O.permute e nenv
 
   let ite e1 e2 e3 =
-    mapterop Expr0.O.ite e1 e2 e3
+    Env.mapterop Expr0.O.ite e1 e2 e3
 
-  let cofactor e1 e2 = mapbinop Expr0.cofactor e1 e2
-  let restrict e1 e2 = mapbinop Expr0.restrict e1 e2
-  let tdrestrict e1 e2 = mapbinop Expr0.tdrestrict e1 e2
+  let cofactor e1 e2 = Env.mapbinop Expr0.cofactor e1 e2
+  let restrict e1 e2 = Env.mapbinop Expr0.restrict e1 e2
+  let tdrestrict e1 e2 = Env.mapbinop Expr0.tdrestrict e1 e2
 
   let substitute_by_var e lvarvar =
     make_value e.env (Expr0.O.substitute_by_var e.Env.env e.Env.val0 lvarvar)
   let substitute e lvarexpr =
-    let lvarexpr = check_lvarvalue e.env lvarexpr in
+    let lvarexpr = Env.check_lvarvalue e.env lvarexpr in
     make_value e.env (Expr0.O.substitute e.env e.val0 lvarexpr)
 
-  let eq e1 e2 = mapbinope Expr0.O.eq e1 e2
+  let eq e1 e2 = Env.mapbinope Expr0.O.eq e1 e2
 
   let support (e:('a,'b) expr) = Expr0.O.support e.env e.val0
 
@@ -151,51 +75,51 @@ module O = struct
     let of_bool env b = if b then dtrue env else dfalse env
 
     let var env (var:string) =
-      check_var env var;
+      Env.check_var env var;
       make_value env (Expr0.O.Bool.var env var)
 
-    let dnot e = mapunop Cudd.Bdd.dnot e
+    let dnot e = Env.mapunop Cudd.Bdd.dnot e
 
-    let dand e1 e2 = mapbinop Cudd.Bdd.dand e1 e2
-    let dor e1 e2 = mapbinop Cudd.Bdd.dor e1 e2
-    let xor e1 e2 = mapbinop Cudd.Bdd.xor e1 e2
-    let nand e1 e2 = mapbinop Cudd.Bdd.nand e1 e2
-    let nor e1 e2 = mapbinop Cudd.Bdd.nor e1 e2
-    let nxor e1 e2 = mapbinop Cudd.Bdd.nxor e1 e2
-    let eq e1 e2 = mapbinop Cudd.Bdd.eq e1 e2
-    let leq e1 e2 = mapbinop (fun x y -> Cudd.Bdd.dor y (Cudd.Bdd.dnot x)) e1 e2
-    let ite e1 e2 e3 = mapterop Cudd.Bdd.ite e1 e2 e3
+    let dand e1 e2 = Env.mapbinop Cudd.Bdd.dand e1 e2
+    let dor e1 e2 = Env.mapbinop Cudd.Bdd.dor e1 e2
+    let xor e1 e2 = Env.mapbinop Cudd.Bdd.xor e1 e2
+    let nand e1 e2 = Env.mapbinop Cudd.Bdd.nand e1 e2
+    let nor e1 e2 = Env.mapbinop Cudd.Bdd.nor e1 e2
+    let nxor e1 e2 = Env.mapbinop Cudd.Bdd.nxor e1 e2
+    let eq e1 e2 = Env.mapbinop Cudd.Bdd.eq e1 e2
+    let leq e1 e2 = Env.mapbinop (fun x y -> Cudd.Bdd.dor y (Cudd.Bdd.dnot x)) e1 e2
+    let ite e1 e2 e3 = Env.mapterop Cudd.Bdd.ite e1 e2 e3
 
     let is_true e = Cudd.Bdd.is_true e.val0
     let is_false e = Cudd.Bdd.is_false e.val0
     let is_cst e = Cudd.Bdd.is_cst e.val0
     let is_eq e1 e2 = 
-      check_value2 e1 e2;
+      Env.check_value2 e1 e2;
       Cudd.Bdd.is_equal e1.val0 e2.val0
 
     let is_leq e1 e2 =
-      check_value2 e1 e2;
+      Env.check_value2 e1 e2;
       Cudd.Bdd.is_leq e1.val0 e2.val0
 	
     let is_inter_false e1 e2 =
-      check_value2 e1 e2;
+      Env.check_value2 e1 e2;
       Cudd.Bdd.is_inter_empty e1.val0 e2.val0
 	
     let exist (lvar:string list) e =
-      check_lvar e.env lvar;
+      Env.check_lvar e.env lvar;
       make_value
 	e.env
 	(Cudd.Bdd.exist (Expr0.O.bddsupport e.env lvar) e.val0)
 
     let forall (lvar:string list) e =
-      check_lvar e.env lvar;
+      Env.check_lvar e.env lvar;
       make_value
 	e.env
 	(Cudd.Bdd.forall (Expr0.O.bddsupport e.env lvar) e.val0)
 
-    let cofactor e1 e2 = mapbinop Cudd.Bdd.cofactor e1 e2
-    let restrict e1 e2 = mapbinop Cudd.Bdd.restrict e1 e2
-    let tdrestrict e1 e2 = mapbinop Cudd.Bdd.tdrestrict e1 e2
+    let cofactor e1 e2 = Env.mapbinop Cudd.Bdd.cofactor e1 e2
+    let restrict e1 e2 = Env.mapbinop Cudd.Bdd.restrict e1 e2
+    let tdrestrict e1 e2 = Env.mapbinop Cudd.Bdd.tdrestrict e1 e2
 
     let substitute_by_var e lvarvar =
       make_value e.Env.env
@@ -234,29 +158,29 @@ module O = struct
     let var env (var:string) =
       make_value env (Expr0.O.Bint.var env var)
 
-    let neg e = mapunop Int.neg e
-    let succ e = mapunop Int.succ e
-    let pred e = mapunop Int.pred e
+    let neg e = Env.mapunop Int.neg e
+    let succ e = Env.mapunop Int.succ e
+    let pred e = Env.mapunop Int.pred e
 
-    let add e1 e2 = mapbinop Int.add e1 e2
-    let sub e1 e2 = mapbinop Int.sub e1 e2
-    let mul e1 e2 = mapbinop Int.mul e1 e2
-    let shift_left n e = mapunop (Int.shift_left n) e
-    let shift_right n e = mapunop (Int.shift_right n) e
-    let scale n e = mapunop (Int.scale n) e
-    let ite e1 e2 e3 = mapterop Int.ite e1 e2 e3
+    let add e1 e2 = Env.mapbinop Int.add e1 e2
+    let sub e1 e2 = Env.mapbinop Int.sub e1 e2
+    let mul e1 e2 = Env.mapbinop Int.mul e1 e2
+    let shift_left n e = Env.mapunop (Int.shift_left n) e
+    let shift_right n e = Env.mapunop (Int.shift_right n) e
+    let scale n e = Env.mapunop (Int.scale n) e
+    let ite e1 e2 e3 = Env.mapterop Int.ite e1 e2 e3
 
     let zero e = make_value e.env (Int.zero e.env#cudd e.val0)
 
-    let eq e1 e2 = mapbinop (Int.equal e1.env#cudd) e1 e2
-    let supeq e1 e2 = mapbinop (Int.greatereq e1.env#cudd) e1 e2
-    let sup e1 e2 = mapbinop (Int.greater e1.env#cudd) e1 e2
+    let eq e1 e2 = Env.mapbinop (Int.equal e1.env#cudd) e1 e2
+    let supeq e1 e2 = Env.mapbinop (Int.greatereq e1.env#cudd) e1 e2
+    let sup e1 e2 = Env.mapbinop (Int.greater e1.env#cudd) e1 e2
     let eq_int e n = make_value e.env (Int.equal_int e.env#cudd e.val0 n)
     let supeq_int e n = make_value e.env (Int.greatereq_int e.env#cudd e.val0 n)
 
-    let cofactor e1 e2 = mapbinop Int.cofactor e1 e2
-    let restrict e1 e2 = mapbinop Int.restrict e1 e2
-    let tdrestrict e1 e2 = mapbinop Int.tdrestrict e1 e2
+    let cofactor e1 e2 = Env.mapbinop Int.cofactor e1 e2
+    let restrict e1 e2 = Env.mapbinop Int.restrict e1 e2
+    let tdrestrict e1 e2 = Env.mapbinop Int.tdrestrict e1 e2
 
     let substitute_by_var e lvarvar =
       make_value e.Env.env
@@ -297,16 +221,16 @@ module O = struct
     let var env (var:string) =
       make_value env (Expr0.O.Benum.var env var)
 
-    let ite e1 e2 e3 = mapterop Enum.ite e1 e2 e3
+    let ite e1 e2 e3 = Env.mapterop Enum.ite e1 e2 e3
 
-    let eq e1 e2 = mapbinope Enum.equal e1 e2
+    let eq e1 e2 = Env.mapbinope Enum.equal e1 e2
 
     let eq_label e label =
       make_value e.env (Enum.equal_label e.env e.val0 label)
 
-    let cofactor e1 e2 = mapbinop Enum.cofactor e1 e2
-    let restrict e1 e2 = mapbinop Enum.restrict e1 e2
-    let tdrestrict e1 e2 = mapbinop Enum.tdrestrict e1 e2
+    let cofactor e1 e2 = Env.mapbinop Enum.cofactor e1 e2
+    let restrict e1 e2 = Env.mapbinop Enum.restrict e1 e2
+    let tdrestrict e1 e2 = Env.mapbinop Enum.tdrestrict e1 e2
 
     let substitute_by_var e lvarvar =
       make_value e.Env.env
@@ -346,7 +270,7 @@ module O = struct
       
     let of_lexpr0 = make_value
     let of_lexpr env lexpr1 =
-      let lexpr0 = check_lvalue env lexpr1 in
+      let lexpr0 = Env.check_lvalue env lexpr1 in
       of_lexpr0 env lexpr0
     let extend_environment e nenv =
       Env.extend_environment

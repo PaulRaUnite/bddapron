@@ -47,10 +47,10 @@ module O = struct
   let is_bottom man t = Bdddomain0.O.is_bottom man t.val0
   let is_top man t = Bdddomain0.O.is_top man t.val0
   let is_leq man t1 t2 =
-    Bdd.Expr1.O.check_value2 t1 t2;
+    Bdd.Env.check_value2 t1 t2;
     Bdddomain0.O.is_leq man t1.val0 t2.val0
   let is_eq man t1 t2 =
-    Bdd.Expr1.O.check_value2 t1 t2;
+    Bdd.Env.check_value2 t1 t2;
     Bdddomain0.O.is_eq man t1.val0 t2.val0
   let to_bddapron man t =
     let apron_env = t.env#apron_env in
@@ -66,16 +66,16 @@ module O = struct
       list0
 
   let meet man (t1:('a,'b) t) (t2:('a,'b) t) : ('a,'b) t =
-    Bdd.Expr1.O.check_value2 t1 t2;
-    Bdd.Expr1.O.mapbinop (Bdddomain0.O.meet man) t1 t2
+    Bdd.Env.check_value2 t1 t2;
+    Bdd.Env.mapbinop (Bdddomain0.O.meet man) t1 t2
 
   let join man (t1:('a,'b) t) (t2:('a,'b) t) : ('a,'b) t =
-    Bdd.Expr1.O.check_value2 t1 t2;
-    Bdd.Expr1.O.mapbinop (Bdddomain0.O.join man) t1 t2
+    Bdd.Env.check_value2 t1 t2;
+    Bdd.Env.mapbinop (Bdddomain0.O.join man) t1 t2
 
   let widening man (t1:('a,'b) t) (t2:('a,'b) t) : ('a,'b) t =
-    Bdd.Expr1.O.check_value2 t1 t2;
-    Bdd.Expr1.O.mapbinop (Bdddomain0.O.widening man) t1 t2
+    Bdd.Env.check_value2 t1 t2;
+    Bdd.Env.mapbinop (Bdddomain0.O.widening man) t1 t2
 
   let meet_condition
       man 
@@ -114,7 +114,7 @@ module O = struct
       (odest:('a,'b) t option)
       =
     let lexpr0 = Bdd.Domain1.O.check_lvalue Expr0.O.permute lexpr t.env in
-    let odest0 = Bdd.Expr1.O.check_ovalue t.env odest in
+    let odest0 = Bdd.Env.check_ovalue t.env odest in
     make_value t.env
       (Bdddomain0.O.assign_lexpr ?relational ?nodependency man
 	t.env cond t.val0 lvar lexpr0 odest0)
@@ -129,7 +129,7 @@ module O = struct
     let lexpr0 = 
       Bdd.Domain1.O.check_value Expr0.O.permute_list listexpr2.val1 t.env
     in
-    let odest0 = Bdd.Expr1.O.check_ovalue t.env odest in
+    let odest0 = Bdd.Env.check_ovalue t.env odest in
     make_value t.env
       (Bdddomain0.O.assign_lexpr ?relational ?nodependency man
 	t.env listexpr2.Cond.cond t.val0 lvar lexpr0 odest0)
@@ -142,7 +142,7 @@ module O = struct
       (odest:('a,'b) t option)
       =
     let lexpr0 = Bdd.Domain1.O.check_lvalue Expr0.O.permute lexpr t.env in
-    let odest0 = Bdd.Expr1.O.check_ovalue t.env odest in
+    let odest0 = Bdd.Env.check_ovalue t.env odest in
     make_value t.env
       (Bdddomain0.O.substitute_lexpr man
 	t.env cond t.val0 lvar lexpr0 odest0)
@@ -156,7 +156,7 @@ module O = struct
     let lexpr0 = 
       Bdd.Domain1.O.check_value Expr0.O.permute_list listexpr2.val1 t.env
     in
-    let odest0 = Bdd.Expr1.O.check_ovalue t.env odest in
+    let odest0 = Bdd.Env.check_ovalue t.env odest in
     make_value t.env
       (Bdddomain0.O.substitute_lexpr man
 	t.env listexpr2.Cond.cond t.val0 lvar lexpr0 odest0)

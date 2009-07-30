@@ -24,7 +24,7 @@ let is_leq = Expr0.O.Bool.is_leq
 let is_eq = Expr0.O.Bool.is_eq
 
 let is_variable_unconstrained env abs var =
-  Expr1.O.check_var env var;
+  Env.check_var env var;
   let tid = PMappe.find var env#vartid in
   Array.fold_left
     (begin fun res id -> res && not (Cudd.Bdd.is_var_in id abs) end)

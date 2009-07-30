@@ -45,6 +45,7 @@ BDDAPRONMOD = \
         bddapron/descend \
 	bddapron/mtbdddomain0 bddapron/mtbdddomain1 \
 	bddapron/bddleaf bddapron/bdddomain0 bddapron/bdddomain1 \
+	bddapron/domain0 bddapron/domain1 \
 	bddapron/syntax bddapron/yacc bddapron/lex bddapron/parser
 
 MLMOD = $(BDDMOD) $(BDDAPRONMOD)

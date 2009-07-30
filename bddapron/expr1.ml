@@ -25,7 +25,7 @@ module O = struct
   let substitute cond (e:'a t) (substitution:(string * 'a t) list) : 'a t
       =
     let lvarexpr =
-      Bdd.Expr1.O.check_lvarvalue e.env substitution
+      Bdd.Env.check_lvarvalue e.env substitution
     in
     make_value e.env (Expr0.O.substitute e.env cond e.val0 lvarexpr)
 
@@ -182,28 +182,28 @@ module O = struct
     let var env cond name = make_value env (Expr0.O.Apron.var env cond name)
     let cst env cond cst = make_value env (Expr0.O.Apron.cst env cond cst)
     let add cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-      Bdd.Expr1.O.mapbinop
+      Bdd.Env.mapbinop
 	(ApronexprDD.add ~typ ~round) e1 e2
     let mul cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-      Bdd.Expr1.O.mapbinop
+      Bdd.Env.mapbinop
 	(ApronexprDD.mul ~typ ~round) e1 e2
     let sub cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-      Bdd.Expr1.O.mapbinop
+      Bdd.Env.mapbinop
 	(ApronexprDD.sub ~typ ~round) e1 e2
     let div cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-      Bdd.Expr1.O.mapbinop
+      Bdd.Env.mapbinop
 	(ApronexprDD.div ~typ ~round) e1 e2
     let gmod cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-      Bdd.Expr1.O.mapbinop
+      Bdd.Env.mapbinop
 	(ApronexprDD.gmod ~typ ~round) e1 e2
-    let negate cond e = Bdd.Expr1.O.mapunop ApronexprDD.negate e
+    let negate cond e = Bdd.Env.mapunop ApronexprDD.negate e
     let sqrt cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e =
-      Bdd.Expr1.O.mapunop (ApronexprDD.sqrt ~typ ~round) e
+      Bdd.Env.mapunop (ApronexprDD.sqrt ~typ ~round) e
     let cast cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e =
-      Bdd.Expr1.O.mapunop (ApronexprDD.cast ~typ ~round) e
+      Bdd.Env.mapunop (ApronexprDD.cast ~typ ~round) e
 
     let ite cond e1 e2 e3 =
-      Bdd.Expr1.O.mapterop Cudd.Mtbdd.ite e1 e2 e3
+      Bdd.Env.mapterop Cudd.Mtbdd.ite e1 e2 e3
 
     let condition (cond:(Cond.cond,'a) #Cond.O.t) typ (e:'a t) : 'a Bool.t =
       make_value e.env (ApronexprDD.Condition.make e.env cond typ e.val0)
@@ -212,9 +212,9 @@ module O = struct
     let sup cond expr = condition cond Apron.Tcons1.SUP expr
     let eq cond expr = condition cond Apron.Tcons1.EQ expr
 
-    let cofactor e1 e2 = Bdd.Expr1.O.mapbinop Cudd.Mtbdd.cofactor e1 e2
-    let restrict e1 e2 = Bdd.Expr1.O.mapbinop Cudd.Mtbdd.restrict e1 e2
-    let tdrestrict e1 e2 = Bdd.Expr1.O.mapbinop Cudd.Mtbdd.tdrestrict e1 e2
+    let cofactor e1 e2 = Bdd.Env.mapbinop Cudd.Mtbdd.cofactor e1 e2
+    let restrict e1 e2 = Bdd.Env.mapbinop Cudd.Mtbdd.restrict e1 e2
+    let tdrestrict e1 e2 = Bdd.Env.mapbinop Cudd.Mtbdd.tdrestrict e1 e2
 
     let print cond fmt (x:'a t) =
       ApronexprDD.print (Expr0.O.print_bdd x.env cond) fmt x.val0
@@ -249,12 +249,12 @@ module O = struct
     end
 
   let ite cond e1 e2 e3 =
-    Bdd.Expr1.O.check_value3 e1 e2 e3;
+    Bdd.Env.check_value3 e1 e2 e3;
     make_value e1.env (Expr0.O.ite e1.env cond e1.val0 e2.val0 e3.val0)
 
-  let cofactor e1 e2 = Bdd.Expr1.O.mapbinop Expr0.cofactor e1 e2
-  let restrict e1 e2 = Bdd.Expr1.O.mapbinop Expr0.restrict e1 e2
-  let tdrestrict e1 e2 = Bdd.Expr1.O.mapbinop Expr0.tdrestrict e1 e2
+  let cofactor e1 e2 = Bdd.Env.mapbinop Expr0.cofactor e1 e2
+  let restrict e1 e2 = Bdd.Env.mapbinop Expr0.restrict e1 e2
+  let tdrestrict e1 e2 = Bdd.Env.mapbinop Expr0.tdrestrict e1 e2
 
   let eq cond e1 e2 =
     let t = Expr0.O.check_typ2 e1.val0 e2.val0 in
@@ -303,7 +303,7 @@ module O = struct
 
     let of_lexpr0 = make_value
     let of_lexpr1 env lexpr1 =
-      let lexpr0 = Bdd.Expr1.O.check_lvalue env lexpr1 in
+      let lexpr0 = Bdd.Env.check_lvalue env lexpr1 in
       of_lexpr0 env lexpr0
 
     let extend_environment e nenv =

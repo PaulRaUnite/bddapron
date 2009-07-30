@@ -7,7 +7,11 @@
 (** {2 Abstract domain} *)
 (*  ********************************************************************** *)
 
-type 'a man = 'a Mtbdddomain0.man
+type 'a man = 'a Mtbdddomain0.man = {
+  apron: 'a Apron.Manager.t;
+  table : 'a ApronDD.table;
+  oglobal : 'a ApronDD.global option;
+}
   (** BDDAPRON Manager. The type parameter ['a] indicates the
       underlying APRON abstract domain, as in type {!'a
       Apron.Abstract0.t} *)
