@@ -28,142 +28,142 @@
 module O : sig
   
   type 'a t = ('a, Expr0.t) Env.value
-  constraint 'a = ('b,'c) #Env.O.t
+  constraint 'a = ('b,'c,'d) Env.O.t
 
   type 'a expr = 'a t
     (** Type of general expressions *)
     
   module Bool : sig
     type 'a t = ('a, Expr0.Bool.t) Env.value
-    constraint 'a = ('b,'c) #Env.O.t
+    constraint 'a = ('b,'c,'d) Env.O.t
 
     val of_expr : ('a, [> `Bool of Expr0.Bool.t ]) Env.value -> 'a t
     val to_expr : 'a t -> ('a, [> `Bool of Expr0.Bool.t ]) Env.value
 
     val extend_environment : 'a t -> 'a -> 'a t
 
-    val dtrue : 'a -> (Cond.cond,'a) #Cond.O.t -> 'a t
-    val dfalse : 'a -> (Cond.cond,'a) #Cond.O.t -> 'a t
-    val of_bool : 'a -> (Cond.cond,'a) #Cond.O.t -> bool -> 'a t
-    val var : 'a -> (Cond.cond,'a) #Cond.O.t -> string -> 'a t
+    val dtrue : 'a -> 'a Cond.O.t -> 'a t
+    val dfalse : 'a -> 'a Cond.O.t -> 'a t
+    val of_bool : 'a -> 'a Cond.O.t -> bool -> 'a t
+    val var : 'a -> 'a Cond.O.t -> string -> 'a t
 
     (** {4 Logical connectors} *)
 
-    val dnot : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t
-    val dand : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t -> 'a t
-    val dor : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t -> 'a t
+    val dnot : 'a Cond.O.t -> 'a t -> 'a t
+    val dand : 'a Cond.O.t -> 'a t -> 'a t -> 'a t
+    val dor : 'a Cond.O.t -> 'a t -> 'a t -> 'a t
     (** [not], [and] and [or] (use of 'd' prefix because of conflict with OCaml
 	keywords) *)
 
-    val xor : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t -> 'a t
-    val nand : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t -> 'a t
-    val nor : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t -> 'a t
-    val nxor : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t -> 'a t
+    val xor : 'a Cond.O.t -> 'a t -> 'a t -> 'a t
+    val nand : 'a Cond.O.t -> 'a t -> 'a t -> 'a t
+    val nor : 'a Cond.O.t -> 'a t -> 'a t -> 'a t
+    val nxor : 'a Cond.O.t -> 'a t -> 'a t -> 'a t
     (** Exclusive or, not and, nor or and not xor *)
 
-    val eq : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t -> 'a t
+    val eq : 'a Cond.O.t -> 'a t -> 'a t -> 'a t
     (** Same as [nxor] *)
-    val leq : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t -> 'a t
+    val leq : 'a Cond.O.t -> 'a t -> 'a t -> 'a t
     (** Implication *)
 
-    val ite : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t -> 'a t -> 'a t
+    val ite : 'a Cond.O.t -> 'a t -> 'a t -> 'a t -> 'a t
     (** If-then-else *)
 
-    val is_true : (Cond.cond,'a) #Cond.O.t -> 'a t -> bool
-    val is_false : (Cond.cond,'a) #Cond.O.t -> 'a t -> bool
-    val is_cst : (Cond.cond,'a) #Cond.O.t -> 'a t -> bool
-    val is_eq : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t -> bool
-    val is_leq : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t -> bool
-    val is_inter_false : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t -> bool
+    val is_true : 'a Cond.O.t -> 'a t -> bool
+    val is_false : 'a Cond.O.t -> 'a t -> bool
+    val is_cst : 'a Cond.O.t -> 'a t -> bool
+    val is_eq : 'a Cond.O.t -> 'a t -> 'a t -> bool
+    val is_leq : 'a Cond.O.t -> 'a t -> 'a t -> bool
+    val is_inter_false : 'a Cond.O.t -> 'a t -> 'a t -> bool
 
-    val exist : (Cond.cond,'a) #Cond.O.t -> string list -> 'a t -> 'a t
-    val forall : (Cond.cond,'a) #Cond.O.t -> string list -> 'a t -> 'a t
+    val exist : 'a Cond.O.t -> string list -> 'a t -> 'a t
+    val forall : 'a Cond.O.t -> string list -> 'a t -> 'a t
 
     val cofactor : 'a t -> 'a t -> 'a t
     val restrict : 'a t -> 'a t -> 'a t
     val tdrestrict : 'a t -> 'a t -> 'a t
 
-    val substitute_by_var : (Cond.cond,'a) #Cond.O.t -> 'a t -> (string * string) list -> 'a t
-    val substitute : (Cond.cond,'a) #Cond.O.t -> 'a t -> (string * 'a expr) list -> 'a t
+    val substitute_by_var : 'a Cond.O.t -> 'a t -> (string * string) list -> 'a t
+    val substitute : 'a Cond.O.t -> 'a t -> (string * 'a expr) list -> 'a t
 
-    val print : (Cond.cond,'a) #Cond.O.t -> Format.formatter -> 'a t -> unit
+    val print : 'a Cond.O.t -> Format.formatter -> 'a t -> unit
   end
 
   module Bint : sig
     type 'a t = ('a, Cudd.Man.v Bdd.Int.t) Env.value
-    constraint 'a = ('b,'c) #Env.O.t
+    constraint 'a = ('b,'c,'d) Env.O.t
 
     val of_expr : ('a, [> `Bint of Expr0.Bint.t ]) Env.value -> 'a t
     val to_expr : 'a t -> ('a, [> `Bint of Expr0.Bint.t ]) Env.value
     val extend_environment : 'a t -> 'a -> 'a t
 
     val of_int :
-      'a -> (Cond.cond,'a) #Cond.O.t -> [`Tbint of bool * int ] -> int -> 'a t
-    val var : 'a -> (Cond.cond,'a) #Cond.O.t -> string -> 'a t
+      'a -> 'a Cond.O.t -> [`Tbint of bool * int ] -> int -> 'a t
+    val var : 'a -> 'a Cond.O.t -> string -> 'a t
 
-    val neg : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t
-    val succ : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t
-    val pred : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t
-    val add : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t -> 'a t
-    val sub : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t -> 'a t
-    val mul : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t -> 'a t
-    val shift_left : (Cond.cond,'a) #Cond.O.t -> int -> 'a t -> 'a t
-    val shift_right : (Cond.cond,'a) #Cond.O.t -> int -> 'a t -> 'a t
-    val scale : (Cond.cond,'a) #Cond.O.t -> int -> 'a t -> 'a t
-    val ite : (Cond.cond,'a) #Cond.O.t -> 'a Bool.t -> 'a t -> 'a t -> 'a t
-    val zero : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a Bool.t
-    val eq : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t -> 'a Bool.t
-    val supeq : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t -> 'a Bool.t
-    val sup : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t -> 'a Bool.t
-    val eq_int : (Cond.cond,'a) #Cond.O.t -> 'a t -> int -> 'a Bool.t
-    val supeq_int : (Cond.cond,'a) #Cond.O.t -> 'a t -> int -> 'a Bool.t
+    val neg : 'a Cond.O.t -> 'a t -> 'a t
+    val succ : 'a Cond.O.t -> 'a t -> 'a t
+    val pred : 'a Cond.O.t -> 'a t -> 'a t
+    val add : 'a Cond.O.t -> 'a t -> 'a t -> 'a t
+    val sub : 'a Cond.O.t -> 'a t -> 'a t -> 'a t
+    val mul : 'a Cond.O.t -> 'a t -> 'a t -> 'a t
+    val shift_left : 'a Cond.O.t -> int -> 'a t -> 'a t
+    val shift_right : 'a Cond.O.t -> int -> 'a t -> 'a t
+    val scale : 'a Cond.O.t -> int -> 'a t -> 'a t
+    val ite : 'a Cond.O.t -> 'a Bool.t -> 'a t -> 'a t -> 'a t
+    val zero : 'a Cond.O.t -> 'a t -> 'a Bool.t
+    val eq : 'a Cond.O.t -> 'a t -> 'a t -> 'a Bool.t
+    val supeq : 'a Cond.O.t -> 'a t -> 'a t -> 'a Bool.t
+    val sup : 'a Cond.O.t -> 'a t -> 'a t -> 'a Bool.t
+    val eq_int : 'a Cond.O.t -> 'a t -> int -> 'a Bool.t
+    val supeq_int : 'a Cond.O.t -> 'a t -> int -> 'a Bool.t
 
     val cofactor : 'a t -> 'a Bool.t -> 'a t
     val restrict : 'a t -> 'a Bool.t -> 'a t
     val tdrestrict : 'a t -> 'a Bool.t -> 'a t
 
-    val substitute_by_var : (Cond.cond,'a) #Cond.O.t -> 'a t -> (string * string) list -> 'a t
-    val substitute : (Cond.cond,'a) #Cond.O.t -> 'a t -> (string * 'a expr) list -> 'a t
+    val substitute_by_var : 'a Cond.O.t -> 'a t -> (string * string) list -> 'a t
+    val substitute : 'a Cond.O.t -> 'a t -> (string * 'a expr) list -> 'a t
 
-    val guard_of_int : (Cond.cond,'a) #Cond.O.t -> 'a t -> int -> 'a Bool.t
+    val guard_of_int : 'a Cond.O.t -> 'a t -> int -> 'a Bool.t
     (** Return the guard of the integer value. *)
-    val guardints : (Cond.cond,'a) #Cond.O.t -> 'a t -> ('a Bool.t * int) list
+    val guardints : 'a Cond.O.t -> 'a t -> ('a Bool.t * int) list
     (** Return the list [g -> n] of guarded values. *)
 
-    val print : (Cond.cond,'a) #Cond.O.t -> Format.formatter -> 'a t -> unit
+    val print : 'a Cond.O.t -> Format.formatter -> 'a t -> unit
   end
 
   module Benum : sig
     type 'a t = ('a, Cudd.Man.v Bdd.Enum.t) Env.value
-    constraint 'a = ('b,'c) #Env.O.t
+    constraint 'a = ('b,'c,'d) Env.O.t
     val of_expr : ('a, [> `Benum of Expr0.Benum.t ]) Env.value -> 'a t
     val to_expr : 'a t -> ('a, [> `Benum of Expr0.Benum.t ]) Env.value
     val extend_environment : 'a t -> 'a -> 'a t
 
-    val var : 'a -> (Cond.cond,'a) #Cond.O.t -> string -> 'a t
-    val ite : (Cond.cond,'a) #Cond.O.t -> 'a Bool.t -> 'a t -> 'a t -> 'a t
-    val eq : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t -> 'a Bool.t
-    val eq_label : (Cond.cond,'a) #Cond.O.t -> 'a t -> string -> 'a Bool.t
+    val var : 'a -> 'a Cond.O.t -> string -> 'a t
+    val ite : 'a Cond.O.t -> 'a Bool.t -> 'a t -> 'a t -> 'a t
+    val eq : 'a Cond.O.t -> 'a t -> 'a t -> 'a Bool.t
+    val eq_label : 'a Cond.O.t -> 'a t -> string -> 'a Bool.t
 
     val cofactor : 'a t -> 'a Bool.t -> 'a t
     val restrict : 'a t -> 'a Bool.t -> 'a t
     val tdrestrict : 'a t -> 'a Bool.t -> 'a t
 
-    val substitute_by_var : (Cond.cond,'a) #Cond.O.t -> 'a t -> (string * string) list -> 'a t
-    val substitute : (Cond.cond,'a) #Cond.O.t -> 'a t -> (string * 'a expr) list -> 'a t
+    val substitute_by_var : 'a Cond.O.t -> 'a t -> (string * string) list -> 'a t
+    val substitute : 'a Cond.O.t -> 'a t -> (string * 'a expr) list -> 'a t
 
-    val guard_of_label : (Cond.cond,'a) #Cond.O.t -> 'a t -> string -> 'a Bool.t
+    val guard_of_label : 'a Cond.O.t -> 'a t -> string -> 'a Bool.t
     (** Return the guard of the label. *)
 
-    val guardlabels : (Cond.cond,'a) #Cond.O.t -> 'a t -> ('a Bool.t * string) list
+    val guardlabels : 'a Cond.O.t -> 'a t -> ('a Bool.t * string) list
     (** Return the list [g -> label] of guarded values. *)
 
-    val print : (Cond.cond,'a) #Cond.O.t -> Format.formatter -> 'a t -> unit
+    val print : 'a Cond.O.t -> Format.formatter -> 'a t -> unit
   end
 
   module Apron : sig
     type 'a t = ('a, Expr0.Apron.t) Env.value
-    constraint 'a = ('b,'c) #Env.O.t
+    constraint 'a = ('b,'c,'d) Env.O.t
 
     val of_expr :
       ('a, [> `Apron of Expr0.Apron.t ]) Env.value -> 'a t
@@ -173,42 +173,42 @@ module O : sig
 
     val extend_environment : 'a t -> 'a -> 'a t
 
-    val var : 'a -> (Cond.cond,'a) #Cond.O.t -> string -> 'a t
-    val cst : 'a -> (Cond.cond,'a) #Cond.O.t -> Apron.Coeff.t -> 'a t
-    val add : (Cond.cond,'a) #Cond.O.t ->
+    val var : 'a -> 'a Cond.O.t -> string -> 'a t
+    val cst : 'a -> 'a Cond.O.t -> Apron.Coeff.t -> 'a t
+    val add : 'a Cond.O.t ->
       ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round ->
       'a t -> 'a t -> 'a t
-    val mul : (Cond.cond,'a) #Cond.O.t ->
+    val mul : 'a Cond.O.t ->
       ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round ->
       'a t -> 'a t -> 'a t
-    val sub : (Cond.cond,'a) #Cond.O.t ->
+    val sub : 'a Cond.O.t ->
       ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round ->
       'a t -> 'a t -> 'a t
-    val div : (Cond.cond,'a) #Cond.O.t ->
+    val div : 'a Cond.O.t ->
       ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round ->
       'a t -> 'a t -> 'a t
-    val gmod : (Cond.cond,'a) #Cond.O.t ->
+    val gmod : 'a Cond.O.t ->
       ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round ->
       'a t -> 'a t -> 'a t
 
-    val negate : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t
-    val sqrt : (Cond.cond,'a) #Cond.O.t -> ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> 'a t -> 'a t
-    val cast : (Cond.cond,'a) #Cond.O.t -> ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> 'a t -> 'a t
+    val negate : 'a Cond.O.t -> 'a t -> 'a t
+    val sqrt : 'a Cond.O.t -> ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> 'a t -> 'a t
+    val cast : 'a Cond.O.t -> ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> 'a t -> 'a t
 
-    val ite : (Cond.cond,'a) #Cond.O.t -> 'a Bool.t -> 'a t -> 'a t -> 'a t
+    val ite : 'a Cond.O.t -> 'a Bool.t -> 'a t -> 'a t -> 'a t
 
-    val condition : (Cond.cond,'a) #Cond.O.t -> Apron.Tcons1.typ -> 'a t -> 'a Bool.t
-    val supeq : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a Bool.t
-    val sup : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a Bool.t
-    val eq : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a Bool.t
+    val condition : 'a Cond.O.t -> Apron.Tcons1.typ -> 'a t -> 'a Bool.t
+    val supeq : 'a Cond.O.t -> 'a t -> 'a Bool.t
+    val sup : 'a Cond.O.t -> 'a t -> 'a Bool.t
+    val eq : 'a Cond.O.t -> 'a t -> 'a Bool.t
     val cofactor : 'a t -> 'a Bool.t -> 'a t
     val restrict : 'a t -> 'a Bool.t -> 'a t
     val tdrestrict : 'a t -> 'a Bool.t -> 'a t
 
-    val substitute_by_var : (Cond.cond,'a) #Cond.O.t -> 'a t -> (string * string) list -> 'a t
-    val substitute : (Cond.cond,'a) #Cond.O.t -> 'a t -> (string * 'a expr) list -> 'a t
+    val substitute_by_var : 'a Cond.O.t -> 'a t -> (string * string) list -> 'a t
+    val substitute : 'a Cond.O.t -> 'a t -> (string * 'a expr) list -> 'a t
 
-    val print : (Cond.cond,'a) #Cond.O.t -> Format.formatter -> 'a t -> unit
+    val print : 'a Cond.O.t -> Format.formatter -> 'a t -> unit
   end
 
   val typ_of_expr : 'a t -> [
@@ -223,24 +223,24 @@ module O : sig
   (** Creation from an expression without environment *)
 
   val extend_environment : 'a t -> 'a -> 'a t
-  val var : 'a -> (Cond.cond,'a) #Cond.O.t -> string -> 'a t
+  val var : 'a -> 'a Cond.O.t -> string -> 'a t
   (** Expression representing the litteral var *)
-  val ite : (Cond.cond,'a) #Cond.O.t -> 'a Bool.t -> 'a t -> 'a t -> 'a t
+  val ite : 'a Cond.O.t -> 'a Bool.t -> 'a t -> 'a t -> 'a t
   (** If-then-else operation *)
-  val eq : (Cond.cond,'a) #Cond.O.t -> 'a t -> 'a t -> 'a Bool.t
+  val eq : 'a Cond.O.t -> 'a t -> 'a t -> 'a Bool.t
   (** Equality operation *)
 
   val substitute_by_var :
-    (Cond.cond,'a) #Cond.O.t -> 'a t -> (string * string) list -> 'a t
+    'a Cond.O.t -> 'a t -> (string * string) list -> 'a t
     (** Variable renaming.
 	The new variables should already have been declared *)
   val substitute :
-    (Cond.cond,'a) #Cond.O.t -> 'a t -> (string * 'a t) list -> 'a t
+    'a Cond.O.t -> 'a t -> (string * 'a t) list -> 'a t
     (** Parallel substitution of variables by expressions *)
 
-  val support : (Cond.cond,'a) #Cond.O.t -> 'a t -> string PSette.t
+  val support : 'a Cond.O.t -> 'a t -> string PSette.t
     (** Support of the expression *)
-  val support_cond : (Cond.cond,'a) #Cond.O.t -> 'a t -> Cudd.Man.v Cudd.Bdd.t
+  val support_cond : Cudd.Man.vt -> 'a t -> Cudd.Bdd.vt
     (** Return the support of an expression as a conjunction of the BDD
 	identifiers involved in the expression *)
 
@@ -251,11 +251,11 @@ module O : sig
     (** Simplify the expression knowing that the BDD is true.  Generalizes
 	[cofactor]. *)
 
-  val print : (Cond.cond,'a) #Cond.O.t -> Format.formatter -> 'a t -> unit
+  val print : 'a Cond.O.t -> Format.formatter -> 'a t -> unit
 
   val normalize : 
     ?reduce:bool -> ?careset:bool -> 
-    ((Cond.cond,'a) #Cond.O.t as 'b) * 'a t list ->
+    ('a Cond.O.t as 'b) * 'a t list ->
     'b * 'a t list
 
   (*  ====================================================================== *)
@@ -264,20 +264,20 @@ module O : sig
 
   module List : sig
     type 'a t = ('a, Expr0.t list) Env.value
-    constraint 'a = ('b,'c) #Env.O.t
+    constraint 'a = ('b,'c,'d) Env.O.t
       
     val of_lexpr0 : 'a -> Expr0.t list -> 'a t
     val of_lexpr1 : 'a -> 'a expr list -> 'a t
     val extend_environment : 'a t -> 'a -> 'a t
     val normalize : 
       ?reduce:bool -> ?careset:bool -> 
-      ((Cond.cond,'a) #Cond.O.t as 'b) * 'a t ->
+      ('a Cond.O.t as 'b) * 'a t ->
       'b * 'a t
     val print : 
       ?first:(unit,Format.formatter,unit) format ->
       ?sep:(unit,Format.formatter,unit) format ->
       ?last:(unit,Format.formatter,unit) format ->
-      (Cond.cond,'a) #Cond.O.t -> Format.formatter -> 'a t -> unit
+      'a Cond.O.t -> Format.formatter -> 'a t -> unit
   end
 end
   
@@ -288,6 +288,7 @@ end
 (*  ====================================================================== *)
 (** {3 General expressions} *)
 (*  ====================================================================== *)
+
 type t = (Env.t, Expr0.t) Env.value
 type expr = t
   (** Type of general expressions *)
@@ -431,6 +432,7 @@ end
 (*  ====================================================================== *)
 (** {3 Arithmetic expressions} *)
 (*  ====================================================================== *)
+
 module Apron : sig
   type t = (Env.t, Expr0.Apron.t) Env.value
 
@@ -509,7 +511,7 @@ val substitute : Cond.t -> t -> (string * t) list -> t
 
 val support : Cond.t -> t -> string PSette.t
     (** Support of the expression *)
-val support_cond : Cond.t -> t -> Cudd.Man.v Cudd.Bdd.t
+val support_cond : Cudd.Man.vt -> t -> Cudd.Bdd.vt
     (** Return the support of an expression as a conjunction of the BDD
 	identifiers involved in the expression *)
 

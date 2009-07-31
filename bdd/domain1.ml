@@ -13,7 +13,7 @@ open Env
 module O = struct
 
   type ('a,'b) t = ('a,'b) Expr1.O.Bool.t
-  constraint 'a = ('c,'d,'b) #Env.O.t
+  constraint 'a = ('c,'d,'b,'e) Env.O.t
 
   let size t = Domain0.size t.val0
   let print fmt t = Domain0.O.print t.env fmt t.val0
@@ -34,10 +34,10 @@ module O = struct
 
   let check_value permute t nenv =
     if Env.is_eq t.env nenv &&
-      t.env#bddindex0 = nenv#bddindex0 then
+      t.env.bddindex0 = nenv.bddindex0 then
       t.val0
     else if Env.is_leq t.env nenv &&
-      t.env#bddindex0 = nenv#bddindex0 then
+      t.env.bddindex0 = nenv.bddindex0 then
 	permute t.val0 (Env.permutation12 t.env nenv)
     else
       failwith (Print.sprintf "Bdd.Domain1: the environment of the argument is not a subenvironment of the expected environment@. t.env=%a@.nenv=%a@." Env.print t.env Env.print nenv)
@@ -87,8 +87,8 @@ module O = struct
 
   let rename t lvarvar =
     if lvarvar=[] then t else
-      let nenv = Oo.copy t.env in
-      let operm = nenv#rename_vars lvarvar in
+      let nenv = Env.copy t.env in
+      let operm = Env.rename_vars_with nenv lvarvar in
       make_value nenv
 	(match operm with
 	| None -> t.val0
@@ -105,7 +105,7 @@ end
 (*  ********************************************************************** *)
 
 type 'a t = 'a Expr1.Bool.t
-type 'a lexpr = ('a Env.t, 'a Expr0.t list) Env.value
+type 'a expr = ('a Env.t, 'a Expr0.t list) Env.value
 
 let size = O.size
 let print = O.print

@@ -18,19 +18,18 @@ module O = struct
   (** {3 General expressions} *)
   (*  ==================================================================== *)
 
-  type ('a,'b) t = ('a, 'b Expr1.O.t) Cond.value
-  constraint 'a = (Cond.cond,'b) #Cond.O.t
+  type 'a t = ('a Cond.O.t, 'a Expr1.O.t) Cond.value
 
-  type ('a,'b) expr = ('a,'b) t
+  type 'a expr = 'a t
 
-  let print fmt (expr:('a,'b) t) =
+  let print fmt (expr:'a t) =
     Expr1.O.print expr.Cond.cond fmt expr.Cond.val1
 
   let of_expr0
       ?(normalize=false) ?reduce ?careset
-      (env:'b) (cond:'a) (expr0:Expr0.t)
+      (env:'a) (cond:'a Cond.O.t) (expr0:Expr0.t)
       :
-      ('a,'b) t
+      'a t
       =
     let (cond,expr0) =
       if normalize then
@@ -43,9 +42,9 @@ module O = struct
 
   let of_expr1
       ?(normalize=false) ?reduce ?careset
-      (cond:'a) (expr1:'b Expr1.O.t)
+      (cond:'a Cond.O.t) (expr1:'a Expr1.O.t)
       :
-      ('a,'b) t
+      'a t
       =
     if normalize then
       of_expr0 ~normalize ?reduce ?careset expr1.Env.env cond expr1.Env.val0
@@ -62,10 +61,9 @@ module O = struct
   (*  ==================================================================== *)
 
   module Bool = struct
-    type ('a,'b) t = ('a, 'b Expr1.O.Bool.t) Cond.value
-    constraint 'a = (Cond.cond,'b) #Cond.O.t
+    type 'a t = ('a Cond.O.t, 'a Expr1.O.Bool.t) Cond.value
 
-    let print fmt (expr:('a,'b) t) =
+    let print fmt (expr:'a t) =
       Expr1.O.Bool.print expr.Cond.cond fmt expr.Cond.val1
 
     let of_expr e =
@@ -77,9 +75,9 @@ module O = struct
 
     let of_expr0
 	?normalize ?reduce ?careset
-	(env:'b) (cond:'a) (bexpr0:Expr0.Bool.t)
+	(env:'a) (cond:'a Cond.O.t) (bexpr0:Expr0.Bool.t)
 	:
-	('a,'b) t
+	'a t
 	=
       let expr0 = ((Expr0.O.Bool.to_expr bexpr0):> Expr0.t) in
       let expr = of_expr0 ?normalize ?reduce ?careset env cond expr0 in
@@ -87,9 +85,9 @@ module O = struct
 
     let of_expr1
 	?normalize ?reduce ?careset
-	(cond:'a) (bexpr1:'b Expr1.O.Bool.t)
+	(cond:'a Cond.O.t) (bexpr1:'a Expr1.O.Bool.t)
 	:
-	('a,'b) t
+	'a t
 	=
       let expr1 = ((Expr1.O.Bool.to_expr bexpr1):> 'b Expr1.O.t) in
       let expr = of_expr1 ?normalize ?reduce ?careset cond expr1 in
@@ -109,18 +107,17 @@ module O = struct
   (*  ==================================================================== *)
 
   module List = struct
-    type ('a,'b) t = ('a, 'b Expr1.O.List.t) Cond.value
-    constraint 'a = (Cond.cond,'b) #Cond.O.t
+    type 'a t = ('a Cond.O.t, 'a Expr1.O.List.t) Cond.value
 
-    let print ?first ?sep ?last fmt (listexpr:('a,'b) t) =
+    let print ?first ?sep ?last fmt (listexpr:'a t) =
       Expr1.O.List.print ?first ?sep ?last
 	listexpr.Cond.cond fmt listexpr.Cond.val1
 
     let of_lexpr0
 	?(normalize=false) ?reduce ?careset
-	(env:'b) (cond:'a) (lexpr0:Expr0.t list)
+	(env:'a) (cond:'a Cond.O.t) (lexpr0:Expr0.t list)
 	:
-	('a,'b) t
+	'a t
 	=
       let (cond,lexpr0) =
 	if normalize
@@ -131,9 +128,9 @@ module O = struct
 
     let of_listexpr1
 	?(normalize=false) ?reduce ?careset
-	(cond:'a) (listexpr1:'b Expr1.O.List.t)
+	(cond:'a Cond.O.t) (listexpr1:'a Expr1.O.List.t)
 	:
-	('a,'b) t
+	'a t
 	=
       if normalize then
 	of_lexpr0 ~normalize ?reduce ?careset listexpr1.Env.env cond listexpr1.Env.val0
@@ -142,9 +139,9 @@ module O = struct
 
     let of_lexpr1
 	?normalize ?reduce ?careset
-	(env:'b) (cond:'a) (lexpr1:'b Expr1.O.t list)
+	(env:'a) (cond:'a Cond.O.t) (lexpr1:'a Expr1.O.t list)
 	:
-	('a,'b) t
+	'a t
 	=
       let listexpr1 = Expr1.O.List.of_lexpr1 env lexpr1 in
       of_listexpr1 ?normalize ?reduce ?careset cond listexpr1

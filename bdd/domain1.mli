@@ -37,7 +37,7 @@ val assign_listexpr : ?relational:bool -> ?nodependency:bool -> 'a t -> string l
       If [nodependency=true], which means that no expression depends on the
       assigned variables, it uses an optimized algorithm.
       
-      If [rel=true], it is assumed that [Env.t#bddincr=2] (checked), starting from
+      If [rel=true], it is assumed that [env#bddincr=2] (checked), starting from
       a pair index. It is also advised to have paired variables in groups.
       
       [rel=true] is most probably much better for assignements of a few
@@ -66,15 +66,15 @@ module O : sig
   
   val check_value :
     ('a -> int array -> 'a) ->
-    (([> Env.typ ] as 'b, [> Env.typdef ] as 'c, 'd) #Env.O.t, 'a) Env.value ->
-    ('b, 'c, 'd) #Env.O.t -> 'a
+    (('b, 'c, 'd, 'e) Env.O.t, 'a) Env.value ->
+    ('b, 'c, 'd, 'e) Env.O.t -> 'a
   val check_lvalue :
     ('a -> int array -> 'a) ->
-    (([> Env.typ ] as 'b, [> Env.typdef ] as 'c, 'd) #Env.O.t, 'a) Env.value list -> 
-    ('b, 'c, 'd) #Env.O.t -> 'a list
+    (('b, 'c, 'd, 'e) Env.O.t, 'a) Env.value list -> 
+    ('b, 'c, 'd, 'e) Env.O.t -> 'a list
     
   type ('a,'b) t = ('a,'b) Expr1.O.Bool.t
-  constraint 'a = ('c,'d,'b) #Env.O.t
+  constraint 'a = ('c,'d,'b,'e) Env.O.t
     
   val size : ('a,'b) t -> int
   val print : Format.formatter -> ('a,'b) t -> unit
@@ -99,7 +99,7 @@ module O : sig
   val assign_listexpr : ?relational:bool -> ?nodependency:bool -> ('a,'b) t -> string list -> ('a,'b) Expr1.O.List.t -> ('a,'b) t
   (** Assignement
       
-      If [rel=true], it is assumed that [Env.t#bddincr=2] (checked), starting from
+      If [rel=true], it is assumed that [env#bddincr=2] (checked), starting from
       a pair index. It is also advised to have paired variables in groups.
       
       [rel=true] is most probably much better for assignements of a few

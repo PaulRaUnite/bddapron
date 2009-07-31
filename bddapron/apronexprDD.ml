@@ -4,6 +4,8 @@
    Please read the COPYING file packaged in the distribution  *)
 
 open Format
+open Bdd.Env
+open Env
 
 (*  ********************************************************************** *)
 (** {2 Decision diagram} *)
@@ -41,8 +43,8 @@ let absorbant_one expr =
 
 let cst cudd coeff = 
   Cudd.Mtbdd.cst cudd table (Apronexpr.cst coeff)
-let var cudd env v =
-  Cudd.Mtbdd.cst cudd table (Apronexpr.var env v)
+let var env v =
+  Cudd.Mtbdd.cst env.cudd table (Apronexpr.var (Env.typ_of_var env) v)
 let add ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
   Cudd.User.map_op2
     ~commutative:true
@@ -276,12 +278,12 @@ module Condition = struct
       Array.fold_left
 	(begin fun res (guard,e) ->
 	  let atom =
-	    let condition = Apronexpr.Condition.make env typ e in
+	    let condition = Apronexpr.Condition.make (Env.typ_of_var env) typ e in
 	    match condition with
 	    | `Bool b ->
 		if b then Cudd.Bdd.dtrue manager else Cudd.Bdd.dfalse manager
 	    | `Cond x ->
-		let (id,b) = cond#idb_of_cond env (`Apron x) in
+		let (id,b) = Cond.idb_of_cond env cond (`Apron x) in
 		let bdd = Cudd.Bdd.ithvar manager id in
 		if b then bdd else Cudd.Bdd.dnot bdd
 	  in
@@ -297,16 +299,14 @@ module Condition = struct
   let eq env cond expr = make env cond Apronexpr.Condition.EQ expr
 
   let substitute
-   cudd
-   env
-   cond
+   env cond
    (condition:Apronexpr.Condition.t)
    (substitution:(string,[>`Apron of t]) PMappe.t)
    :
-   Cudd.Man.v Cudd.Bdd.t
+   Cudd.Bdd.vt
     =
     let (typ,expr) = condition in
-    let nexpr = substitute cudd expr substitution in
+    let nexpr = substitute env.cudd expr substitution in
     make env cond typ nexpr
 
 end

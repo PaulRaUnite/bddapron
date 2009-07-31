@@ -5,258 +5,158 @@
 
 open Format
 
-let compare_idb = Env.compare_idb
+(*  ********************************************************************** *)
+(** {2 Datatypes } *)
+(*  ********************************************************************** *)
 
-class type ['a,'b,'c] t = object('d)
-  constraint 'b = < bddindex : int; bddindex0 : int; .. >
+type ('a,'b,'c) t = {
+  compare_cond : 'a -> 'a -> int;
+  negate_cond : 'b -> 'a -> 'a;
+  support_cond : 'b -> 'a -> string PSette.t;
+  mutable print_cond : 'b -> Format.formatter -> 'a -> unit;
 
-  method permutation : int array
-    (** Compute the permutation for normalizing the environment *)
-  method permute : int array -> unit
-    (** Apply the given permutation to the environment *)
-  method normalize : int array
-    (** Combine the two previous functions, and return the permutation *)
-
-  method compute_careset : normalized:bool -> unit
-    (** Computes the careset, using [self#compare_cond] *)
-  method reduce : 'c Cudd.Bdd.t -> unit
-    (** Remove from the environment all conditions that do not
-	belong to the given support. Does not perform
-	normalization (so there may be "holes" in the allocation
-	of indices *)
-  method clear : unit
-    (** Clear all the conditions (results in a normalized environments) *)
-
-  method cond_of_idb : int*bool -> 'a
-  method idb_of_cond : 'b -> 'a -> int*bool
-
-  val v_compare_cond : 'a -> 'a -> int
-  val v_negate_cond : 'b -> 'a -> 'a
-  val v_support_cond : 'b -> 'a -> string PSette.t
-  val mutable v_print_cond : 'b -> Format.formatter -> 'a -> unit
-  val v_cudd : 'c Cudd.Man.t
+  cudd : 'c Cudd.Man.t;
     (** CUDD manager *)
-
-  val mutable v_bddindex0 : int
+  mutable bddindex0 : int;
     (** First index for finite-type variables *)
-  val mutable v_bddsize : int
+  mutable bddsize : int;
     (** Number of indices dedicated to finite-type variables *)
-  val mutable v_bddindex : int
+  mutable bddindex : int;
     (** Next free index in BDDs used by [self#add_var]. *)
-  val v_bddincr : int
-  val mutable v_cond : ('a,int*bool) PDMappe.t
-    (** Two-way association between a condition and a pair of a BDD index and a polarity *)
-  val mutable v_cond_supp : 'c Cudd.Bdd.t
+  bddincr : int;
+  mutable condidb : ('a,int*bool) PDMappe.t;
+    (** Two-way association between a condition and a pair of a
+	BDD index and a polarity *)
+  mutable cond_supp : 'c Cudd.Bdd.t;
     (** Support of conditions *)
-  val mutable v_careset : 'c Cudd.Bdd.t
+  mutable careset : 'c Cudd.Bdd.t;
     (** Boolean formula indicating which logical
 	combination known as true could be exploited for simplification.
 	For instance, [x>=1 => x>=0]. *)
+}
 
-  method compare_cond : 'a -> 'a -> int
-  method negate_cond : 'b -> 'a -> 'a
-  method support_cond : 'b -> 'a -> string PSette.t
-  method print_cond : 'b -> Format.formatter -> 'a -> unit
+(*  ********************************************************************** *)
+(** {2 Printing} *)
+(*  ********************************************************************** *)
 
-  method cudd : 'c Cudd.Man.t
-  method bddindex0 : int
-  method bddsize : int
-  method bddindex : int
-  method bddincr : int
-  method cond : ('a,int*bool) PDMappe.t
-  method cond_supp : 'c Cudd.Bdd.t
-  method careset : 'c Cudd.Bdd.t
-
-  method set_bddindex0 : int -> unit
-  method set_bddsize : int -> unit
-  method set_bddindex : int -> unit
-  method set_cond : ('a,int*bool) PDMappe.t -> unit
-  method set_cond_supp : 'c Cudd.Bdd.t -> unit
-  method set_careset : 'c Cudd.Bdd.t -> unit
-end
-
-  (*  ============================================================ *)
-  (** {3 Creating the class [env]} *)
-  (*  ============================================================ *)
-
-class ['a,'b,'c] make
-  ?(bddindex0=100)
-  ?(bddsize=300)
-  (man:'c Cudd.Man.t)
-  ~(compare_cond: 'a -> 'a -> int)
-  ~(negate_cond:'b -> 'a -> 'a)
-  ~(support_cond:('b -> 'a -> string PSette.t))
-  ~(print_cond: 'b -> Format.formatter -> 'a -> unit)
-  :
-  ['a,'b,'c] t
-  =
-object(self)
-
-  val v_compare_cond = compare_cond
-  val v_negate_cond = negate_cond
-  val v_support_cond = support_cond
-  val mutable v_print_cond = print_cond
-
-  val v_cudd = man
-  val mutable v_bddindex0 = bddindex0
-  val mutable v_bddsize = bddsize
-  val mutable v_bddindex = bddindex0
-  val v_bddincr = 1
-  val mutable v_cond = PDMappe.empty compare_cond compare_idb
-  val mutable v_cond_supp = Cudd.Bdd.dtrue man
-  val mutable v_careset = Cudd.Bdd.dtrue man
-
-  method compare_cond = compare_cond
-  method negate_cond = negate_cond
-  method support_cond = support_cond
-  method print_cond = print_cond
-
-  method cudd = v_cudd
-  method bddindex0 = v_bddindex0
-  method bddsize = v_bddsize
-  method bddindex = v_bddindex
-  method bddincr = v_bddincr
-  method cond = v_cond
-  method cond_supp = v_cond_supp
-  method careset = v_careset
-  method set_bddindex0 x = v_bddindex0 <- x
-  method set_bddsize x = v_bddsize <- x
-  method set_bddindex x = v_bddindex <- x
-  method set_cond cond = v_cond <- cond
-  method set_cond_supp supp = v_cond_supp <- supp
-  method set_careset x = v_careset <- x
-
-  method permutation : int array
-    =
-    let perm = Array.init (Cudd.Man.get_bddvar_nb v_cudd) (fun i -> i) in
-    let index = ref 0 in
-    PDMappe.iter
-      (begin fun cond (id,b) ->
-	if b then begin
-	  perm.(id) <- !index;
-	  index := !index + v_bddincr;
-	end
-      end)
-      v_cond
-    ;
-    perm
-
-  method permute (perm:int array) : unit
-    =
-    v_cond <-
-      (PDMappe.fold
-	(begin fun cond (id,b) res ->
-	  PDMappe.add cond (perm.(id),b) res
-	end)
-	v_cond
-	(PDMappe.empty v_compare_cond compare_idb))
-    ;
-    v_cond_supp <- (Cudd.Bdd.permute v_cond_supp perm);
-    v_careset <- (Cudd.Bdd.permute v_careset perm);
-    ()
-
-  method normalize : int array =
-    let perm = self#permutation in
-    self#permute perm;
-    perm
-
-  method reduce supp = 
-    let suppr = Cudd.Bdd.support_diff v_cond_supp supp in
-    v_careset <- Cudd.Bdd.exist suppr v_careset;
-    v_cond_supp <- Cudd.Bdd.cofactor v_cond_supp suppr;
-    let suppr = Cudd.Bdd.list_of_support suppr in
-    let setidb = 
-      List.fold_left 
-	(fun res id -> 
-	  PSette.add (id,true) (PSette.add (id,false) res)
-	)
-	(PSette.empty compare_idb)
-	suppr
-    in
-    v_cond <- PDMappe.diffsety v_cond setidb;
-    ()
-
-  method clear =
-    let dtrue = Cudd.Bdd.dtrue v_cudd in
-    v_cond <- (PDMappe.empty self#compare_cond compare_idb);
-    v_cond_supp <- dtrue;
-    v_careset <- dtrue;
-    v_bddindex <- v_bddindex0
-
-  method compute_careset
-    ~(normalized:bool)
-    :
-    unit
-    =
-    v_careset <- (Cudd.Bdd.dtrue v_cudd);
-    let list =
-      PMappe.fold
-	(begin fun cons (id,b) res ->
-	  if b then (cons,id) :: res else res
-	end)
-	(PDMappe.mapx v_cond)
-	[]
-    in
-    let list =
-      if normalized then list
-      else
-	List.fast_sort
-	  (fun (cons2,id2) (cons1,id1) -> self#compare_cond cons1 cons2)
-	  list
-    in
-    let rec parcours = function
-      | (cons2,id2)::( ((cons1,id1)::_) as t) ->
-	  let cmp = self#compare_cond cons1 cons2 in
-	  if cmp = (-1) then begin
-	    v_careset <-
-	      Cudd.Bdd.dand v_careset
-	      (Cudd.Bdd.dor (Cudd.Bdd.ithvar v_cudd id2)
-		(Cudd.Bdd.dnot (Cudd.Bdd.ithvar v_cudd id1)))
-	  end;
-	  parcours t
-      | _ -> ()
-    in
-    parcours list;
-    ()
-
-  method cond_of_idb idb = PDMappe.x_of_y idb v_cond
-  method idb_of_cond (env:'b) cond : int*bool =
-    try PDMappe.y_of_x cond v_cond
-    with Not_found ->
-      let ncond = v_negate_cond env cond in
-      let id = v_bddindex in
-      if id>=v_bddindex0+v_bddsize then raise Env.Bddindex;
-      let b = (v_compare_cond cond ncond) < 0 in
-      v_cond <-
-	(PDMappe.add
-	  cond (id,b)
-	  (PDMappe.add
-	    ncond (id,not b)
-	    v_cond));
-      v_bddindex <- v_bddindex + v_bddincr;
-      let bdd = (Cudd.Bdd.ithvar v_cudd id) in
-      v_cond_supp <- Cudd.Bdd.dand bdd v_cond_supp;
-      (id,b)
-
-end
-
-let make = new make
-
-let print (env:'b) fmt (cond:('a,'b,'c) #t) =
+let print (env:'b) fmt (cond:('a,'b,'c) t) =
   fprintf fmt
     "{@[<v>bddindex0 = %i; bddindex = %i; cond = %a;@ cond_supp = %a@ careset = %a@]}"
-    cond#bddindex0 cond#bddindex
+    cond.bddindex0 cond.bddindex
     (PDMappe.print
-      (cond#print_cond env)
+      (cond.print_cond env)
       (fun fmt (id,b) -> fprintf fmt "(%i,%b)" id b))
-    cond#cond
-    (Cudd.Bdd.print_minterm pp_print_int) cond#cond_supp
-    (Cudd.Bdd.print_minterm pp_print_int) cond#careset
+    cond.condidb
+    (Cudd.Bdd.print_minterm pp_print_int) cond.cond_supp
+    (Cudd.Bdd.print_minterm pp_print_int) cond.careset
 
-let check_normalized (env:'b) (cond:('a,'b,'c) #t) : bool
+(*  ********************************************************************** *)
+(** {2 Constructors} *)
+(*  ********************************************************************** *)
+
+let compare_idb = Env.compare_idb
+
+let make
+    ?(bddindex0=100)
+    ?(bddsize=300)
+    (cudd:'c Cudd.Man.t)
+    ~(compare_cond: 'a -> 'a -> int)
+    ~(negate_cond:'b -> 'a -> 'a)
+    ~(support_cond:('b -> 'a -> string PSette.t))
+    ~(print_cond: 'b -> Format.formatter -> 'a -> unit)
+    :
+    ('a,'b,'c) t
+    =
+  {
+    compare_cond = compare_cond;
+    negate_cond = negate_cond;
+    support_cond = support_cond;
+    print_cond = print_cond;
+    cudd = cudd;
+    bddindex0 = bddindex0;
+    bddsize = bddsize;
+    bddindex = bddindex0;
+    bddincr = 1;
+    condidb = PDMappe.empty compare_cond compare_idb;
+    cond_supp = Cudd.Bdd.dtrue cudd;
+    careset = Cudd.Bdd.dtrue cudd;
+  }
+
+let copy t = { t with cudd = t.cudd }
+
+(*  ********************************************************************** *)
+(** {2 Internal functions} *)
+(*  ********************************************************************** *)
+
+let permutation t =
+  let perm = Array.init (Cudd.Man.get_bddvar_nb t.cudd) (fun i -> i) in
+  let index = ref 0 in
+  PDMappe.iter
+    (begin fun cond (id,b) ->
+      if b then begin
+	perm.(id) <- !index;
+	index := !index + t.bddincr;
+      end
+    end)
+    t.condidb
+  ;
+  perm
+
+let permute_with t (perm:int array) : unit
+    =
+  t.condidb <-
+    (PDMappe.fold
+      (begin fun cond (id,b) res ->
+	PDMappe.add cond (perm.(id),b) res
+      end)
+      t.condidb
+      (PDMappe.empty t.compare_cond compare_idb))
+  ;
+  t.cond_supp <- (Cudd.Bdd.permute t.cond_supp perm);
+  t.careset <- (Cudd.Bdd.permute t.careset perm);
+  ()
+
+let normalize_with t : int array =
+  let perm = permutation t in
+  permute_with t perm;
+  perm
+
+let reduce_with t supp =
+  let suppr = Cudd.Bdd.support_diff t.cond_supp supp in
+  t.careset <- Cudd.Bdd.exist suppr t.careset;
+  t.cond_supp <- Cudd.Bdd.cofactor t.cond_supp suppr;
+  let suppr = Cudd.Bdd.list_of_support suppr in
+  List.iter
+    (begin fun id ->
+      t.condidb <- PDMappe.removey (id,true) t.condidb;
+      t.condidb <- PDMappe.removey (id,false) t.condidb;
+    end)
+    suppr
+  ;
+(*
+  let setidb =
+    List.fold_left
+      (fun res id ->
+	PSette.add (id,true) (PSette.add (id,false) res)
+      )
+      (PSette.empty compare_idb)
+      suppr
+  in
+  t.condidb <- PDMappe.diffsety t.condidb setidb;
+*)
+  ()
+
+let clear t =
+  let dtrue = Cudd.Bdd.dtrue t.cudd in
+  t.condidb <- (PDMappe.empty t.compare_cond compare_idb);
+  t.cond_supp <- dtrue;
+  t.careset <- dtrue;
+  t.bddindex <- t.bddindex0
+
+let check_normalized (env:'b) (cond:('a,'b,'c) t) : bool
     =
   try
-    let index = ref 0 in
+    let index = ref cond.bddindex0 in
     PDMappe.iter
       (begin fun _ (id,b) ->
 	if b then begin
@@ -268,48 +168,105 @@ let check_normalized (env:'b) (cond:('a,'b,'c) #t) : bool
 	    ;
 	    raise Exit
 	  end;
-	  index := !index + cond#bddincr;
+	  index := !index + cond.bddincr;
 	end
       end)
-      cond#cond
+      cond.condidb
     ;
     true
   with Exit ->
     false
 
-let is_leq (cond1:('a,'b1,'c) #t) (cond2:('a,'b2,'c) #t) : bool =
-  cond1==(Obj.magic cond2) ||
-    cond1#cudd = cond2#cudd &&
-      (cond1#bddindex - cond1#bddindex0 <= cond2#bddindex - cond2#bddindex0) &&
-      (cond1#cond==Obj.magic cond2#cond || PMappe.subset (fun _ _ -> true)
-	(PDMappe.mapx cond1#cond)
-	(PDMappe.mapx cond2#cond))
+(*  ********************************************************************** *)
+(** {2 Operations} *)
+(*  ********************************************************************** *)
 
-let is_eq (cond1:('a,'b1,'c) #t) (cond2:('a,'b2,'c) #t) : bool =
-  cond1==(Obj.magic cond2) ||
-    cond1#cudd = cond2#cudd &&
-      (cond1#bddindex - cond1#bddindex0 = cond2#bddindex - cond2#bddindex0) &&
-      (cond1#cond==Obj.magic cond2#cond || (PDMappe.equaly cond1#cond cond2#cond))
+let cond_of_idb t idb = PDMappe.x_of_y idb t.condidb
+let idb_of_cond (env:'b) t cond : int*bool =
+  try PDMappe.y_of_x cond t.condidb
+  with Not_found ->
+    let ncond = t.negate_cond env cond in
+    let id = t.bddindex in
+    if id>=t.bddindex0+t.bddsize then raise Env.Bddindex;
+    let b = (t.compare_cond cond ncond) < 0 in
+    t.condidb <- PDMappe.add cond (id,b) t.condidb;
+    t.condidb <- PDMappe.add ncond (id,not b) t.condidb;
+    t.bddindex <- t.bddindex + t.bddincr;
+    let bdd = (Cudd.Bdd.ithvar t.cudd id) in
+    t.cond_supp <- Cudd.Bdd.dand bdd t.cond_supp;
+    if t.bddindex >= t.bddindex0+t.bddsize then raise Env.Bddindex;
+    (id,b)
 
-let shift (cond:(('a,'b,'c) #t as 'd)) (offset:int) : 'd =
-  let perm = Env.permutation_of_offset cond#bddindex offset in
-  let ncond = Oo.copy cond in
-  ncond#set_bddindex0 (ncond#bddindex0 + offset);
-  ncond#permute perm;
+let compute_careset
+    (t:('a,'b,'c) t)
+    ~(normalized:bool)
+    :
+    unit
+    =
+  t.careset <- (Cudd.Bdd.dtrue t.cudd);
+  let list =
+    PMappe.fold
+      (begin fun cons (id,b) res ->
+	if b then (cons,id) :: res else res
+      end)
+      (PDMappe.mapx t.condidb)
+      []
+  in
+  let list =
+    if normalized then list
+    else
+      List.fast_sort
+	(fun (cons2,id2) (cons1,id1) -> t.compare_cond cons1 cons2)
+	list
+  in
+  let rec parcours = function
+    | (cons2,id2)::( ((cons1,id1)::_) as rest) ->
+	let cmp = t.compare_cond cons1 cons2 in
+	if cmp = (-1) then begin
+	  t.careset <-
+	    Cudd.Bdd.dand t.careset
+	    (Cudd.Bdd.dor (Cudd.Bdd.ithvar t.cudd id2)
+	      (Cudd.Bdd.dnot (Cudd.Bdd.ithvar t.cudd id1)))
+	end;
+	parcours rest
+    | _ -> ()
+  in
+  parcours list;
+  ()
+
+let is_leq (cond1:('a,'b1,'c) t) (cond2:('a,'b2,'c) t) : bool =
+  cond1==cond2 ||
+    cond1.cudd = cond2.cudd &&
+      (cond1.bddindex - cond1.bddindex0 <= cond2.bddindex - cond2.bddindex0) &&
+      (cond1.condidb==cond2.condidb || PMappe.subset (fun _ _ -> true)
+	(PDMappe.mapx cond1.condidb)
+	(PDMappe.mapx cond2.condidb))
+
+let is_eq (cond1:('a,'b,'c) t) (cond2:('a,'b,'c) t) : bool =
+  cond1==cond2 ||
+    cond1.cudd = cond2.cudd &&
+      (cond1.bddindex - cond1.bddindex0 = cond2.bddindex - cond2.bddindex0) &&
+      (cond1.condidb==cond2.condidb || (PDMappe.equaly cond1.condidb cond2.condidb))
+
+let shift (cond:('a,'b,'c) t) (offset:int) : ('a,'b,'c) t =
+  let perm = Env.permutation_of_offset cond.bddindex offset in
+  let ncond = copy cond in
+  ncond.bddindex0 <- ncond.bddindex0 + offset;
+  permute_with ncond perm;
   ncond
 
-let lce (cond1:(('a,'b,'c) #t as 'd)) (cond2:'d) : 'd =
+let lce (cond1:('a,'b,'c) t) (cond2:('a,'b,'c) t) : ('a,'b,'c) t =
   if is_leq cond2 cond1 then
-    let offset = cond1#bddindex0 - cond2#bddindex0 in
-    if offset>=0 then 
-      cond1 
-    else  
+    let offset = cond1.bddindex0 - cond2.bddindex0 in
+    if offset>=0 then
+      cond1
+    else
       shift cond1 (-offset)
   else if is_leq cond1 cond2 then
-    let offset = cond2#bddindex0 - cond1#bddindex0 in
-    if offset>=0 then 
+    let offset = cond2.bddindex0 - cond1.bddindex0 in
+    if offset>=0 then
       cond2
-    else  
+    else
       shift cond2 (-offset)
   else begin
     let mapcondkid =
@@ -317,81 +274,76 @@ let lce (cond1:(('a,'b,'c) #t as 'd)) (cond2:'d) : 'd =
 	if b then PMappe.add cond (k,id) res else res
       in
       let map1 =
-	PDMappe.fold (add 1) cond1#cond (PMappe.empty cond1#compare_cond)
+	PDMappe.fold (add 1) cond1.condidb (PMappe.empty cond1.compare_cond)
       in
       let map12 =
-	PDMappe.fold (add 2) cond2#cond map1
+	PDMappe.fold (add 2) cond2.condidb map1
       in
       map12
     in
-    let index0 = Pervasives.max cond1#bddindex0 cond2#bddindex0 in
-    let size = Pervasives.max cond1#bddsize cond2#bddsize in
-    let index = ref index0 in
-    let incr = cond1#bddincr in
-    let newcond = ref (PDMappe.empty cond1#compare_cond compare_idb) in
+    let cond = copy cond1 in
+    cond.bddindex0 <- Pervasives.max cond1.bddindex0 cond2.bddindex0;
+    cond.bddsize <- Pervasives.max cond1.bddsize cond2.bddsize;
+    clear cond;
     PMappe.iter
       (begin fun pcond (k,id) ->
-	let ncond =
-	  (if k=1 then cond1 else cond2)#cond_of_idb (id,false)
-	in
-	if !index >= index0+size then raise Env.Bddindex;
-	newcond :=
-	  PDMappe.add pcond (!index,true)
-	    (PDMappe.add ncond (!index,false) !newcond);
-	index := !index + incr;
+	let ncond = cond_of_idb (if k=1 then cond1 else cond2) (id,false) in
+	if cond.bddindex >= cond.bddindex0+cond.bddsize then raise Env.Bddindex;
+	cond.condidb <- PDMappe.add pcond (cond.bddindex,true) cond.condidb;
+	cond.condidb <- PDMappe.add ncond (cond.bddindex,false) cond.condidb;
+	let bdd = (Cudd.Bdd.ithvar cond.cudd id) in
+	cond.cond_supp <- Cudd.Bdd.dand bdd cond.cond_supp;
+	cond.bddindex <- cond.bddindex + cond.bddincr
       end)
       mapcondkid
     ;
-    let cond = Oo.copy cond1 in
-    cond#set_bddindex0 index0;
-    cond#set_bddsize size;
-    cond#set_bddindex !index;
-    cond#set_cond !newcond;
-    cond#set_cond_supp (Cudd.Bdd.dtrue cond#cudd);
-    cond#set_careset (Cudd.Bdd.dtrue cond#cudd);
-    cond#compute_careset ~normalized:true;
+    compute_careset cond ~normalized:true;
     cond
   end
 
-let permutation12 (cond1:('a,'b1,'c) #t) (cond2:('a,'b2,'c) #t) : int array
+let permutation12 (cond1:('a,'b,'c) t) (cond2:('a,'b,'c) t) : int array
   =
   assert(is_leq cond1 cond2);
-  let perm = Array.init cond1#bddindex (fun i -> i) in
-  let offset = ref (cond2#bddindex0 - cond1#bddindex0) in
+  let perm = Array.init cond1.bddindex (fun i -> i) in
+  let offset = ref (cond2.bddindex0 - cond1.bddindex0) in
   PMappe.iter
     (begin fun cons2 (id2,b2) ->
       if b2 then begin
 	try
-	  let (id1,b1) = PDMappe.y_of_x cons2 cond1#cond in
+	  let (id1,b1) = PDMappe.y_of_x cons2 cond1.condidb in
 	  assert b1;
 	  perm.(id1) <- id1 + !offset
 	with Not_found ->
-	  offset := !offset + cond2#bddincr
+	  offset := !offset + cond2.bddincr
       end
     end)
-    (PDMappe.mapx cond2#cond)
+    (PDMappe.mapx cond2.condidb)
   ;
   perm
 
-let permutation21 (cond2:('a,'b2,'c) #t) (cond1:('a,'b1,'c) #t) : int array
+let permutation21 (cond2:('a,'b,'c) t) (cond1:('a,'b,'c) t) : int array
     =
   assert(is_leq cond1 cond2);
-  let perm = Array.init cond2#bddindex (fun i -> i) in
-  let offset = ref (cond2#bddindex0 - cond1#bddindex0) in
+  let perm = Array.init cond2.bddindex (fun i -> i) in
+  let offset = ref (cond2.bddindex0 - cond1.bddindex0) in
   PMappe.iter
     (begin fun cons2 (id2,b2) ->
       if b2 then begin
 	try
-	  let (id1,b1) = PDMappe.y_of_x cons2 cond1#cond in
+	  let (id1,b1) = PDMappe.y_of_x cons2 cond1.condidb in
 	  assert b1;
 	  perm.(id1 + !offset) <- id1
 	with Not_found ->
-	  offset := !offset + cond2#bddincr;
+	  offset := !offset + cond2.bddincr;
       end
     end)
-    (PDMappe.mapx cond2#cond)
+    (PDMappe.mapx cond2.condidb)
   ;
   perm
+
+(*  ********************************************************************** *)
+(** {2 Level 2} *)
+(*  ********************************************************************** *)
 
 type ('a,'b) value = {
   cond : 'a;
@@ -400,4 +352,3 @@ type ('a,'b) value = {
 
 let make_value cond val1 =
   { cond=cond; val1=val1 }
-    

@@ -154,7 +154,7 @@ let rec translate_expr
     let res = match expr with
       | Cst cst -> translate_cst env cond cst
       | Ref var ->
-	  if not (env#mem_var var) then
+	  if not (Env.mem_var env var) then
 	    (error
 	      "unknown label/variable %s" var)
 	  else

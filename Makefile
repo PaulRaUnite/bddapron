@@ -37,10 +37,10 @@ BDDMOD = \
 
 BDDAPRONMOD = \
 	bddapron/apronexpr \
-	bddapron/apronexprDD \
-	bddapron/apronDD \
 	bddapron/env \
 	bddapron/cond \
+	bddapron/apronexprDD \
+	bddapron/apronDD \
 	bddapron/expr0 bddapron/expr1 bddapron/expr2 \
         bddapron/descend \
 	bddapron/mtbdddomain0 bddapron/mtbdddomain1 \
@@ -157,7 +157,8 @@ bddtop: bdd.cma
 bddaprontop: bddapron.cma
 	$(OCAMLMKTOP) -g -verbose $(OCAMLFLAGS) $(OCAMLINC) -o $@ \
 	-custom -cc "$(CC)" cudd.cma camllib.cma \
-	bigarray.cma gmp.cma apron.cma box.cma polka.cma bddapron.cma
+	bigarray.cma gmp.cma apron.cma box.cma oct.cma polka.cma bddapron.cma -cclib "-loctMPQ"
+
 
 example1.byte: bdd/example1.ml bdd.cma
 	$(OCAMLC) -g $(OCAMLFLAGS) $(OCAMLINC) -o $@ -custom cudd.cma camllib.cma bdd.cma $<

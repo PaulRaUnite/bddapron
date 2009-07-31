@@ -10,10 +10,7 @@ type typ = [
   | `Real
 ]
 
-class type ['a] env = object
-  constraint 'a = [>typ]
-  method typ_of_var : string -> 'a
-end
+type 'a typ_of_var = string -> 'a constraint 'a = [>typ]
 
 (*  ********************************************************************** *)
 (** {2 Expressions} *)
@@ -129,7 +126,7 @@ type t =
   | Tree of Tree.t
 type expr = t
 
-val var : 'a #env -> string -> t
+val var : 'a typ_of_var -> string -> t
 val zero : t
 val one : t
 val cst : Apron.Coeff.t -> t
@@ -148,8 +145,8 @@ val equal : t -> t -> bool
 val hash : t -> int
 val compare : t -> t -> int
 val normalize_as_constraint : t -> t
-val is_dependent_on_integer_only : 'a #env -> t -> bool
-val typ_of_expr : 'a #env -> t -> [`Int | `Real]
+val is_dependent_on_integer_only : 'a typ_of_var -> t -> bool
+val typ_of_expr : 'a typ_of_var -> t -> [`Int | `Real]
 val print : Format.formatter -> t -> unit
 val print_typ : Format.formatter -> [>typ] -> unit
 
@@ -171,8 +168,8 @@ module Condition :
     type typ = Apron.Tcons1.typ = 
       EQ | SUPEQ | SUP | DISEQ | EQMOD of Apron.Scalar.t
     type t = typ * expr
-    val make : 'a #env -> typ -> expr -> [ `Cond of t | `Bool of bool ]
-    val negate : 'a #env -> t -> t
+    val make : 'a typ_of_var -> typ -> expr -> [ `Cond of t | `Bool of bool ]
+    val negate : 'a typ_of_var -> t -> t
     val support : t -> string PSette.t
     val print : Format.formatter -> t -> unit
     val compare : t -> t -> int

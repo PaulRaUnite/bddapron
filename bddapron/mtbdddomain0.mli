@@ -74,7 +74,7 @@ val meet_condition :
 
 val assign_lexpr :
   ?relational:bool -> ?nodependency:bool ->
-  'a man -> Env.t -> Cond. t ->
+  'a man -> Env.t -> Cond.t ->
   'a t -> string list -> Expr0.t list -> 'a t option -> 'a t
 val substitute_lexpr :
   'a man -> Env.t -> Cond.t ->
@@ -99,12 +99,10 @@ val widening : 'a man -> 'a t -> 'a t -> 'a t
   more internal functions *)
 
 module O : sig
-  val print :
-    ('a,'b) #Env.O.t ->
-    Format.formatter -> 'd t -> unit
-  val bottom : 'a man -> ('b,'c) #Env.O.t -> 'a t
-  val top : 'a man -> ('b,'c) #Env.O.t -> 'a t
-  val of_apron : 'a man -> ('b,'c) #Env.O.t -> 'a Apron.Abstract0.t -> 'a t
+  val print : ('b,'c,'d) Env.O.t -> Format.formatter -> 'a t -> unit
+  val bottom : 'a man -> ('b,'c,'d) Env.O.t -> 'a t
+  val top : 'a man -> ('b,'c,'d) Env.O.t -> 'a t
+  val of_apron : 'a man -> ('b,'c,'d) Env.O.t -> 'a Apron.Abstract0.t -> 'a t
 
   val is_bottom : 'a man -> 'a t -> bool
   val is_top : 'a man -> 'a t -> bool
@@ -115,25 +113,25 @@ module O : sig
   val join : 'a man -> 'a t -> 'a t -> 'a t
   val widening : 'a man -> 'a t -> 'a t -> 'a t
   val meet_idcondb :
-    'a man -> (('b,'c) #Env.O.t as 'd) -> (Cond.cond,'d) #Cond.O.t -> 'a t -> int * bool -> 'a t
+    'a man -> 'b -> 'b Cond.O.t -> 'a t -> int * bool -> 'a t
 
   val meet_condition :
-    'a man -> (('b,'c) #Env.O.t as 'd) -> (Cond.cond,'d) #Cond.O.t ->
+    'a man -> 'b -> 'b Cond.O.t ->
     'a t -> Expr0.Bool.t -> 'a t
   val assign_lexpr :
     ?relational:bool ->
     ?nodependency:bool ->
     'a man -> 
-    (('b,'c) #Env.O.t as 'd) -> (Cond.cond,'d) #Cond.O.t ->
+    'b -> 'b Cond.O.t ->
     'a t -> string list -> Expr0.t list -> 'a t option -> 'a t
   val substitute_lexpr :
     'a man ->
-    (('b,'c) #Env.O.t as 'd) -> (Cond.cond,'d) #Cond.O.t ->
+    'b -> 'b Cond.O.t ->
     'a t -> string list -> Expr0.t list -> 'a t option -> 'a t
   val forget_list :
-    'd man ->
-    ('a,'b) #Env.O.t ->
-    'd t -> string list -> 'd t
+    'a man ->
+    ('b,'c,'d) Env.O.t ->
+    'a t -> string list -> 'a t
   val apply_change :
     bottom:'a t -> 'a man -> 'a ApronDD.t -> Env.change -> 'a t
   val apply_permutation :

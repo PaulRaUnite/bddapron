@@ -17,7 +17,7 @@ module O = struct
   (*  ==================================================================== *)
 
   type ('a,'b) t = ('a, 'b Expr0.expr) Env.value
-  constraint 'a = ('c,'d,'b) #Env.O.t
+  constraint 'a = ('c,'d,'b,'e) Env.O.t
 
   type ('a,'b) expr = ('a,'b) t
     (** Type of general expressions *)
@@ -48,7 +48,7 @@ module O = struct
 
   let support (e:('a,'b) expr) = Expr0.O.support e.env e.val0
 
-  let support_cond (e:('a,'b) expr) = Expr0.O.support_cond e.env e.val0
+  let support_cond (e:('a,'b) expr) = Expr0.O.support_cond e.env.cudd e.val0
 
   let print fmt (e:('a,'b) expr) : unit = Expr0.O.print e.env fmt e.val0
 
@@ -58,7 +58,7 @@ module O = struct
 
   module Bool = struct
     type ('a,'b) t = ('a, 'b Cudd.Bdd.t) Env.value
-    constraint 'a = ('c,'d,'b) #Env.O.t
+    constraint 'a = ('c,'d,'b,'e) Env.O.t
 
     let of_expr e : ('a,'b) t =
       match e.val0 with
@@ -70,8 +70,8 @@ module O = struct
 
     let extend_environment e nenv = Env.extend_environment Cudd.Bdd.permute e nenv
 
-    let dtrue env = make_value env (Cudd.Bdd.dtrue env#cudd)
-    let dfalse env = make_value env (Cudd.Bdd.dfalse env#cudd)
+    let dtrue env = make_value env (Cudd.Bdd.dtrue env.cudd)
+    let dfalse env = make_value env (Cudd.Bdd.dfalse env.cudd)
     let of_bool env b = if b then dtrue env else dfalse env
 
     let var env (var:string) =
@@ -138,7 +138,7 @@ module O = struct
 
   module Bint = struct
     type ('a,'b) t = ('a, 'b Int.t) Env.value
-    constraint 'a = ('c,'d,'b) #Env.O.t
+    constraint 'a = ('c,'d,'b,'e) Env.O.t
 
     let of_expr e : ('a,'b) t =
       match e.val0 with
@@ -153,7 +153,7 @@ module O = struct
     let of_int env typ cst =
       match typ with
       | `Tbint(sgn,size) ->
-	  make_value env (Int.of_int env#cudd sgn size cst)
+	  make_value env (Int.of_int env.cudd sgn size cst)
 
     let var env (var:string) =
       make_value env (Expr0.O.Bint.var env var)
@@ -170,13 +170,13 @@ module O = struct
     let scale n e = Env.mapunop (Int.scale n) e
     let ite e1 e2 e3 = Env.mapterop Int.ite e1 e2 e3
 
-    let zero e = make_value e.env (Int.zero e.env#cudd e.val0)
+    let zero e = make_value e.env (Int.zero e.env.cudd e.val0)
 
-    let eq e1 e2 = Env.mapbinop (Int.equal e1.env#cudd) e1 e2
-    let supeq e1 e2 = Env.mapbinop (Int.greatereq e1.env#cudd) e1 e2
-    let sup e1 e2 = Env.mapbinop (Int.greater e1.env#cudd) e1 e2
-    let eq_int e n = make_value e.env (Int.equal_int e.env#cudd e.val0 n)
-    let supeq_int e n = make_value e.env (Int.greatereq_int e.env#cudd e.val0 n)
+    let eq e1 e2 = Env.mapbinop (Int.equal e1.env.cudd) e1 e2
+    let supeq e1 e2 = Env.mapbinop (Int.greatereq e1.env.cudd) e1 e2
+    let sup e1 e2 = Env.mapbinop (Int.greater e1.env.cudd) e1 e2
+    let eq_int e n = make_value e.env (Int.equal_int e.env.cudd e.val0 n)
+    let supeq_int e n = make_value e.env (Int.greatereq_int e.env.cudd e.val0 n)
 
     let cofactor e1 e2 = Env.mapbinop Int.cofactor e1 e2
     let restrict e1 e2 = Env.mapbinop Int.restrict e1 e2
@@ -189,10 +189,10 @@ module O = struct
       of_expr (substitute (to_expr e) lvarexpr)
 
     let guard_of_int (e:('a,'b) t) (n:int) : ('a,'b) Bool.t =
-      make_value e.env (Int.guard_of_int e.env#cudd e.val0 n)
+      make_value e.env (Int.guard_of_int e.env.cudd e.val0 n)
 
     let guardints (e:('a,'b) t) : (('a,'b) Bool.t*int) list =
-      let res = Int.guardints e.env#cudd e.val0 in
+      let res = Int.guardints e.env.cudd e.val0 in
       List.map (fun (bdd,n) -> (make_value e.env bdd, n)) res
 
     let print fmt (x:('a,'b) t) =
@@ -206,7 +206,7 @@ module O = struct
 
   module Benum = struct
     type ('a,'b) t = ('a, 'b Enum.t) Env.value
-    constraint 'a = ('c,'d,'b) #Env.O.t
+    constraint 'a = ('c,'d,'b,'e) Env.O.t
 
     let of_expr e : ('a,'b) t =
       match e.val0 with
@@ -266,7 +266,7 @@ module O = struct
 
   module List = struct
     type ('a,'b) t = ('a, 'b Expr0.t list) Env.value
-    constraint 'a = ('c,'d,'b) #Env.O.t
+    constraint 'a = ('c,'d,'b,'e) Env.O.t
       
     let of_lexpr0 = make_value
     let of_lexpr env lexpr1 =

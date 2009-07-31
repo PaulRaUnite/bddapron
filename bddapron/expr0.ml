@@ -4,6 +4,10 @@
    Please read the COPYING file packaged in the distribution  *)
 
 open Format
+open Bdd.Cond
+open Bdd.Env
+open Cond
+open Env
 
 type t = [
   | Cudd.Man.v Bdd.Expr0.t
@@ -17,15 +21,12 @@ type expr = t
 
 module O = struct
 
-  let print_bdd
-      (env:('a,'b) #Env.O.t as 'c)
-      (cond:(Cond.cond,'c) #Cond.O.t)
-      fmt bdd
+  let print_bdd env cond fmt bdd
       =
     Bdd.Expr0.O.print_bdd
       ~print_external_idcondb:begin fun fmt idb ->
-	let condition = cond#cond_of_idb idb in
-	cond#print_cond env fmt condition
+	let condition = Cond.cond_of_idb cond idb in
+	Cond.print_cond env fmt condition
       end
       env fmt bdd
 
@@ -83,10 +84,10 @@ module O = struct
     List.map (fun e -> permute e tab) le
 
   let compose_of_lvarexpr
-      (env:('a,'b) #Env.O.t as 'c) (cond:(Cond.cond,'c) #Cond.O.t)
+      env cond
       (substitution:(string*expr) list)
       :
-      Cudd.Man.v Cudd.Bdd.t array option * (string, expr) PMappe.t
+      Cudd.Bdd.vt array option * (string, expr) PMappe.t
       =
     let change = ref false in
     (* we first look at Boolean variables/conditions *)
@@ -110,14 +111,14 @@ module O = struct
       (* we now take care of other conditions *)
       for id=0 to pred(Array.length tab) do
 	begin try
-	  let condition = cond#cond_of_idb (id,true) in
-	  let supp = cond#support_cond env condition in
+	  let condition = Cond.cond_of_idb cond (id,true) in
+	  let supp = Cond.support_cond env condition in
 	  let substitution = PMappe.interset osub supp in
 	  if not (PMappe.is_empty substitution) then begin
 	    change := true;
 	    let bdd = match condition with
 	      | `Apron x ->
-		  ApronexprDD.Condition.substitute env#cudd env cond x substitution
+		  ApronexprDD.Condition.substitute env cond x substitution
 	    in
 	    tab.(id) <- bdd
 	  end
@@ -129,7 +130,7 @@ module O = struct
     ((if !change then Some tab else None), osub)
 
   let substitute
-      (env:('a,'b) #Env.O.t as 'c) (cond:(Cond.cond,'c) #Cond.O.t)
+      env cond
       (e:t) (substitution:(string*expr) list) : t
       =
     if substitution = [] then
@@ -156,7 +157,7 @@ module O = struct
 	    | Some(tab) -> ((Bdd.Expr0.O.compose x tab):>expr)
 	    end
 	| `Apron expr ->
-	    let cudd = env#cudd in
+	    let cudd = env.cudd in
 	    let default = Cudd.Mtbdd.cst_u cudd (Cudd.Mtbdd.pick_leaf_u expr) in
 	    let leaves_u = Cudd.Mtbdd.leaves_u expr in
 	    let res = ref default in
@@ -178,19 +179,19 @@ module O = struct
     end
 
   let var
-      (env:('a,'b) #Env.O.t as 'c) (cond:(Cond.cond,'c) #Cond.O.t)
+      env cond
       (var:string) : t
       =
-    let typ = env#typ_of_var var in
+    let typ = Env.typ_of_var env var in
     match typ with
     | #Bdd.Env.typ ->
 	((Bdd.Expr0.O.var env var):>expr)
     | `Int | `Real ->
-	`Apron (ApronexprDD.var env#cudd env var)
+	`Apron (ApronexprDD.var env var)
     | _ -> raise Not_found
 
   let substitute_by_var
-      (env:('a,'b) #Env.O.t as 'c) (cond:(Cond.cond,'c) #Cond.O.t)
+      env cond
       e (substitution:(string*string) list)
       =
     substitute env cond e
@@ -325,8 +326,8 @@ module O = struct
 
     let print env cond fmt x = ApronexprDD.print (print_bdd env cond) fmt x
 
-    let cst env cond c = ApronexprDD.cst env#cudd c
-    let var env cond name = ApronexprDD.var env#cudd env name
+    let cst env cond c = ApronexprDD.cst env.cudd c
+    let var env cond name = ApronexprDD.var env name
     let add env cond = ApronexprDD.add
     let sub env cond = ApronexprDD.sub
     let mul env cond = ApronexprDD.mul
@@ -336,11 +337,11 @@ module O = struct
     let cast env cond = ApronexprDD.cast
     let sqrt env cond = ApronexprDD.sqrt
 
-    let supeq (env:('a,'b) #Env.O.t) cond = ApronexprDD.Condition.supeq env cond
-    let sup (env:('a,'b) #Env.O.t) cond = ApronexprDD.Condition.sup env cond
-    let eq (env:('a,'b) #Env.O.t) cond = ApronexprDD.Condition.eq env cond
+    let supeq env cond = ApronexprDD.Condition.supeq env cond
+    let sup env cond = ApronexprDD.Condition.sup env cond
+    let eq env cond = ApronexprDD.Condition.eq env cond
 
-    let ite (env:('a,'b) #Env.O.t) cond b (t1:t) (t2:t) : t =
+    let ite env cond b (t1:t) (t2:t) : t =
       Cudd.Mtbdd.ite b t1 t2
 
     let cofactor = Cudd.Mtbdd.cofactor
@@ -391,30 +392,30 @@ module O = struct
     | _ -> failwith ""
 
   let support_cond
-      (env: < cudd : Cudd.Man.v Cudd.Man.t; .. >)
-      (expr:t) : Cudd.Man.v Cudd.Bdd.t
+      cudd
+      (expr:t) : Cudd.Bdd.vt
       =
     match expr with
     | #Bdd.Expr0.t as x ->
-	Bdd.Expr0.O.support_cond env (x:> Cudd.Man.v Bdd.Expr0.t)
+	Bdd.Expr0.O.support_cond cudd (x:> Cudd.Man.v Bdd.Expr0.t)
     | `Apron x ->
 	Apron.support x
 
   let support
-      (env:('a,'b) #Env.O.t as 'c) (cond:(Cond.cond,'c) #Cond.O.t)
+      env cond
       (expr:t) : string PSette.t
       =
-    let supp = support_cond env expr in
+    let supp = support_cond env.cudd expr in
     let list = Cudd.Bdd.list_of_support supp in
     let set = ref (PSette.empty String.compare) in
     List.iter
       (begin fun id ->
 	try
-	  let condition = cond#cond_of_idb (id,true) in
-	  let supp = cond#support_cond env condition in
+	  let condition = Cond.cond_of_idb cond (id,true) in
+	  let supp = Cond.support_cond env condition in
 	  set := PSette.union supp !set
 	with Not_found ->
-	  let var = PMappe.find id env#idcondvar in
+	  let var = PMappe.find id env.idcondvar in
 	  set := PSette.add var !set
       end)
       list
@@ -428,39 +429,36 @@ module O = struct
 
   let normalize 
       ?(reduce=false) ?(careset=false) 
-      ((cond,lexpr):(((Cond.cond,'a) #Cond.O.t as 'b) * t list))
-      :
-      'b * t list
+      ((cond:'a Cond.O.t),lexpr)
       =
-    let ncond = Oo.copy cond in
+    let ncond = Cond.copy cond in
     let support lexpr =
-      let cond_supp = ncond#cond_supp in
       List.fold_left
 	(begin fun supp expr ->
 	  Cudd.Bdd.support_union supp 
 	    (Cudd.Bdd.support_inter 
-	      cond_supp 
-	      (support_cond ncond expr))
+	      ncond.cond_supp 
+	      (support_cond ncond.Bdd.Cond.cudd expr))
 	end)
-	(Cudd.Bdd.dtrue cond#cudd)
+	(Cudd.Bdd.dtrue cond.Bdd.Cond.cudd)
 	lexpr
     in
     if reduce then begin
       let supp = support lexpr in
-      ncond#reduce supp
+      Bdd.Cond.reduce_with ncond supp
     end;
-    let perm = ncond#normalize in
+    let perm = Bdd.Cond.normalize_with ncond in
     let lexpr = List.map (fun e -> permute e perm) lexpr in
     let lexpr = 
       if careset then begin
-	ncond#compute_careset ~normalized:true;
-	let careset = ncond#careset in
+	Bdd.Cond.compute_careset ncond ~normalized:true;
+	let careset = ncond.careset in
 	let lexpr = List.map (fun e -> tdrestrict e careset) lexpr in
 	if reduce then begin
 	  let supp = support lexpr in
-	  if not (Cudd.Bdd.is_equal supp ncond#cond_supp) then begin
-	    ncond#reduce supp;
-	    let perm = ncond#normalize in
+	  if not (Cudd.Bdd.is_equal supp ncond.cond_supp) then begin
+	    Bdd.Cond.reduce_with ncond supp;
+	    let perm = Bdd.Cond.normalize_with ncond in
 	    let lexpr = List.map (fun e -> permute e perm) lexpr in
 	    lexpr
 	  end
@@ -499,7 +497,7 @@ let substitute_by_var = O.substitute_by_var
 let substitute = O.substitute  
 let support = O.support
 let eq = O.eq
-let support_cond env = O.support_cond
+let support_cond = O.support_cond
 let print = O.print
 let normalize = O.normalize
 

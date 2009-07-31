@@ -42,7 +42,7 @@ val assign_lexpr :
     If [nodependency=true], which means that no expression depends on the
     assigned variables, it uses an optimized algorithm.
 
-    If [relational=true], it is assumed that [Env.t#bddincr=2] (checked),
+    If [relational=true], it is assumed that [env#bddincr=2] (checked),
     starting from a pair index. It is also advised to have paired variables in
     groups.
 
@@ -69,47 +69,47 @@ module O : sig
 
 val print :     
     ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-    ('a,'b,'d) #Env.O.t -> Format.formatter -> 'd t -> unit
+    ('a,'b,'c,'d) Env.O.t -> Format.formatter -> 'c t -> unit
 
 val bottom :
-  ('a,'b,'d) #Env.O.t -> 'd t
+  ('a,'b,'c,'d) Env.O.t -> 'c t
 val top :
-  ('a,'b,'d) #Env.O.t -> 'd t
+  ('a,'b,'c,'d) Env.O.t -> 'c t
   (** Constructors *)
 
-val is_bottom : ('a,'b,'d) #Env.O.t -> 'd t -> bool
-val is_top : ('a,'b,'d) #Env.O.t -> 'd t -> bool
-val is_leq : ('a,'b,'d) #Env.O.t -> 'd t -> 'd t -> bool
-val is_eq : ('a,'b,'d) #Env.O.t -> 'd t -> 'd t -> bool
-val is_variable_unconstrained : ('a,'b,'d) #Env.O.t -> 'd t -> string -> bool
+val is_bottom : ('a,'b,'c,'d) Env.O.t -> 'c t -> bool
+val is_top : ('a,'b,'c,'d) Env.O.t -> 'c t -> bool
+val is_leq : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> bool
+val is_eq : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> bool
+val is_variable_unconstrained : ('a,'b,'c,'d) Env.O.t -> 'c t -> string -> bool
   (** Tests *)
 
-val meet : ('a,'b,'d) #Env.O.t -> 'd t -> 'd t -> 'd t
-val join : ('a,'b,'d) #Env.O.t -> 'd t -> 'd t -> 'd t
-val meet_condition : ('a,'b,'d) #Env.O.t -> 'd t -> 'd Expr0.Bool.t -> 'd t
+val meet : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> 'c t
+val join : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> 'c t
+val meet_condition : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c Expr0.Bool.t -> 'c t
   (** Lattice operations *)
 
 val assign_lexpr :
   ?relational:bool ->
   ?nodependency:bool -> 
-  ('a,'b,'d) #Env.O.t ->
-  'd t -> string list -> 'd Expr0.expr list -> 'd t
+  ('a,'b,'c,'d) Env.O.t ->
+  'c t -> string list -> 'c Expr0.expr list -> 'c t
   (** Assignement
 
     If [nodependency=true], which means that no expression depends on the
     assigned variables, it uses an optimized algorithm.
 
-    If [rel=true], it is assumed that [Env.t#bddincr=2] (checked), starting from
+    If [rel=true], it is assumed that [env#bddincr=2] (checked), starting from
     a pair index. It is also advised to have paired variables in groups.
 
     [rel=true] is most probably much better for assignements of a few
     variables.  *)
 val substitute_lexpr :
-  ('a,'b,'d) #Env.O.t ->
-  'd t -> string list -> 'd Expr0.expr list -> 'd t
+  ('a,'b,'c,'d) Env.O.t ->
+  'c t -> string list -> 'c Expr0.expr list -> 'c t
   (** Substitution *)
 
-val forget_list : ('a,'b,'d) #Env.O.t -> 'd t -> string list -> 'd t
+val forget_list : ('a,'b,'c,'d) Env.O.t -> 'c t -> string list -> 'c t
   (** Eliminating variables *)
 
 module Asssub : sig
@@ -119,9 +119,9 @@ module Asssub : sig
   val postcondition : 'a Cudd.Bdd.t -> 'a Cudd.Bdd.t array -> 'a Cudd.Bdd.t
 end
 val relation_supp_compose_of_lvarlexpr :
-  ('a,'b,'d) #Env.O.t ->
-  string list -> 'd Expr0.expr list ->
-  'd Cudd.Bdd.t * 'd Cudd.Bdd.t * 'd Cudd.Bdd.t array
+  ('a,'b,'c,'d) Env.O.t ->
+  string list -> 'c Expr0.expr list ->
+  'c Cudd.Bdd.t * 'c Cudd.Bdd.t * 'c Cudd.Bdd.t array
 
 val apply_change : 'a t -> 'a Env.change -> 'a t
 end

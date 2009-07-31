@@ -4,6 +4,7 @@
    Please read the COPYING file packaged in the distribution  *)
 
 open Format
+open Env
 
 type 'a t = 'a Expr0.Bool.t
 
@@ -25,7 +26,7 @@ let is_eq = Expr0.O.Bool.is_eq
 
 let is_variable_unconstrained env abs var =
   Env.check_var env var;
-  let tid = PMappe.find var env#vartid in
+  let tid = PMappe.find var env.vartid in
   Array.fold_left
     (begin fun res id -> res && not (Cudd.Bdd.is_var_in id abs) end)
     true
@@ -113,8 +114,8 @@ let relation_supp_compose_of_lvarlexpr
   :
   'a Cudd.Bdd.t * 'a Cudd.Bdd.t * 'a Cudd.Bdd.t array
   =
-  assert (env#bddincr=2);
-  let manager = env#cudd in
+  assert (env.bddincr=2);
+  let manager = env.cudd in
   let relation = ref (Cudd.Bdd.dtrue manager) in
   let supp = ref (!relation) in
   let tbdd =
@@ -149,7 +150,7 @@ let assign_lexpr
   else begin
     let res =
       if relational then begin
-	let manager = env#cudd in
+	let manager = env.cudd in
 	if nodependency then begin
 	  let supp = Expr0.O.bddsupport env lvar in
 	  let image = ref (Cudd.Bdd.exist supp abs) in

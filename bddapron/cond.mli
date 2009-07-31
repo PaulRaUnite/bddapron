@@ -10,56 +10,42 @@
 type cond = [`Apron of Apronexpr.Condition.t]
   (** Conditions *)
 
+val print_cond : 'a -> Format.formatter -> [< cond ] -> unit
 val compare_cond :
   [< `Apron of Apronexpr.Condition.t ] ->
   [< `Apron of Apronexpr.Condition.t ] -> int
-val negate_cond : [> Apronexpr.typ ] #Apronexpr.env -> cond -> cond
-val cond_support : 'a -> [< `Apron of Apronexpr.Condition.t ] -> string PSette.t
+val negate_cond : ('a,'b,'c) Env.O.t -> cond -> cond
+val support_cond : 'a -> [< `Apron of Apronexpr.Condition.t ] -> string PSette.t
 
-(*  ********************************************************************** *)
-(** {2 Opened signature} *)
-(*  ********************************************************************** *)
 module O : sig
-  class type ['a,'b] t =
-	  [[> cond] as 'a,
-	  [> Apronexpr.typ ] #Apronexpr.env as 'b,
-	  Cudd.Man.v]
-	    Bdd.Cond.t
-  class ['a, 'b] make :
-    ?bddindex0:int -> ?bddsize:int ->
-	     Cudd.Man.v Cudd.Man.t ->
-	     compare_cond:('a -> 'a -> int) ->
-	     negate_cond:('b -> 'a -> 'a) ->
-	     support_cond:('b -> 'a -> string PSette.t) ->
-	     print_cond:('b -> Format.formatter -> 'a -> unit) ->
-	     ['a, 'b] t
+  type 'a t = (cond,'a,Cudd.Man.v) Bdd.Cond.t
+  constraint 'a = ('b,'c,'d) Env.O.t
+
   val make :
-    ?bddindex0:int -> ?bddsize:int ->
-    Cudd.Man.v Cudd.Man.t ->
-    compare_cond:('a -> 'a -> int) ->
-    negate_cond:('b -> 'a -> 'a) ->
-    support_cond:('b -> 'a -> string PSette.t) ->
-    print_cond:('b -> Format.formatter -> 'a -> unit) -> ('a, 'b) t
-  val print : 'b -> Format.formatter -> ('a, 'b) #t -> unit
+    ?bddindex0:int ->
+    ?bddsize:int ->
+    Cudd.Man.vt -> 'a t
 end
 
+type t = Env.t O.t
 
-(*  ********************************************************************** *)
-(** {2 Closed signature} *)
-(*  ********************************************************************** *)
+val make :
+  ?bddindex0:int ->
+  ?bddsize:int ->
+  Cudd.Man.vt -> t
 
-class type t = [cond, Env.t] O.t
-class make : ?bddindex0:int -> ?bddsize:int -> Cudd.Man.v Cudd.Man.t -> [cond, Env.t] O.make
-val make : ?bddindex0:int -> ?bddsize:int -> Cudd.Man.v Cudd.Man.t -> t
-val print : Env.t -> Format.formatter -> t -> unit
+val copy : 'a O.t -> 'a O.t
 
-val check_normalized : Env.t -> t -> bool
-val is_leq : t -> t -> bool
-val is_eq : t -> t -> bool
-val shift : t -> int -> t
-val lce : t -> t -> t
-val permutation12 : t -> t -> int array
-val permutation21 : t -> t -> int array
+val print : 'a -> Format.formatter -> 'a O.t -> unit
+val cond_of_idb : 'a O.t -> int*bool -> cond
+val idb_of_cond : 'a -> 'a O.t -> cond -> int*bool
+val check_normalized : 'a -> 'a O.t -> bool
+val is_leq : 'a O.t -> 'a O.t -> bool
+val is_eq : 'a O.t -> 'a O.t -> bool
+val shift : 'a O.t -> int -> 'a O.t
+val lce : 'a O.t -> 'a O.t -> 'a O.t
+val permutation12 : 'a O.t -> 'a O.t -> int array
+val permutation21 : 'a O.t -> 'a O.t -> int array
 
 type ('a,'b) value = ('a,'b) Bdd.Cond.value = {
   cond : 'a;

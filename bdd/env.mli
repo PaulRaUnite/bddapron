@@ -31,200 +31,164 @@ type 'a expr = [
       (** Enumerated *)
 ]
 
-(*  ********************************************************************** *)
-(** {2 Opened signature} *)
-(*  ********************************************************************** *)
-
-module O : sig
-  class type ['a,'b,'c] t = object('d)
-    constraint 'a = [> typ]
-    constraint 'b = [> typdef]
-
-    method add_typ : string -> 'b -> unit
-    (** Declaration of a new type *)
-    method mem_typ : string -> bool
-    (** Is the type defined in the database ? *)
-    method typdef_of_typ : string -> 'b
-    (** Return the definition of the type *)
-
-    method add_vars : (string * 'a) list -> int array option
-    (** Add the set of variables, possibly normalize the
-	environment and return the applied permutation (that
-	should also be applied to expressions defined in this
-	environment) *)
-    method remove_vars : string list -> int array option
-    (** Remove the set of variables, as well as all constraints,
-	and possibly normalize the environment and return the
-	applied permutation. *)
-    method rename_vars : (string * string) list -> int array option
-    (** Rename the variables, and remove all constraints,possibly
-	normalize the environment and return the applied
-	permutation. *)
-    method mem_var : string -> bool
-    (** Is the label/var defined in the database ? *)
-    method mem_label : string -> bool
-    (** Is the label a label defined in the database ? *)
-    method typ_of_var : string -> 'a
-    (** Return the type of the label/variable *)
-    method vars : string PSette.t
-    (** Return the list of variables (not labels) *)
-    method labels : string PSette.t
-    (** Return the list of labels (not variables) *)
-
-    method permutation : int array
-    (** Compute the permutation for normalizing the environment *)
-    method permute : int array -> unit
-    (** Apply the given permutation to the environment *)
-    method normalize : int array
-    (** Combine the two previous functions, and return the permutation *)
-(*
-    method pair : unit
-    (** Assuming [bddindex] is even and [bddincr=2]), if [v_paired=false],
-	groups variable by pair *)
-*)
-    method add_var : string -> 'a -> unit
-    (** Private function *)
-
-    method print_idcondb : Format.formatter -> int*bool -> unit
-    method print_order : Format.formatter -> unit
-    (** Print the BDD variable ordering *)
-
-    val v_cudd : 'c Cudd.Man.t
+(** Environment *)
+type ('a,'b,'c,'d) t0 = ('a,'b,'c,'d) Enum.env0 = {
+  cudd : 'c Cudd.Man.t;
     (** CUDD manager *)
-    val mutable v_paired : bool
-    (** Are pair groups active (default false) ? *)
-    val mutable v_typdef : (string, 'b) PMappe.t
+  mutable typdef : (string, 'b) PMappe.t;
     (** Named types definitions *)
-    val mutable v_vartyp : (string, 'a) PMappe.t
+  mutable vartyp : (string, 'a) PMappe.t;
     (** Associate to a var/label its type *)
-    val mutable v_bddindex0 : int
+  mutable bddindex0 : int;
     (** First index for finite-type variables *)
-    val mutable v_bddsize : int
+  mutable bddsize : int;
     (** Number of indices dedicated to finite-type variables *)
-    val mutable v_bddindex : int
+  mutable bddindex : int;
     (** Next free index in BDDs used by [self#add_var]. *)
-    val v_bddincr : int
+  bddincr : int;
     (** Increment used by [self#add_var] for incrementing
-	[self#_v_bddindex] *)
-    val mutable v_idcondvar : (int, string) PMappe.t
+	[self#_bddindex] *)
+  mutable idcondvar : (int, string) PMappe.t;
     (** Associates to a BDD index the variable involved by it *)
-    val mutable v_vartid : (string, int array) PMappe.t
+  mutable vartid : (string, int array) PMappe.t;
     (** (Sorted) array of BDD indices associated to finite-type variables. *)
-    val mutable v_varset : (string, 'c Cudd.Bdd.t) PMappe.t
+  mutable varset : (string, 'c Cudd.Bdd.t) PMappe.t;
     (** Associates to enumerated variable the (care)set of
 	possibled values. *)
-    val mutable v_print_external_idcondb : Format.formatter -> int*bool -> unit
+  mutable print_external_idcondb : Format.formatter -> int*bool -> unit;
     (** Printing conditions not managed by the environment..
 	By default, [pp_print_int]. *)
+  mutable ext : 'd;
+  copy_ext : 'd -> 'd;
+}
 
-    method cudd : 'c Cudd.Man.t
-    method typdef : (string, 'b) PMappe.t
-    method vartyp : (string, 'a) PMappe.t
-    method bddindex0 : int
-    method bddsize : int
-    method bddindex : int
-    method bddincr : int
-    method idcondvar : (int, string) PMappe.t
-    method vartid : (string, int array) PMappe.t
-    method varset : (string, 'c Cudd.Bdd.t) PMappe.t
-    method print_external_idcondb : Format.formatter -> int*bool -> unit
-    method set_bddindex0 : int -> unit
-    method set_bddsize : int -> unit
-    method set_bddindex : int -> unit
-    method set_idcondvar : (int, string) PMappe.t -> unit
-    method set_vartid : (string, int array) PMappe.t -> unit
-    method set_varset : (string, 'c Cudd.Bdd.t) PMappe.t -> unit
-    method set_typdef : (string, 'b) PMappe.t -> unit
-    method set_vartyp : (string, 'a) PMappe.t -> unit
-    method set_print_external_idcondb :
-      (Format.formatter -> int*bool -> unit) -> unit
-  end
+(** {3 Opened signature} *)
+module O : sig
+  type ('a,'b,'c,'d) t = ('a,'b,'c,'d) t0
+  constraint 'a = [>typ]
+  constraint 'b = [>typdef]
 
-  class ['a,'b,'c] make:
-    ?bddindex0:int ->
-    ?bddsize:int -> 
-    ?relational:bool ->
-    'c Cudd.Man.t ->
-    ['a,'b,'c] t
-    (** Creates an environment from scratch *)
+  val make : 
+    ?bddindex0:int -> ?bddsize:int -> ?relational:bool -> 
+    'c Cudd.Man.t -> 'd -> ('d -> 'd) ->('a,'b,'c,'d) t
+      (** Create a new database.  Default values for
+	  [bddindex0,bddsize,relational] are [0,100,false].
+	  [bddincr] is initialized to 1 if [relational=false], 2
+	  otherwise. *)
 
   val print :
     (Format.formatter -> 'a -> unit) ->
     (Format.formatter -> 'b -> unit) ->
-    Format.formatter -> ('a,'b,'c) #t -> unit
-    (** Print an environment *)
-
+    (Format.formatter -> 'd -> unit) ->
+    Format.formatter -> ('a,'b,'c,'d) t -> unit
+      (** Print an environment *)
 end
 
+type 'c t = (typ,typdef,'c,unit) O.t
+
 (*  ********************************************************************** *)
-(** {2 Closed signature} *)
+(** {2 Printing} *)
+(*  ********************************************************************** *)
+val print_typ : Format.formatter -> [> typ] -> unit
+  (** Print a type *)
+val print_typdef : Format.formatter -> [> typdef] -> unit
+  (** Print a type definition *)
+
+val print_tid : Format.formatter -> int array -> unit
+val print_idcondb : ('a,'b,'c,'d) O.t -> Format.formatter -> int * bool -> unit
+val print_order : ('a,'b,'c,'d) O.t -> Format.formatter -> unit
+    (** Print the BDD variable ordering *)
+
+val print : Format.formatter -> ('a,'b,'c,'d) O.t -> unit
+    (** Print an environment *)
+
+(*  ********************************************************************** *)
+(** {2 Constructors} *)
 (*  ********************************************************************** *)
 
-class type ['a] t = [typ, typdef, 'a] O.t
-class ['a] make :
-  ?bddindex0:int -> ?bddsize:int -> ?relational:bool ->
-  'a Cudd.Man.t -> ['a] t
 
 val make :
-  ?bddindex0:int -> ?bddsize:int -> ?relational:bool ->
-  'a Cudd.Man.t -> 'a t
-      (** Create a new database.
-	  [bddindex] and [bddincr] initalized to 0 and 1. *)
+  ?bddindex0:int ->
+  ?bddsize:int -> ?relational:bool -> 'c Cudd.Man.t -> 'c t
+      (** Same as [O.make], but constrained signature. *)
 
-val print : Format.formatter -> ([>typ ], [>typdef ], 'a) #O.t -> unit
+val copy : ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t 
+      (** Copy *)
 
-(** {3 Functional version of some methods} *)
+(*  ********************************************************************** *)
+(** {2 Accessors} *)
+(*  ********************************************************************** *)
 
-val add_typ : (('a,'b,'c) #O.t as 'd) -> string -> 'b -> 'd
-val add_vars : (('a,'b,'c) #O.t as 'd) -> (string * 'a) list -> 'd
-val remove_vars : (('a,'b,'c) #O.t as 'd) -> string list -> 'd
-val rename_vars : (('a,'b,'c) #O.t as 'd) -> (string * string) list -> 'd
+val mem_typ : ('a,'b,'c,'d) O.t -> string -> bool
+    (** Is the type defined in the database ? *)
+val mem_var : ('a,'b,'c,'d) O.t -> string -> bool
+    (** Is the label/var defined in the database ? *)
+val mem_label : ('a,'b,'c,'d) O.t -> string -> bool
+    (** Is the label a label defined in the database ? *)
 
-(** {3 Functions} *)
+val typdef_of_typ : ('a,'b,'c,'d) O.t -> string -> 'b
+    (** Return the definition of the type *)
 
-val is_leq : ('a,'b,'c) #O.t -> ('a,'b,'c) #O.t -> bool
+val typ_of_var : ('a,'b,'c,'d) O.t -> string -> 'a
+    (** Return the type of the label/variable *)
+
+val vars : ('a,'b,'c,'d) O.t -> string PSette.t
+    (** Return the list of variables (not labels) *)
+val labels : ('a,'b,'c,'d) O.t -> String.t PSette.t
+    (** Return the list of labels (not variables) *)
+
+(*  ********************************************************************** *)
+(** {2 Adding types and variables} *)
+(*  ********************************************************************** *)
+
+val add_typ_with : ('a,'b,'c,'d) O.t -> string -> 'b -> unit
+    (** Declaration of a new type *)
+
+val add_vars_with : ('a,'b,'c,'d) O.t -> (string * 'a) list -> int array option
+    (** Add the set of variables, possibly normalize the
+	environment and return the applied permutation (that
+	should also be applied to expressions defined in this
+	environment) *)
+val remove_vars_with : ('a,'b,'c,'d) O.t -> string list -> int array option
+    (** Remove the set of variables, as well as all constraints,
+	and possibly normalize the environment and return the
+	applied permutation. *)
+val rename_vars_with : ('a,'b,'c,'d) O.t -> (string * string) list -> int array option
+    (** Rename the variables, and remove all constraints,possibly
+	normalize the environment and return the applied
+	permutation. *)
+
+val add_typ : ('a,'b,'c,'d) O.t -> string -> 'b -> ('a,'b,'c,'d) O.t 
+val add_vars : ('a,'b,'c,'d) O.t -> (string * 'a) list -> ('a,'b,'c,'d) O.t
+val remove_vars : ('a,'b,'c,'d) O.t -> string list -> ('a,'b,'c,'d) O.t
+val rename_vars : ('a,'b,'c,'d) O.t -> (string * string) list -> ('a,'b,'c,'d) O.t
+  (** Functional versions of the previous functions *)
+
+val add_var_with : ('a,'b,'c,'d) O.t -> string -> 'a -> unit
+    (** Private function *)
+
+(* ********************************************************************** *)
+(** {2 Operations} *)
+(* ********************************************************************** *)
+
+val iter_ordered :
+  ('a,'b,'c,'d) O.t -> (string -> int array -> unit) -> unit
+    (** Iter on all finite-state variables declared in the database *)
+
+val is_leq : ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t -> bool
     (** Test inclusion of environments in terms of types and
 	variables (but not in term of indexes) *)
-val is_eq : ('a,'b,'c) #O.t -> ('a,'b,'c) #O.t -> bool
+val is_eq : ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t -> bool
     (** Test equality of environments in terms of types and
 	variables (but not in term of indexes) *)
-val shift : (('a,'b,'c) #O.t as 'd) -> int -> 'd
+val shift : ('a,'b,'c,'d) O.t -> int -> ('a,'b,'c,'d) O.t
     (** Shift all the indices by the offset *) 
-val lce : (('a,'b,'c) #O.t as 'd) -> 'd -> 'd
+val lce : ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t
     (** Least common environment *)
-(*
-val lce2 :
-  (('a,'b,'c) #O.t as 'd) ->
-  ('a,'b,'c) #O.t -> 'd
-    (** Least common environment, special version *)
-*)
-  
-val compose_permutation : int array -> int array -> int array
-val compose_opermutation : int array option -> int array option -> int array option
-val permutation_of_offset : int -> int -> int array
-
-val check_normalized : ('a,'b,'c) #O.t -> bool
-    (** Prints error message and returns [false] if not normalized *)
-val permutation12 : ('a,'b,'c) #O.t -> ('a,'b,'c) #O.t -> int array
+val permutation12 : ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t -> int array
     (** Permutation for going from a subenvironment to a superenvironment *)
-val permutation21 : ('a,'b,'c) #O.t -> ('a,'b,'c) #O.t -> int array
+val permutation21 : ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t -> int array
     (** Permutation from a superenvironment to a subenvironment *)
-  
-val iter_ordered : ('a,'b,'c) #O.t -> (string -> int array -> unit) -> unit
-  (** Iter on all finite-state variables declared in the database *)
-  
-val compare_idb : int*bool -> int*bool -> int
-  (** Comparison *)
-  
-val print_tid : Format.formatter -> int array -> unit
-  
-val print_typ : Format.formatter -> [>typ] -> unit
-  (** Print a type *)
-val print_typdef : Format.formatter -> [>typdef] -> unit
-  (** Print a type definition *)
-val print :
-  Format.formatter -> ('a,'b,'c) #O.t -> unit
-    (** Print an environment *)
 
 (*  ********************************************************************** *)
 (** {2 Precomputing change of environments} *)
@@ -240,72 +204,104 @@ type 'a change = {
     (** BDD variables to existentially quantify out, and
 	permutation to apply *)
 }
-val compute_change : (('a,'b,'c) #O.t as 'd) -> 'd -> 'c change
+val compute_change : ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t -> 'c change
 
 (*  ********************************************************************** *)
 (** {2 Utilities} *)
 (*  ********************************************************************** *)
 
 (** Type of pairs [(environment, value)] *)
-type ('a,'b) value = {
-  env : 'a;
-  val0 : 'b
-}
+type ('a, 'b) value = { env : 'a; val0 : 'b; }
 
-val make_value : 'a -> 'b -> ('a,'b) value
+val make_value :
+  ('a,'b,'c,'d) O.t ->
+  'e -> (('a,'b,'c,'d) O.t, 'e) value
   (** Constructor *)
 
 val extend_environment :
-  ('a -> int array -> 'a) ->
-  (('b,'c,'d) #O.t as 'env, 'a) value -> 'env -> ('env, 'a) value
-    (** [extend_environment permute value env] embed [value] in the new
-      (super)environment [env], by computing the permutation transformation and
-      using [permute] to apply it to the value. *)
+  ('e -> int array -> 'e) ->
+  (('a,'b,'c,'d) O.t, 'e) value ->
+  ('a,'b,'c,'d) O.t -> (('a,'b,'c,'d) O.t, 'e) value
+    (** [extend_environment permute value env] embed [value] in
+	the new (super)environment [env], by computing the
+	permutation transformation and using [permute] to apply it
+	to the value. *)
 
+(*  ********************************************************************** *)
+(** {2 Internal functions} *)
+(*  ********************************************************************** *)
 
-val check_var :
-  ([> typ ], [> typdef ], 'a) #O.t -> string -> unit
-val check_lvar :
-  ([> typ ], [> typdef ], 'a) #O.t ->
-  string list -> unit
-val mapunop :
-  ('a -> 'b) -> ('c, 'a) value -> ('c, 'b) value
+val compare_idb : int*bool -> int*bool -> int
+  (** Comparison *)
+
+(* ====================================================================== *)
+(** {3 Normalisation} *)
+(* ====================================================================== *)
+
+val permutation : ('a,'b,'c,'d) O.t -> int array
+    (** Compute the permutation for normalizing the environment *)
+val permute_with : ('a,'b,'c,'d) O.t -> int array -> unit
+    (** Apply the given permutation to the environment *)
+val normalize_with : ('a,'b,'c,'d) O.t -> int array
+    (** Combine the two previous functions, and return the permutation *)
+val check_normalized : ('a,'b,'c,'d) O.t -> bool
+    (** Prints error message and returns [false] if not normalized *)
+
+(* ====================================================================== *)
+(** {3 Permutations} *)
+(* ====================================================================== *)
+
+val permute_expr : 'a expr -> int array -> 'a expr
+val compose_permutation : int array -> int array -> int array
+val compose_opermutation :
+  int array option -> int array option -> int array option
+val permutation_of_offset : int -> int -> int array
+
+(* ====================================================================== *)
+(** {3 Used by level1 APIs} *)
+(* ====================================================================== *)
+
+val check_var : ('a,'b,'c,'d) O.t -> string -> unit
+val check_lvar : ('a,'b,'c,'d) O.t -> string list -> unit
 val check_value :
-  ([> typ ] as 'a, [> typdef ] as 'b, 'c) #O.t ->
-  (('a, 'b, 'c) #O.t, 'd) value -> unit
+  ('a,'b,'c,'d) O.t -> 
+  (('a,'b,'c,'d) O.t, 'e) value -> unit
 val check_value2 :
-  (([> typ ] as 'a, [> typdef ] as 'b, 'c) #O.t, 'd)
-  value -> (('a, 'b, 'c) #O.t, 'e) value -> unit
-val mapbinop :
-  ('a -> 'b -> 'c) ->
-  (([> typ ] as 'e, [> typdef ] as 'f, 'g) #O.t as 'd,
-  'a) value ->
-  (('e, 'f, 'g) #O.t, 'b) value -> ('d, 'c) value
-val mapbinope :
-  ((([> typ ] as 'b, [> typdef ] as 'c, 'd) #O.t as 'a) ->
-    'e -> 'f -> 'g) ->
-  (('b, 'c, 'd) #O.t as 'h, 'e) value ->
-  ('a, 'f) value -> ('h, 'g) value
+  (('a,'b,'c,'d) O.t, 'e) value ->
+  (('a,'b,'c,'d) O.t, 'f) value -> unit
 val check_value3 :
-  (([> typ ] as 'a, [> typdef ] as 'b, 'c) #O.t, 'd)
-  value ->
-  (('a, 'b, 'c) #O.t, 'e) value ->
-  (('a, 'b, 'c) #O.t, 'f) value -> unit
-val mapterop :
-  ('a -> 'b -> 'c -> 'd) ->
-  (([> typ ] as 'f, [> typdef ] as 'g, 'h) #O.t as 'e,
-  'a)
-    value ->
-  (('f, 'g, 'h) #O.t, 'b) value ->
-  (('f, 'g, 'h) #O.t, 'c) value -> ('e, 'd) value
+  (('a,'b,'c,'d) O.t, 'e) value ->
+  (('a,'b,'c,'d) O.t, 'f) value -> 
+  (('a,'b,'c,'d) O.t, 'g) value -> unit
+
 val check_lvarvalue :
-  ([> typ ] as 'a, [> typdef ] as 'b, 'c) #O.t ->
-  (string * (('a, 'b, 'c) #O.t, 'd) value) list ->
-  (string * 'd) list
+  ('a,'b,'c,'d) O.t ->
+  (string * (('a,'b,'c,'d) O.t, 'e) value) list -> (string * 'e) list
 val check_lvalue :
-  ([> typ ] as 'a, [> typdef ] as 'b, 'c) #O.t ->
-  (('a, 'b, 'c) #O.t, 'd) value list -> 'd list
+  ('a,'b,'c,'d) O.t ->
+  (('a,'b,'c,'d) O.t, 'e) value list -> 'e list
 val check_ovalue :
-  ([> typ ] as 'a, [> typdef ] as 'b, 'c) #O.t ->
-  (('a, 'b, 'c) #O.t, 'd) value option -> 'd option
-  
+  ('a,'b,'c,'d) O.t ->
+  (('a,'b,'c,'d) O.t, 'e) value option -> 'e option
+
+val mapunop :
+  ('e -> 'f) ->
+  (('a,'b,'c,'d) O.t, 'e) value ->
+  (('a,'b,'c,'d) O.t, 'f) value
+
+val mapbinop :
+  ('e -> 'f -> 'g) ->
+  (('a,'b,'c,'d) O.t, 'e) value ->
+  (('a,'b,'c,'d) O.t, 'f) value ->
+  (('a,'b,'c,'d) O.t, 'g) value
+val mapbinope :
+  (('a,'b,'c,'d) O.t -> 'e -> 'f -> 'g) ->
+  (('a,'b,'c,'d) O.t, 'e) value ->
+  (('a,'b,'c,'d) O.t, 'f) value -> (('a,'b,'c,'d) O.t, 'g) value
+val mapterop :
+  ('e -> 'f -> 'g -> 'h) ->
+  (('a,'b,'c,'d) O.t, 'e) value ->
+  (('a,'b,'c,'d) O.t, 'f) value ->
+  (('a,'b,'c,'d) O.t, 'g) value ->
+  (('a,'b,'c,'d) O.t, 'h) value
+

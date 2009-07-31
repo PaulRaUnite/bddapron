@@ -135,8 +135,8 @@ val unify : 'a man -> 'a t -> 'a t -> 'a t
 
 module O : sig
 
-  type ('a,'b) t = ('a,'b Mtbdddomain0.t) Bdd.Env.value
-  constraint 'a = ('c,'d) #Env.O.t
+  type ('a,'b) t = ('a,'b Mtbdddomain0.t) Env.value
+  constraint 'a = ('c,'d,'e) Env.O.t
 
   val size : 'b man -> ('a,'b) t -> int
   val print : Format.formatter -> ('a,'b) t -> unit
@@ -152,38 +152,38 @@ module O : sig
   val join : 'b man -> ('a,'b) t -> ('a,'b) t -> ('a,'b) t
 
   val meet_condition :
-    'b man -> (Cond.cond,'a) #Cond.O.t ->
+    'b man -> 'a Cond.O.t ->
     ('a,'b) t -> 'a Expr1.O.Bool.t -> ('a,'b) t
   val meet_condition2 :
     'b man -> 
-    ('a,'b) t -> ('c,'a) Expr2.O.Bool.t -> ('a,'b) t
+    ('a,'b) t -> 'a Expr2.O.Bool.t -> ('a,'b) t
 
   val assign_lexpr :
     ?relational:bool -> ?nodependency:bool ->
-    'b man -> (Cond.cond,'a) #Cond.O.t ->
+    'b man -> 'a Cond.O.t ->
     ('a,'b) t -> string list -> 'a Expr1.O.t list -> ('a,'b) t option ->
     ('a,'b) t
   val assign_listexpr2 :
     ?relational:bool -> ?nodependency:bool ->
     'b man ->
-    ('a,'b) t -> string list -> ('c,'a) Expr2.O.List.t -> ('a,'b) t option ->
+    ('a,'b) t -> string list -> 'a Expr2.O.List.t -> ('a,'b) t option ->
     ('a,'b) t
   val substitute_lexpr :
-    'b man -> (Cond.cond,'a) #Cond.O.t ->
+    'b man -> 'a Cond.O.t ->
     ('a,'b) t -> string list -> 'a Expr1.O.t list -> ('a,'b) t option ->
     ('a,'b) t
   val substitute_listexpr2 :
     'b man ->
-    ('a,'b) t -> string list -> ('c,'a) Expr2.O.List.t -> ('a,'b) t option ->
+    ('a,'b) t -> string list -> 'a Expr2.O.List.t -> ('a,'b) t option ->
     ('a,'b) t
 
   val forget_list :
     'b man -> ('a,'b) t -> string list -> ('a,'b) t
 
-  val change_environment : 'a man -> (Env.t,'a) t -> Env.t -> (Env.t,'a) t
+  val change_environment : 'b man -> ('a,'b) t -> 'a -> ('a,'b) t
   val rename :
     'b man -> ('a,'b) t -> (string*string) list -> ('a,'b) t
   val widening : 'b man -> ('a,'b) t -> ('a,'b) t -> ('a,'b) t
-  val unify : 'a man -> (Env.t,'a) t -> (Env.t,'a) t -> (Env.t,'a) t
+  val unify : 'b man -> ('a,'b) t -> ('a,'b) t -> ('a,'b) t
 
 end

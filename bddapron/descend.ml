@@ -1,3 +1,9 @@
+
+open Bdd.Cond
+open Bdd.Env
+open Cond
+open Env
+
 (*  ********************************************************************** *)
 (** {2 Arrays of expressions} *)
 (*  ********************************************************************** *)
@@ -6,21 +12,20 @@ let texpr_cofactor cofactor (texpr:Expr0.t array) bdd =
   Array.map (fun expr -> cofactor expr bdd) texpr
 
 let texpr_support cond (texpr: Expr0.t array) =
-  let cond_supp = cond#cond_supp in
   Array.fold_left
     (fun res expr ->
       let supp =
 	Cudd.Bdd.support_inter
-	  cond_supp
-	  (Expr0.O.support_cond cond expr)
+	  cond.cond_supp
+	  (Expr0.O.support_cond cond.Bdd.Cond.cudd expr)
       in
       Cudd.Bdd.support_union res supp
     )
-    (Cudd.Bdd.dtrue cond#cudd)
+    (Cudd.Bdd.dtrue cond.Bdd.Cond.cudd)
     texpr
 
 let texpr_cofactors env (texpr: Expr0.t array) topvar =
-  let bdd = Cudd.Bdd.ithvar env#cudd topvar in
+  let bdd = Cudd.Bdd.ithvar env.cudd topvar in
   let nbdd = Cudd.Bdd.dnot bdd in
   let t1 = Array.map (fun e -> Expr0.cofactor e bdd) texpr in
   let t2 = Array.map (fun e -> Expr0.cofactor e nbdd) texpr in
@@ -103,24 +108,24 @@ let split_lvarlexpr
 
 let cofactors
     (man:'a ApronDD.man)
-    (env:(('b,'c) #Env.O.t as 'd))
-    (cond:(Cond.cond,'d) #Cond.O.t)
+    (env:'b)
+    (cond:'b Cond.O.t)
     (t:'a ApronDD.t)
     (idcond:int)
     :
     ('a ApronDD.t * 'a ApronDD.t)
     =
-  if PMappe.mem idcond env#idcondvar then begin
-    let bdd = Cudd.Bdd.ithvar env#cudd idcond in
+  if PMappe.mem idcond env.idcondvar then begin
+    let bdd = Cudd.Bdd.ithvar env.cudd idcond in
     (Cudd.Mtbddc.cofactor t bdd,
     Cudd.Mtbddc.cofactor t (Cudd.Bdd.dnot bdd))
   end
   else begin
-    let apron_env = env#apron_env in
-    let `Apron cond1 = cond#cond_of_idb (idcond,true) in
-    let `Apron cond2 = cond#cond_of_idb (idcond,false) in
-    let tcons1 = Apronexpr.Condition.to_tcons0 apron_env cond1 in
-    let tcons2 = Apronexpr.Condition.to_tcons0 apron_env cond2 in
+    let eapron = env.ext.eapron in
+    let `Apron cond1 = Cond.cond_of_idb cond (idcond,true) in
+    let `Apron cond2 = Cond.cond_of_idb cond (idcond,false) in
+    let tcons1 = Apronexpr.Condition.to_tcons0 eapron cond1 in
+    let tcons2 = Apronexpr.Condition.to_tcons0 eapron cond2 in
     let t1 = ApronDD.meet_tcons_array man t [|tcons1|] in
     let t2 = ApronDD.meet_tcons_array man t [|tcons2|] in
     (t1,t2)
@@ -133,8 +138,8 @@ let cofactors
 
 let rec descend_mtbdd
     (man:'a ApronDD.man)
-    (env:(('b,'c) #Env.O.t as 'd))
-    (cond:(Cond.cond,'d) #Cond.O.t)
+    (env:'b)
+    (cond:'b Cond.O.t)
     (f:'a ApronDD.t -> Expr0.t array -> 'a ApronDD.t)
     (t:'a ApronDD.t)
     (texpr:Expr0.t array)

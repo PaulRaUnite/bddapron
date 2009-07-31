@@ -4,6 +4,7 @@
    Please read the COPYING file packaged in the distribution  *)
 
 open Format
+open Bdd.Env
 open Env
 
 type 'a man = 'a ApronDD.man = {
@@ -28,9 +29,9 @@ module O = struct
   (*  ==================================================================== *)
 
   let print env =
-    let apron_env = env#apron_env in
+    let eapron = env.ext.eapron in
     let string_of_dim dim =
-      let var = Apron.Environment.var_of_dim apron_env dim in
+      let var = Apron.Environment.var_of_dim eapron dim in
       let str = Apron.Var.to_string var in
       str
     in
@@ -38,12 +39,12 @@ module O = struct
 
   let bottom man env =
     ApronDD.bottom
-      ~cudd:(env#cudd) man (Apron.Environment.dimension env#apron_env)
+      ~cudd:(env.cudd) man (Apron.Environment.dimension env.ext.eapron)
   let top man env =
     ApronDD.top
-      ~cudd:(env#cudd) man (Apron.Environment.dimension env#apron_env)
+      ~cudd:(env.cudd) man (Apron.Environment.dimension env.ext.eapron)
   let of_apron man env abs0 =
-    ApronDD.cst ~cudd:(env#cudd) man abs0
+    ApronDD.cst ~cudd:(env.cudd) man abs0
 
   let is_bottom = ApronDD.is_bottom
   let is_top = ApronDD.is_top
@@ -69,22 +70,22 @@ module O = struct
 
   let meet_idcondb
       (man:'a man)
-      (env:(('b,'c) #Env.O.t as 'd))
-      (cond:(Cond.cond,'d) #Cond.O.t)
+      (env:'b)
+      (cond:'b Cond.O.t)
       (t:'a t)
       (idcondb:int*bool)
       :
       'a t
       =
     let (idcond,b) = idcondb in
-    if PMappe.mem idcond env#idcondvar then begin
-      let bdd = Cudd.Bdd.ithvar env#cudd idcond in
+    if PMappe.mem idcond env.idcondvar then begin
+      let bdd = Cudd.Bdd.ithvar env.cudd idcond in
       let bdd = if b then bdd else Cudd.Bdd.dnot bdd in
       Cudd.Mtbddc.ite bdd t (bottom man env)
     end
     else begin
-      let `Apron condition = cond#cond_of_idb (idcond,b) in
-      let tcons0 = Apronexpr.Condition.to_tcons0 env#apron_env condition in
+      let `Apron condition = Cond.cond_of_idb cond (idcond,b) in
+      let tcons0 = Apronexpr.Condition.to_tcons0 env.ext.eapron condition in
       ApronDD.meet_tcons_array man t [|tcons0|]
     end
 
@@ -110,8 +111,8 @@ module O = struct
   let assign_lexpr
       ?relational ?nodependency
       (man:'a man)
-      (env:(('b,'c) #Env.O.t as 'd))
-      (cond:(Cond.cond,'d) #Cond.O.t)
+      (env:'b)
+      (cond:'b Cond.O.t)
       (t:'a t)
       (lvar : string list) (lexpr: Expr0.t list)
       (odest:'a t option)
@@ -120,8 +121,8 @@ module O = struct
       =
     assert(List.length lvar = List.length lexpr);
     let (lbvar,tavar) = Descend.split_lvar lvar lexpr in
-    let apron_env = env#apron_env in
-    let tadim = Array.map (Apron.Environment.dim_of_var apron_env) tavar in
+    let eapron = env.ext.eapron in
+    let tadim = Array.map (Apron.Environment.dim_of_var eapron) tavar in
 
     let texpr = Array.of_list lexpr in
     Descend.descend_mtbdd man env cond
@@ -134,7 +135,7 @@ module O = struct
 		env bdd lbvar lbexpr
 	    )
 	    Apron.Abstract0.assign_texpr_array
-	    man apron_env t tadim taexpr odest
+	    man eapron t tadim taexpr odest
 	in
 	res
       end)
@@ -142,8 +143,8 @@ module O = struct
 
   let substitute_lexpr
       (man:'a man)
-      (env:(('b,'c) #Env.O.t as 'd))
-      (cond:(Cond.cond,'d) #Cond.O.t)
+      (env:'b)
+      (cond:'b Cond.O.t)
       (t:'a t)
       (lvar : string list) (lexpr: Expr0.t list)
       (odest:'a t option)
@@ -152,8 +153,8 @@ module O = struct
       =
     assert(List.length lvar = List.length lexpr);
     let (lbvar,tavar) = Descend.split_lvar lvar lexpr in
-    let apron_env = env#apron_env in
-    let tadim = Array.map (Apron.Environment.dim_of_var apron_env) tavar in
+    let eapron = env.ext.eapron in
+    let tadim = Array.map (Apron.Environment.dim_of_var eapron) tavar in
     let dest0 = match odest with
       | Some x -> x
       | None -> top man env
@@ -181,7 +182,7 @@ module O = struct
 		Bdd.Domain0.O.substitute_lexpr env bdd lbvar lbexpr
 	      )
 	      Apron.Abstract0.substitute_texpr_array
-	      man apron_env t tadim taexpr odest
+	      man eapron t tadim taexpr odest
 	  in
 	  res
       end)
@@ -194,15 +195,15 @@ module O = struct
   let forget_list (man:'a man) env (t:'a t) lvar =
     if lvar=[] then t
     else begin
-    let apron_env = env#apron_env in
+    let eapron = env.ext.eapron in
       let (lbvar,ladim) =
 	List.fold_left
 	  (begin fun (lbvar,ladim) var ->
-	    match env#typ_of_var var with
+	    match Env.typ_of_var env var with
 	    | #Bdd.Env.typ -> (var::lbvar,ladim)
 	    | _ ->
 		(lbvar,
-		(Apron.Environment.dim_of_var apron_env
+		(Apron.Environment.dim_of_var eapron
 		  (Apron.Var.of_string var))::ladim)
 	  end)
 	  ([],[])
@@ -227,19 +228,19 @@ module O = struct
 
   let apply_change ~bottom man t change =
     if
-      change.bdd.Bdd.Env.intro = None &&
-      change.bdd.Bdd.Env.remove = None
+      change.cbdd.intro = None &&
+      change.cbdd.remove = None
     then
-      ApronDD.apply_dimchange2 man t change.Env.apron false
+      ApronDD.apply_dimchange2 man t change.capron false
     else if
-      change.Env.apron.Apron.Dim.add=None && change.Env.apron.Apron.Dim.remove=None
+      change.capron.Apron.Dim.add=None && change.capron.Apron.Dim.remove=None
     then begin
-      let bdd = change.bdd in
-      let t = match bdd.Bdd.Env.intro with
+      let bdd = change.cbdd in
+      let t = match bdd.intro with
 	| None -> t
 	| Some perm -> Cudd.Mtbddc.permute t perm
       in
-      match bdd.Bdd.Env.remove with
+      match bdd.remove with
       | None -> t
       | Some(supp,perm) ->
 	  let t = ApronDD.exist man ~supp t in
@@ -250,9 +251,9 @@ module O = struct
 	~default:bottom
 	~merge:(ApronDD.join man)
 	(begin fun guard absu ->
-	  let nguard = Bdd.Domain0.O.apply_change guard change.bdd in
+	  let nguard = Bdd.Domain0.O.apply_change guard change.cbdd in
 	  let abs = Cudd.Mtbddc.get absu in
-	  let nabs = Apron.Abstract0.apply_dimchange2 man.apron abs change.Env.apron false
+	  let nabs = Apron.Abstract0.apply_dimchange2 man.apron abs change.capron false
 	  in
 	  let nabsu = Cudd.Mtbddc.unique man.table nabs in
 	  (nguard,nabsu)

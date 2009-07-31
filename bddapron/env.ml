@@ -4,168 +4,205 @@
    Please read the COPYING file packaged in the distribution  *)
 
 open Format
-
-exception Bddindex = Bdd.Env.Bddindex
+open Bdd.Env
 
 type typ = [
   | Bdd.Env.typ
   | Apronexpr.typ
 ]
 type typdef = Bdd.Env.typdef
-type expr = [
-  | Cudd.Man.v Bdd.Expr0.expr
-  | `Apron of ApronexprDD.t
-]
-
-let print_typ fmt (typ:[< typ]) =
-  match typ with
-  | #Bdd.Env.typ as x -> Bdd.Env.print_typ fmt x
-  | #Apronexpr.typ as x -> Apronexpr.print_typ fmt x
-
-let print_typdef fmt (x:[< typdef]) = Bdd.Env.print_typdef fmt (x:>typdef)
-
+(** Environment *)
+type 'a ext = {
+  mutable eapron : Apron.Environment.t;
+  mutable aext : 'a;
+}
+type ('a,'b,'c) t0 = ('a,'b,Cudd.Man.v,'c ext) Bdd.Env.t0
 module O = struct
-  class type ['a,'b] t = object
-    inherit [[> typ] as 'a,[> typdef] as 'b, Cudd.Man.v] Bdd.Env.O.t
+  type ('a,'b,'c) t = ('a,'b,'c) t0
+  constraint 'a = [>typ]
+  constraint 'b = [>typdef]
 
-    val mutable v_apron_env : Apron.Environment.t
-    method apron_env : Apron.Environment.t
-    method set_apron_env : Apron.Environment.t -> unit
+  let make ?bddindex0 ?bddsize ?relational cudd aext copy_aext =
+    Bdd.Env.O.make ?bddindex0 ?bddsize ?relational cudd
+      {
+	eapron = Apron.Environment.make [||] [||];
+	aext = aext;
+      }
+      (fun ext -> { ext with aext = copy_aext ext.aext })
 
-    method rename_vars_apron : (string * string) list -> int array option * Apron.Dim.perm option
-  end
+  let print_ext print_aext fmt ext =
+    Format.fprintf fmt "{@[<v>eapron = %a;@ aext = %a@]}"
+      (fun fmt x -> Apron.Environment.print fmt x) ext.eapron
+      print_aext ext.aext
 
-  let print fmt (env:('a,'b) #t) =
-    Format.fprintf fmt "{@[<v>%a;@ apron_env = %a@]}"
-      (Bdd.Env.O.print print_typ print_typdef) (env:>('a,'b,Cudd.Man.v) Bdd.Env.O.t)
-      (fun fmt x -> Apron.Environment.print fmt x) env#apron_env
-
-  class ['a,'b] make ?bddindex0 ?bddsize ?relational man : ['a,'b] t = object(self)
-    inherit ['a,'b,Cudd.Man.v] Bdd.Env.O.make ?bddindex0 ?bddsize ?relational man as super
-    val mutable v_apron_env = Apron.Environment.make [||] [||]
-    method apron_env = v_apron_env
-    method set_apron_env apron_env = v_apron_env <- apron_env
-
-    method vars : string PSette.t =
-      let vars = PMappe.maptoset v_vartid in
-      let (ivar,qvar) = Apron.Environment.vars v_apron_env in
-      let add ap_var set = PSette.add (Apron.Var.to_string ap_var) set in
-      let vars = Array.fold_right add ivar vars in
-      let vars = Array.fold_right add qvar vars in
-      vars
-
-    method add_vars (lvartyp:(string*'a) list) : int array option =
-      let (integer,real) =
-	List.fold_left
-	  (begin fun ((integer,real) as acc) (var,typ) ->
-	    match typ with
-	    | `Int -> ((Apron.Var.of_string var)::integer,real)
-	    | `Real -> (integer,(Apron.Var.of_string var)::real)
-	    | _ -> acc
-	  end)
-	  ([],[]) lvartyp
-      in
-      let operm = super#add_vars lvartyp in
-      if integer<>[] || real<>[] then begin
-	v_apron_env <-
-	  (Apron.Environment.add v_apron_env
-	    (Array.of_list integer) (Array.of_list real))
-      end;
-      operm
-
-    method remove_vars (lvar:string list) : int array option =
-      let arith =
-	List.fold_left
-	  (begin fun acc var ->
-	    match self#typ_of_var var with
-	    | `Int
-	    | `Real -> (Apron.Var.of_string var)::acc
-	    | _ -> acc
-	  end)
-	  [] lvar
-      in
-      let operm = super#remove_vars lvar in
-      if arith<>[] then begin
-	v_apron_env <-
-	  (Apron.Environment.remove v_apron_env
-	    (Array.of_list arith))
-      end;
-      operm
-
-    method rename_vars_apron (lvarvar:(string*string) list)
-      :
-      int array option * Apron.Dim.perm option
-      =
-      let (lvar1,lvar2) =
-	List.fold_left
-	  (begin fun ((lvar1,lvar2) as acc) (var1,var2) ->
-	    match (self#typ_of_var var1) with
-	    | `Int
-	    | `Real ->
-		((Apron.Var.of_string var1)::lvar1,
-		(Apron.Var.of_string var2)::lvar2)
-	    | _ -> acc
-	  end)
-	  ([],[]) lvarvar
-      in
-      let operm = super#rename_vars lvarvar in
-      let oapronperm =
-	if lvar1<>[] then begin
-	  let (n_apron_env,perm) =
-	    Apron.Environment.rename_perm
-	      v_apron_env
-	      (Array.of_list lvar1) (Array.of_list lvar2)
-	  in
-	  v_apron_env <- n_apron_env;
-	  Some perm
-	end
-	else
-	  None
-      in
-      (operm,oapronperm)
-
-    method rename_vars (lvarvar:(string*string) list) : int array option
-      =
-      fst (self#rename_vars_apron lvarvar)
-  end
-
-  let make ?bddindex0 ?bddsize ?relational man =
-    new make ?bddindex0 ?bddsize ?relational man
-
-  let unify env1 env2 =
-    let nenv = Bdd.Env.lce env1 env2 in
-    if nenv!=env1 && nenv!=env2 then
-      nenv#set_apron_env (Apron.Environment.lce env1#apron_env env2#apron_env);
-    nenv
+  let print print_typ print_typdef print_aext fmt env =
+    Bdd.Env.O.print print_typ print_typdef
+      (print_ext print_aext)
+      fmt env
 end
 
-type t = (typ,typdef) O.t
-let make = O.make
-let print = O.print
-let unify = O.unify
+type t = (typ,typdef,unit) O.t
 
+(*  ********************************************************************** *)
+(** {2 Printing} *)
+(*  ********************************************************************** *)
+
+let print_typ fmt typ =
+  match typ with
+  | #Apronexpr.typ as x -> Apronexpr.print_typ fmt x
+  | _ as x -> Bdd.Env.print_typ fmt x
+let print_typdef fmt typdef = Bdd.Env.print_typdef fmt typdef
+
+let print fmt env =
+  O.print print_typ print_typdef (fun fmt _ -> pp_print_string fmt "_") fmt env
+
+let print_idcondb = Bdd.Env.print_idcondb
+let print_order = Bdd.Env.print_order
+
+(*  ********************************************************************** *)
+(** {2 Constructors} *)
+(*  ********************************************************************** *)
+let make ?bddindex0 ?bddsize ?relational cudd = 
+  O.make ?bddindex0 ?bddsize ?relational cudd () (fun x -> x)
+
+let copy = Bdd.Env.copy
+
+(*  ********************************************************************** *)
+(** {2 Accessors} *)
+(*  ********************************************************************** *)
+
+let mem_typ = Bdd.Env.mem_typ
+let mem_var = Bdd.Env.mem_var
+let mem_label = Bdd.Env.mem_label
+let typdef_of_typ = Bdd.Env.typdef_of_typ
+let typ_of_var = Bdd.Env.typ_of_var
+let vars env =
+  let vars = PMappe.maptoset env.vartid in
+  let (ivar,qvar) = Apron.Environment.vars env.ext.eapron in
+  let add ap_var set = PSette.add (Apron.Var.to_string ap_var) set in
+  let vars = Array.fold_right add ivar vars in
+  let vars = Array.fold_right add qvar vars in
+  vars
+let labels = Bdd.Env.labels
+
+(*  ********************************************************************** *)
+(** {2 Adding types and variables} *)
+(*  ********************************************************************** *)
+
+let add_typ_with = Bdd.Env.add_typ_with
 let add_typ = Bdd.Env.add_typ
-let add_vars = Bdd.Env.add_vars
-let remove_vars = Bdd.Env.remove_vars
-let rename_vars = Bdd.Env.rename_vars
+
+let add_vars_with env (lvartyp:(string*'a) list) : int array option =
+  let (integer,real) =
+    List.fold_left
+      (begin fun ((integer,real) as acc) (var,typ) ->
+	match typ with
+	| `Int -> ((Apron.Var.of_string var)::integer,real)
+	| `Real -> (integer,(Apron.Var.of_string var)::real)
+	| _ -> acc
+      end)
+      ([],[]) lvartyp
+  in
+  let operm = Bdd.Env.add_vars_with env lvartyp in
+  if integer<>[] || real<>[] then begin
+    env.ext.eapron <-
+      (Apron.Environment.add env.ext.eapron
+	(Array.of_list integer) (Array.of_list real))
+  end;
+  operm
+
+let remove_vars_with env (lvar:string list) : int array option =
+  let arith =
+    List.fold_left
+      (begin fun acc var ->
+	match typ_of_var env var with
+	| `Int
+	| `Real -> (Apron.Var.of_string var)::acc
+	| _ -> acc
+      end)
+      [] lvar
+  in
+  let operm = Bdd.Env.remove_vars_with env lvar in
+  if arith<>[] then begin
+    env.ext.eapron <-
+      (Apron.Environment.remove env.ext.eapron (Array.of_list arith))
+  end;
+  operm
+
+let rename_vars_with env (lvarvar:(string*string) list)
+    :
+    int array option * Apron.Dim.perm option
+    =
+  let (lvar1,lvar2) =
+    List.fold_left
+      (begin fun ((lvar1,lvar2) as acc) (var1,var2) ->
+	match (typ_of_var env var1) with
+	| `Int
+	| `Real ->
+	    ((Apron.Var.of_string var1)::lvar1,
+	    (Apron.Var.of_string var2)::lvar2)
+	| _ -> acc
+      end)
+      ([],[]) lvarvar
+  in
+  let operm = Bdd.Env.rename_vars_with env lvarvar in
+  let oapronperm =
+    if lvar1<>[] then begin
+      let (n_eapron,perm) =
+	Apron.Environment.rename_perm
+	  env.ext.eapron
+	  (Array.of_list lvar1) (Array.of_list lvar2)
+      in
+      env.ext.eapron <- n_eapron;
+      Some perm
+    end
+    else
+      None
+  in
+  (operm,oapronperm)
+
+let add_vars env lvartyp =
+  let nenv = copy env in
+  ignore (add_vars_with nenv lvartyp);
+  nenv
+let remove_vars env lvars =
+  let nenv = copy env in
+  ignore (remove_vars_with nenv lvars);
+  nenv
+let rename_vars env lvarvar =
+  let nenv = copy env in
+  ignore (rename_vars_with nenv lvarvar);
+  nenv
+
+(* ********************************************************************** *)
+(** {2 Operations} *)
+(* ********************************************************************** *)
+
+let is_leq = Bdd.Env.is_leq
+let is_eq = Bdd.Env.is_eq
+
+let lce env1 env2 =
+  let env = Bdd.Env.lce env1 env2 in
+  if not (env==env1 || env==env2) then
+    env.ext.eapron <- Apron.Environment.lce env1.ext.eapron env2.ext.eapron
+  ;
+  env
 
 (*  ********************************************************************** *)
 (** {2 Precomputing change of environments} *)
 (*  ********************************************************************** *)
 
 type change = {
-  bdd : Cudd.Man.v Bdd.Env.change;
-  apron : Apron.Dim.change2;
+  cbdd : Cudd.Man.v Bdd.Env.change;
+  capron : Apron.Dim.change2;
 }
 
 let compute_change env1 env2 =
-  let bdd = Bdd.Env.compute_change env1 env2 in
-  let apron_env1 = env1#apron_env in
-  let apron_env2 = env2#apron_env in
-  let apron =
-    Apron.Environment.dimchange2 apron_env1 apron_env2
+  let cbdd = Bdd.Env.compute_change env1 env2 in
+  let capron =
+    Apron.Environment.dimchange2 env1.ext.eapron env2.ext.eapron
   in
-  { bdd = bdd; apron = apron; }
+  { cbdd = cbdd; capron = capron; }
 
 (*  ********************************************************************** *)
 (** {2 Utilities} *)
@@ -177,3 +214,15 @@ type ('a,'b) value = ('a,'b) Bdd.Env.value = {
 }
 
 let make_value = Bdd.Env.make_value
+let check_var = Bdd.Env.check_var
+let check_lvar = Bdd.Env.check_lvar
+let check_value = Bdd.Env.check_value
+let check_value2 = Bdd.Env.check_value2
+let check_value3 = Bdd.Env.check_value3
+let check_lvarvalue = Bdd.Env.check_lvarvalue
+let check_lvalue = Bdd.Env.check_lvalue
+let check_ovalue = Bdd.Env.check_ovalue
+let mapunop = Bdd.Env.mapunop
+let mapbinop = Bdd.Env.mapbinop
+let mapbinope = Bdd.Env.mapbinope
+let mapterop = Bdd.Env.mapterop

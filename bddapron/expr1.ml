@@ -4,8 +4,8 @@
    Please read the COPYING file packaged in the distribution  *)
 
 open Format
+open Bdd.Env
 open Env
-
 
 (*  ********************************************************************** *)
 (** {2 Opened signature and Internal functions} *)
@@ -18,18 +18,18 @@ module O = struct
   (*  ==================================================================== *)
 
   type 'a t = ('a, Expr0.t) Env.value
-  constraint 'a = ('b,'c) #Env.O.t
+  constraint 'a = ('b,'c,'d) Env.O.t
 
   type 'a expr = 'a t
 
-  let substitute cond (e:'a t) (substitution:(string * 'a t) list) : 'a t
+  let substitute (cond:'a Cond.O.t) (e:'a t) (substitution:(string * 'a t) list) : 'a t
       =
     let lvarexpr =
-      Bdd.Env.check_lvarvalue e.env substitution
+      Env.check_lvarvalue e.env substitution
     in
     make_value e.env (Expr0.O.substitute e.env cond e.val0 lvarexpr)
 
-  let substitute_by_var cond e (substitution:(string*string) list) =
+  let substitute_by_var (cond:'a Cond.O.t) (e:'a t) (substitution:(string*string) list) =
     make_value e.env (Expr0.O.substitute_by_var e.env cond e.val0 substitution)
 
   let ddsubstitute = substitute
@@ -45,7 +45,7 @@ module O = struct
 
   module Bool = struct
     type 'a t = ('a, Cudd.Man.v Cudd.Bdd.t) Env.value
-    constraint 'a = ('b,'c) #Env.O.t
+    constraint 'a = ('b,'c,'d) Env.O.t
 
     let of_expr = Bdd.Expr1.O.Bool.of_expr
     let to_expr = Bdd.Expr1.O.Bool.to_expr
@@ -84,9 +84,10 @@ module O = struct
     let substitute cond e sub =
       of_expr (ddsubstitute cond (to_expr e) sub)
   end
+
   module Bint = struct
     type 'a t = ('a, Cudd.Man.v Bdd.Int.t) Env.value
-    constraint 'a = ('b,'c) #Env.O.t
+    constraint 'a = ('b,'c,'d) Env.O.t
 
     let of_expr = Bdd.Expr1.O.Bint.of_expr
     let to_expr = Bdd.Expr1.O.Bint.to_expr
@@ -129,7 +130,8 @@ module O = struct
   end
   module Benum = struct
     type 'a t = ('a, Cudd.Man.v Bdd.Enum.t) Env.value
-    constraint 'a = ('b,'c) #Env.O.t
+    constraint 'a = ('b,'c,'d) Env.O.t
+
     let of_expr = Bdd.Expr1.O.Benum.of_expr
     let to_expr = Bdd.Expr1.O.Benum.to_expr
     let extend_environment = Bdd.Expr1.O.Benum.extend_environment
@@ -158,7 +160,7 @@ module O = struct
 
   module Apron = struct
     type 'a t = ('a, ApronexprDD.t) Env.value
-    constraint 'a = ('b,'c) #Env.O.t
+    constraint 'a = ('b,'c,'d) Env.O.t
 
     let of_expr e : 'a t =
       match e.val0 with
@@ -169,10 +171,10 @@ module O = struct
       make_value e.env (`Apron e.val0)
 
     let extend_environment e nenv =
-      if Bdd.Env.is_eq e.env nenv then
+      if Env.is_eq e.env nenv then
 	e
       else begin
-	if not (Bdd.Env.is_leq e.env nenv) then
+	if not (Env.is_leq e.env nenv) then
 	  failwith "Apron.extend_environment: the given environment is not a superenvironment "
 	;
 	let perm = Bdd.Env.permutation12 e.env nenv in
@@ -182,39 +184,39 @@ module O = struct
     let var env cond name = make_value env (Expr0.O.Apron.var env cond name)
     let cst env cond cst = make_value env (Expr0.O.Apron.cst env cond cst)
     let add cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-      Bdd.Env.mapbinop
+      Env.mapbinop
 	(ApronexprDD.add ~typ ~round) e1 e2
     let mul cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-      Bdd.Env.mapbinop
+      Env.mapbinop
 	(ApronexprDD.mul ~typ ~round) e1 e2
     let sub cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-      Bdd.Env.mapbinop
+      Env.mapbinop
 	(ApronexprDD.sub ~typ ~round) e1 e2
     let div cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-      Bdd.Env.mapbinop
+      Env.mapbinop
 	(ApronexprDD.div ~typ ~round) e1 e2
     let gmod cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-      Bdd.Env.mapbinop
+      Env.mapbinop
 	(ApronexprDD.gmod ~typ ~round) e1 e2
-    let negate cond e = Bdd.Env.mapunop ApronexprDD.negate e
+    let negate cond e = Env.mapunop ApronexprDD.negate e
     let sqrt cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e =
-      Bdd.Env.mapunop (ApronexprDD.sqrt ~typ ~round) e
+      Env.mapunop (ApronexprDD.sqrt ~typ ~round) e
     let cast cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e =
-      Bdd.Env.mapunop (ApronexprDD.cast ~typ ~round) e
+      Env.mapunop (ApronexprDD.cast ~typ ~round) e
 
     let ite cond e1 e2 e3 =
-      Bdd.Env.mapterop Cudd.Mtbdd.ite e1 e2 e3
+      Env.mapterop Cudd.Mtbdd.ite e1 e2 e3
 
-    let condition (cond:(Cond.cond,'a) #Cond.O.t) typ (e:'a t) : 'a Bool.t =
+    let condition (cond:'a Cond.O.t) typ (e:'a t) : 'a Bool.t =
       make_value e.env (ApronexprDD.Condition.make e.env cond typ e.val0)
 
     let supeq cond expr = condition cond Apron.Tcons1.SUPEQ expr
     let sup cond expr = condition cond Apron.Tcons1.SUP expr
     let eq cond expr = condition cond Apron.Tcons1.EQ expr
 
-    let cofactor e1 e2 = Bdd.Env.mapbinop Cudd.Mtbdd.cofactor e1 e2
-    let restrict e1 e2 = Bdd.Env.mapbinop Cudd.Mtbdd.restrict e1 e2
-    let tdrestrict e1 e2 = Bdd.Env.mapbinop Cudd.Mtbdd.tdrestrict e1 e2
+    let cofactor e1 e2 = Env.mapbinop Cudd.Mtbdd.cofactor e1 e2
+    let restrict e1 e2 = Env.mapbinop Cudd.Mtbdd.restrict e1 e2
+    let tdrestrict e1 e2 = Env.mapbinop Cudd.Mtbdd.tdrestrict e1 e2
 
     let print cond fmt (x:'a t) =
       ApronexprDD.print (Expr0.O.print_bdd x.env cond) fmt x.val0
@@ -238,10 +240,10 @@ module O = struct
     | `Apron e -> `Apron (Cudd.Mtbdd.permute e tab)
 
   let extend_environment abs nenv =
-    if Bdd.Env.is_eq abs.env nenv then
+    if Env.is_eq abs.env nenv then
       abs
     else begin
-      if not (Bdd.Env.is_leq abs.env nenv) then
+      if not (Env.is_leq abs.env nenv) then
 	failwith "BddapronexprE.O.extend_environment: the given environment is not a superenvironment"
       ;
       let perm = Bdd.Env.permutation12 abs.env nenv in
@@ -249,12 +251,12 @@ module O = struct
     end
 
   let ite cond e1 e2 e3 =
-    Bdd.Env.check_value3 e1 e2 e3;
+    Env.check_value3 e1 e2 e3;
     make_value e1.env (Expr0.O.ite e1.env cond e1.val0 e2.val0 e3.val0)
 
-  let cofactor e1 e2 = Bdd.Env.mapbinop Expr0.cofactor e1 e2
-  let restrict e1 e2 = Bdd.Env.mapbinop Expr0.restrict e1 e2
-  let tdrestrict e1 e2 = Bdd.Env.mapbinop Expr0.tdrestrict e1 e2
+  let cofactor e1 e2 = Env.mapbinop Expr0.cofactor e1 e2
+  let restrict e1 e2 = Env.mapbinop Expr0.restrict e1 e2
+  let tdrestrict e1 e2 = Env.mapbinop Expr0.tdrestrict e1 e2
 
   let eq cond e1 e2 =
     let t = Expr0.O.check_typ2 e1.val0 e2.val0 in
@@ -274,7 +276,7 @@ module O = struct
     | _ -> failwith ""
 
   let support cond (e:'a t) = Expr0.O.support e.env cond e.val0
-  let support_cond cond (e:'a t) = Expr0.O.support_cond e.env e.val0
+  let support_cond cudd (e:'a t) = Expr0.O.support_cond cudd e.val0
 
   let print cond fmt (e:'a t) : unit =
     Expr0.O.print e.env cond fmt e.val0
@@ -299,11 +301,11 @@ module O = struct
 
   module List = struct
     type 'a t = ('a, Expr0.t list) Env.value
-    constraint 'a = ('b,'c) #Env.O.t
+    constraint 'a = ('b,'c,'d) Env.O.t
 
     let of_lexpr0 = make_value
     let of_lexpr1 env lexpr1 =
-      let lexpr0 = Bdd.Env.check_lvalue env lexpr1 in
+      let lexpr0 = Env.check_lvalue env lexpr1 in
       of_lexpr0 env lexpr0
 
     let extend_environment e nenv =
@@ -316,7 +318,7 @@ module O = struct
       let (cond,lexpr0) = Expr0.O.normalize ?reduce ?careset (cond,list.val0) in
       (cond, of_lexpr0 list.env lexpr0)
 
-    let print ?first ?sep ?last (cond:(Cond.cond,'a) #Cond.O.t) fmt (x:'a t) =
+    let print ?first ?sep ?last (cond:'a Cond.O.t) fmt (x:'a t) =
       Print.list ?first ?sep ?last
 	(Expr0.O.print x.env cond) fmt x.val0
 
