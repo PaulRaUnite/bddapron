@@ -1,6 +1,6 @@
 (** Enumerated expressions with BDDs *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 open Format

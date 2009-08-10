@@ -1,6 +1,6 @@
 (** Bounded unsigned integer expressions with BDDs *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 (**
@@ -30,37 +30,56 @@ let shift_left man n x =
   let size = Array.length x in
   if size=0 then
     (x,Cudd.Bdd.dfalse man)
-  else begin
-    if not (n>=1 && n<size) then
-      failwith ("Bddreg.shift_left: out of range for the shift "^(string_of_int n));
+  else if n=0 then
+    (Array.copy x, Cudd.Bdd.dfalse man)
+  else if n>=1 then begin
     let nx = Array.make size (Cudd.Bdd.dfalse man) in
-    Array.blit x 0 nx n (size-n) ;
-    (nx, x.(size-n))
+    if n>=1 && n<=size then begin
+      Array.blit x 0 nx n (size-n) ;
+      (nx, x.(size-n))
+    end
+    else
+      (nx, Cudd.Bdd.dfalse man)
   end
+  else     
+    failwith ("Bdd.Reg.shift_left: negative range for the shift "^(string_of_int n))
+
 
 let shift_right man n x =
   let size = Array.length x in
   if size=0 then
     (x,Cudd.Bdd.dfalse man)
-  else begin
-    if not (n>=1 && n<size) then
-      failwith ("Bddreg.shift_right: out of range for the shift "^(string_of_int n));
+  else if n=0 then
+    (Array.copy x, Cudd.Bdd.dfalse man)
+  else if n>=1 then begin
     let nx = Array.make size x.(size-1) in
-    Array.blit x n nx 0 (size-n);
-    (nx, x.(n-1))
+    if n<=size then begin
+      Array.blit x n nx 0 (size-n);
+      (nx, x.(n-1))
+    end
+    else
+      (nx, x.(size-1))
   end
-
+  else     
+    failwith ("Bdd.Reg.shift_right: negative range for the shift "^(string_of_int n))
+    
 let shift_right_logical man n x =
   let size = Array.length x in
   if size=0 then
     (x,Cudd.Bdd.dfalse man)
-  else begin
-    if not (n>=1 && n<size) then
-      failwith ("Bddreg.shift_right_logical: out of range for the shift "^(string_of_int n));
+  else if n=0 then
+    (Array.copy x, Cudd.Bdd.dfalse man)
+  else if n>=1 then begin
     let nx = Array.make size (Cudd.Bdd.dfalse man) in
-    Array.blit x n nx 0 (size-n);
-    (nx, x.(n-1))
+    if n<=size then begin
+      Array.blit x n nx 0 (size-n);
+      (nx, x.(n-1))
+    end
+    else
+      (nx, Cudd.Bdd.dfalse man)
   end
+  else     
+    failwith ("Bdd.Reg.shift_right_logical: negative range for the shift "^(string_of_int n))
 
 (** This function extends the size of a signed or unsigned integer. *)
 

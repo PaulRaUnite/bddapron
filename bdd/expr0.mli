@@ -1,6 +1,6 @@
 (** Finite-type expressions with BDDs *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 (** This module allows to manipulate structured BDDs, where variables involved
@@ -89,7 +89,7 @@ module Bint : sig
   val of_expr : 'a expr -> 'a t
   val to_expr : 'a t -> 'a expr
 
-  val of_int : 'a Env.t -> [`Tbint of bool * int] -> int -> 'a t
+  val of_int : 'a Env.t -> [`Bint of bool * int] -> int -> 'a t
   val var : 'a Env.t -> string -> 'a t
   val ite : 'a Env.t -> 'a Bool.t -> 'a t -> 'a t -> 'a t
 
@@ -317,7 +317,7 @@ module O : sig
     val of_expr : [> `Bint of 'c t] -> 'c t
     val to_expr : 'c t -> [> `Bint of 'c t]
 
-    val of_int : ('a,'b,'c,'d) Env.O.t -> [> `Tbint of bool * int ] -> int -> 'c t
+    val of_int : ('a,'b,'c,'d) Env.O.t -> [> `Bint of bool * int ] -> int -> 'c t
     val var : ('a,'b,'c,'d) Env.O.t -> string -> 'c t
     val ite : ('a,'b,'c,'d) Env.O.t -> 'c Bool.t -> 'c t -> 'c t -> 'c t
 

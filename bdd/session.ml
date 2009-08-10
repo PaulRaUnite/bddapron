@@ -43,12 +43,12 @@ let b2 = Bdd.Expr1.Bool.var env "b2";;
 let b3 = Bdd.Expr1.Bool.var env "b3";;
 
 let expra =  Bdd.Expr1.Bint.ite b0
-  (Bdd.Expr1.Bint.of_int env (`Tbint (true,4)) (-3))
-  (Bdd.Expr1.Bint.of_int env (`Tbint (true,4)) 2)
+  (Bdd.Expr1.Bint.of_int env (`Bint (true,4)) (-3))
+  (Bdd.Expr1.Bint.of_int env (`Bint (true,4)) 2)
 ;;
 let exprb =  Bdd.Expr1.Bint.ite b1
-  (Bdd.Expr1.Bint.of_int env (`Tbint (true,4)) 1)
-  (Bdd.Expr1.Bint.of_int env (`Tbint (true,4)) (-2))
+  (Bdd.Expr1.Bint.of_int env (`Bint (true,4)) 1)
+  (Bdd.Expr1.Bint.of_int env (`Bint (true,4)) (-2))
 ;;
 let exprc = Bdd.Expr1.Bint.mul expra exprb;;
 
@@ -79,14 +79,14 @@ let expr1 = Bdd.Expr1.Bool.ite b1
 let expr2 = Bdd.Expr1.eq (Bdd.Expr1.Bool.to_expr expr0) (Bdd.Expr1.Bool.to_expr expr1);;
 
 let expr3 = Bdd.Expr1.Bint.ite 
-  (Bdd.Expr1.Bint.supeq (Bdd.Expr1.Bint.of_int env (`Tbint (false,3)) 3) q1) 
-  (Bdd.Expr1.Bint.of_int env (`Tbint(false,3)) 4)
-  (Bdd.Expr1.Bint.of_int env (`Tbint(false,3)) 5)
+  (Bdd.Expr1.Bint.supeq (Bdd.Expr1.Bint.of_int env (`Bint (false,3)) 3) q1) 
+  (Bdd.Expr1.Bint.of_int env (`Bint(false,3)) 4)
+  (Bdd.Expr1.Bint.of_int env (`Bint(false,3)) 5)
 ;;
 let expr4 = Bdd.Expr1.Bint.ite 
-  (Bdd.Expr1.Bint.supeq (Bdd.Expr1.Bint.of_int env (`Tbint (false,3)) 3) q1) 
+  (Bdd.Expr1.Bint.supeq (Bdd.Expr1.Bint.of_int env (`Bint (false,3)) 3) q1) 
   q1 
-  (Bdd.Expr1.Bint.of_int env (`Tbint(false,3)) 7);;
+  (Bdd.Expr1.Bint.of_int env (`Bint(false,3)) 7);;
   
 
 let expr3 = Bdd.Expr1.Bint.to_expr expr3;;

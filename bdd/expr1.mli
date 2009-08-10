@@ -1,6 +1,6 @@
 (** Finite-type expressions linked to normalized environments *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 (*  ********************************************************************** *)
@@ -82,7 +82,7 @@ module Bint : sig
   val extend_environment : 'a t -> 'a Env.t -> 'a t
 
   val of_int :
-    'a Env.t -> [`Tbint of bool * int ] -> int -> 'a t
+    'a Env.t -> [`Bint of bool * int ] -> int -> 'a t
   val var : 'a Env.t -> string -> 'a t
 
   val neg : 'a t -> 'a t
@@ -305,7 +305,7 @@ module O : sig
     val extend_environment : ('a,'b) t -> 'a -> ('a,'b) t
 
     val of_int :
-      'a -> [`Tbint of bool * int ] -> int -> ('a,'b) t
+      'a -> [`Bint of bool * int ] -> int -> ('a,'b) t
     val var : 'a -> string -> ('a,'b) t
 
     val neg : ('a,'b) t -> ('a,'b) t

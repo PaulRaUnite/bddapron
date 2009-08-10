@@ -1,6 +1,6 @@
 (** Finite-type expressions linked to normalized environments *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 open Format
@@ -152,7 +152,7 @@ module O = struct
 
     let of_int env typ cst =
       match typ with
-      | `Tbint(sgn,size) ->
+      | `Bint(sgn,size) ->
 	  make_value env (Int.of_int env.cudd sgn size cst)
 
     let var env (var:string) =

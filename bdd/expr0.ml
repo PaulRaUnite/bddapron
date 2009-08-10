@@ -1,6 +1,6 @@
 (** Finite-type expressions with BDDs *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 (** This module allows to manipulate structured BDDs, where variables involved
@@ -806,7 +806,7 @@ module O = struct
 
     let of_int (env:('a,'b,'c,'d) Env.O.t) typ cst =
       match typ with
-      | `Tbint(sgn,size) ->
+      | `Bint(sgn,size) ->
 	  Int.of_int env.cudd sgn size cst
       | _ -> failwith ""
 
