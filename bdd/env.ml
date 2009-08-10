@@ -1,6 +1,6 @@
 (** Normalized managers/environments *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 open Format
@@ -75,14 +75,14 @@ let print_typ (fmt:Format.formatter) typ = match typ with
   | `Bint(sign,size) -> fprintf fmt "bint(%b,%i)" sign size
   | `Benum s -> pp_print_string fmt s
   | _ -> pp_print_string fmt "Bdd.Env.print_typ: unknown type"
-
+	
 let print_typdef (fmt:Format.formatter) typdef = match typdef with
   | `Benum array ->
       fprintf fmt "benum{%a}"
 	(Print.array ~first:"" ~sep:"," ~last:"" pp_print_string)
 	array
   | _ -> pp_print_string fmt "Bdd.Env.print_typdef: unknown type definition"
-
+      
 let print_tid (fmt:Format.formatter) (tid:int array) : unit =
   Print.array Format.pp_print_int fmt tid
 
