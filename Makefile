@@ -84,7 +84,7 @@ clean:
 		/bin/rm -f *.[aoc] *.cm[ioxa] *.cmxa *.annot; \
 		/bin/rm -f *.log *.aux *.bbl *.blg *.toc **.idx *.ilg *.ind ocamldoc*.tex ocamldoc.sty *.dvi *.pdf *.out; \
 		/bin/rm -fr html_bdd html_bddapron; \
-		/bin/rm -f bddtop bddaprontop example?.byte example?.opt; \
+		/bin/rm -f bddtop bddaprontop *.byte *.opt; \
 	done
 	(cd bddapron; /bin/rm -f yacc.ml yacc.mli lex.ml)
 
