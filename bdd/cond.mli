@@ -1,6 +1,6 @@
-(** Normalized condition environments *)
+(** Normalized condition environments (base module) *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 (*  ********************************************************************** *)
@@ -16,16 +16,16 @@ type ('a,'b,'c) t = {
   cudd : 'c Cudd.Man.t;
     (** CUDD manager *)
   mutable bddindex0 : int;
-    (** First index for finite-type variables *)
+    (** First index for conditions *)
   mutable bddsize : int;
-    (** Number of indices dedicated to finite-type variables *)
+    (** Number of indices dedicated to conditions *)
   mutable bddindex : int;
-    (** Next free index in BDDs used by [self#add_var]. *)
+    (** Next free index in BDDs used by {!idb_of_cond}. *)
   bddincr : int;
   mutable condidb : ('a,int*bool) PDMappe.t;
     (** Two-way association between a condition and a pair of a
 	BDD index and a polarity *)
-  mutable cond_supp : 'c Cudd.Bdd.t;
+  mutable supp : 'c Cudd.Bdd.t;
     (** Support of conditions *)
   mutable careset : 'c Cudd.Bdd.t;
     (** Boolean formula indicating which logical combination known

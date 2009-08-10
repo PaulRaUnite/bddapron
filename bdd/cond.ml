@@ -1,6 +1,6 @@
-(** Normalized condition environments *)
+(** Normalized condition environments (base module) *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 open Format
@@ -18,21 +18,21 @@ type ('a,'b,'c) t = {
   cudd : 'c Cudd.Man.t;
     (** CUDD manager *)
   mutable bddindex0 : int;
-    (** First index for finite-type variables *)
+    (** First index for conditions *)
   mutable bddsize : int;
-    (** Number of indices dedicated to finite-type variables *)
+    (** Number of indices dedicated to conditions *)
   mutable bddindex : int;
-    (** Next free index in BDDs used by [self#add_var]. *)
+    (** Next free index in BDDs used by {!idb_of_cond}. *)
   bddincr : int;
   mutable condidb : ('a,int*bool) PDMappe.t;
     (** Two-way association between a condition and a pair of a
 	BDD index and a polarity *)
-  mutable cond_supp : 'c Cudd.Bdd.t;
+  mutable supp : 'c Cudd.Bdd.t;
     (** Support of conditions *)
   mutable careset : 'c Cudd.Bdd.t;
-    (** Boolean formula indicating which logical
-	combination known as true could be exploited for simplification.
-	For instance, [x>=1 => x>=0]. *)
+    (** Boolean formula indicating which logical combination known
+	as true could be exploited for simplification.  For
+	instance, [x>=1 => x>=0]. *)
 }
 
 (*  ********************************************************************** *)
@@ -41,13 +41,13 @@ type ('a,'b,'c) t = {
 
 let print (env:'b) fmt (cond:('a,'b,'c) t) =
   fprintf fmt
-    "{@[<v>bddindex0 = %i; bddindex = %i; cond = %a;@ cond_supp = %a@ careset = %a@]}"
+    "{@[<v>bddindex0 = %i; bddindex = %i; cond = %a;@ supp = %a@ careset = %a@]}"
     cond.bddindex0 cond.bddindex
     (PDMappe.print
       (cond.print_cond env)
       (fun fmt (id,b) -> fprintf fmt "(%i,%b)" id b))
     cond.condidb
-    (Cudd.Bdd.print_minterm pp_print_int) cond.cond_supp
+    (Cudd.Bdd.print_minterm pp_print_int) cond.supp
     (Cudd.Bdd.print_minterm pp_print_int) cond.careset
 
 (*  ********************************************************************** *)
@@ -78,7 +78,7 @@ let make
     bddindex = bddindex0;
     bddincr = 1;
     condidb = PDMappe.empty compare_cond compare_idb;
-    cond_supp = Cudd.Bdd.dtrue cudd;
+    supp = Cudd.Bdd.dtrue cudd;
     careset = Cudd.Bdd.dtrue cudd;
   }
 
@@ -90,7 +90,7 @@ let copy t = { t with cudd = t.cudd }
 
 let permutation t =
   let perm = Array.init (Cudd.Man.get_bddvar_nb t.cudd) (fun i -> i) in
-  let index = ref 0 in
+  let index = ref t.bddindex0 in
   PDMappe.iter
     (begin fun cond (id,b) ->
       if b then begin
@@ -112,7 +112,7 @@ let permute_with t (perm:int array) : unit
       t.condidb
       (PDMappe.empty t.compare_cond compare_idb))
   ;
-  t.cond_supp <- (Cudd.Bdd.permute t.cond_supp perm);
+  t.supp <- (Cudd.Bdd.permute t.supp perm);
   t.careset <- (Cudd.Bdd.permute t.careset perm);
   ()
 
@@ -122,9 +122,9 @@ let normalize_with t : int array =
   perm
 
 let reduce_with t supp =
-  let suppr = Cudd.Bdd.support_diff t.cond_supp supp in
+  let suppr = Cudd.Bdd.support_diff t.supp supp in
   t.careset <- Cudd.Bdd.exist suppr t.careset;
-  t.cond_supp <- Cudd.Bdd.cofactor t.cond_supp suppr;
+  t.supp <- Cudd.Bdd.cofactor t.supp suppr;
   let suppr = Cudd.Bdd.list_of_support suppr in
   List.iter
     (begin fun id ->
@@ -149,7 +149,7 @@ let reduce_with t supp =
 let clear t =
   let dtrue = Cudd.Bdd.dtrue t.cudd in
   t.condidb <- (PDMappe.empty t.compare_cond compare_idb);
-  t.cond_supp <- dtrue;
+  t.supp <- dtrue;
   t.careset <- dtrue;
   t.bddindex <- t.bddindex0
 
@@ -193,7 +193,7 @@ let idb_of_cond (env:'b) t cond : int*bool =
     t.condidb <- PDMappe.add ncond (id,not b) t.condidb;
     t.bddindex <- t.bddindex + t.bddincr;
     let bdd = (Cudd.Bdd.ithvar t.cudd id) in
-    t.cond_supp <- Cudd.Bdd.dand bdd t.cond_supp;
+    t.supp <- Cudd.Bdd.dand bdd t.supp;
     if t.bddindex >= t.bddindex0+t.bddsize then raise Env.Bddindex;
     (id,b)
 
@@ -203,11 +203,15 @@ let compute_careset
     :
     unit
     =
+  if false then begin
+    let env = Obj.magic (Env.O.make t.cudd) in
+    printf "cond=%a@." (print env) t
+  end;
   t.careset <- (Cudd.Bdd.dtrue t.cudd);
   let list =
     PMappe.fold
-      (begin fun cons (id,b) res ->
-	if b then (cons,id) :: res else res
+      (begin fun cons idb res ->
+	(cons,idb) :: res
       end)
       (PDMappe.mapx t.condidb)
       []
@@ -216,22 +220,57 @@ let compute_careset
     if normalized then list
     else
       List.fast_sort
-	(fun (cons2,id2) (cons1,id1) -> t.compare_cond cons1 cons2)
+	(fun (cons1,idb1) (cons2,idb2) -> t.compare_cond cons1 cons2)
 	list
   in
-  let rec parcours = function
-    | (cons2,id2)::( ((cons1,id1)::_) as rest) ->
+  if false then begin
+    printf "list=%a@."
+      (Print.list (fun fmt (_,(id,b)) -> fprintf fmt "(%i,%b)" id b)) list
+  end;
+  let rec parcours lblock currentblock = function
+    | ((cons1,idb1) as x1)::( ((cons2,idb2)::_) as rest) ->
 	let cmp = t.compare_cond cons1 cons2 in
-	if cmp = (-1) then begin
-	  t.careset <-
-	    Cudd.Bdd.dand t.careset
-	    (Cudd.Bdd.dor (Cudd.Bdd.ithvar t.cudd id2)
-	      (Cudd.Bdd.dnot (Cudd.Bdd.ithvar t.cudd id1)))
-	end;
+	if cmp=(-3) then
+	  let currentblock = List.rev (x1::currentblock) in
+	  parcours (currentblock::lblock) [] rest
+	else 
+	  parcours lblock (x1::currentblock) rest
+    | [x1] -> 
+	let currentblock = List.rev (x1::currentblock) in
+	currentblock::lblock
+    | [] -> []
+  in
+  let lblock = parcours [] [] list in
+  if false then begin
+    printf "block=%a@."
+      (Print.list (Print.list (fun fmt (_,(id,b)) -> fprintf fmt "(%i,%b)" id b))) lblock
+  end;
+  
+  let implies (id1,b1) (id2,b2) =
+    let bdd2 = Cudd.Bdd.ithvar t.cudd id2 in
+    let bdd2 = if b2 then bdd2 else Cudd.Bdd.dnot bdd2 in
+    let nbdd1 = Cudd.Bdd.ithvar t.cudd id1 in
+    let nbdd1 = if not b1 then nbdd1 else Cudd.Bdd.dnot nbdd1 in
+    Cudd.Bdd.dor bdd2 nbdd1
+  in
+  let rec parcours = function
+    | (cons1,idb1)::rest ->
+	List.iter
+	  (begin fun (cons2,idb2) ->
+	    let cmp = t.compare_cond cons1 cons2 in
+	    if false then printf "idb1=(%i,%b) idb2=(%i,%b) cmp=%i@." (fst idb1) (snd idb1) (fst idb2) (snd idb2) cmp;
+	    if cmp = (-1) then begin
+	      t.careset <- Cudd.Bdd.dand t.careset (implies idb1 idb2)
+	      ;
+	      if false then printf "careset=%a@." (Cudd.Bdd.print pp_print_int) t.careset;
+	    end
+	  end)
+	  rest
+	;
 	parcours rest
     | _ -> ()
   in
-  parcours list;
+  List.iter parcours lblock;
   ()
 
 let is_leq (cond1:('a,'b1,'c) t) (cond2:('a,'b2,'c) t) : bool =
@@ -291,8 +330,8 @@ let lce (cond1:('a,'b,'c) t) (cond2:('a,'b,'c) t) : ('a,'b,'c) t =
 	if cond.bddindex >= cond.bddindex0+cond.bddsize then raise Env.Bddindex;
 	cond.condidb <- PDMappe.add pcond (cond.bddindex,true) cond.condidb;
 	cond.condidb <- PDMappe.add ncond (cond.bddindex,false) cond.condidb;
-	let bdd = (Cudd.Bdd.ithvar cond.cudd id) in
-	cond.cond_supp <- Cudd.Bdd.dand bdd cond.cond_supp;
+	let bdd = (Cudd.Bdd.ithvar cond.cudd cond.bddindex) in
+	cond.supp <- Cudd.Bdd.dand cond.supp bdd;
 	cond.bddindex <- cond.bddindex + cond.bddincr
       end)
       mapcondkid
