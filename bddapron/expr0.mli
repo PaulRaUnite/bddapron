@@ -1,6 +1,6 @@
 (** Finite-type and arithmetical expressions *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 type t = [
@@ -16,7 +16,7 @@ type expr = t
 module O : sig
 
   val check_typ2 :
-    [< t] -> [< t] -> [> Env.typ]
+    [< t] -> [< t] -> Env.typ
 
   module Bool : sig
     type t = Cudd.Bdd.vt
@@ -64,7 +64,7 @@ module O : sig
     val of_expr : expr -> t
     val to_expr : t -> expr
 
-    val of_int : 'a -> 'a Cond.O.t -> [> `Tbint of bool * int ] -> int -> t
+    val of_int : 'a -> 'a Cond.O.t -> [> `Bint of bool * int ] -> int -> t
     val var : 'a -> 'a Cond.O.t -> string -> t
     val ite : 'a -> 'a Cond.O.t -> Bool.t -> t -> t -> t
 
@@ -161,12 +161,7 @@ module O : sig
 (** The following operations raise a [Failure] exception in case of a typing
   error. *)
 
-  val typ_of_expr: [<t] -> [
-    | `Bool
-    | `Bint of bool * int
-    | `Benum of string
-    | `Real
-  ]
+  val typ_of_expr: t -> Env.typ
   (** Type of an expression *)
 
   val var : 'a -> 'a Cond.O.t -> string -> t
@@ -270,7 +265,7 @@ module Bint : sig
   val of_expr : expr -> t
   val to_expr : t -> expr
 
-  val of_int : Env.t -> Cond.t -> [`Tbint of bool * int ] -> int -> t
+  val of_int : Env.t -> Cond.t -> [`Bint of bool * int ] -> int -> t
   val var : Env.t -> Cond.t -> string -> t
   val ite : Env.t -> Cond.t -> Bool.t -> t -> t -> t
 
@@ -379,12 +374,7 @@ end
 (** The following operations raise a [Failure] exception in case of a typing
     error. *)
 
-val typ_of_expr: t -> [
-  | `Bool
-  | `Bint of bool * int
-  | `Benum of string
-  | `Real
-]
+val typ_of_expr: t -> Env.typ
   (** Type of an expression *)
 
 val var : Env.t -> Cond.t -> string -> t

@@ -1,4 +1,7 @@
-(** Translating expressions from abstract syntax tree *)
+(** Parsing BDDAPRON expressions from AST or strings *)
+
+(* This file is part of the BDDAPRON Library, released under LGPL license.
+   Please read the COPYING file packaged in the distribution  *)
 
 open Syntax
 open Format
@@ -16,7 +19,7 @@ let translate_cst env cond (cst:Syntax.cst)
 	  env cond)
   | `Bint (typ,n) ->
       Expr0.Bint.to_expr
-	(Expr0.Bint.of_int env cond (`Tbint typ) n)
+	(Expr0.Bint.of_int env cond (`Bint typ) n)
   | `Apron coeff ->
       Expr0.Apron.to_expr
 	(Expr0.Apron.cst env cond coeff)

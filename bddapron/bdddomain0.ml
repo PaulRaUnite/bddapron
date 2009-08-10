@@ -1,12 +1,12 @@
-(** Combined Boolean/Numerical domain *)
+(** Combined Boolean/Numerical domain, with lists of BDDs and APRON values *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 open Format
 open Bdd.Cond
-open Bdd.Env
 open Cond
+open Bdd.Env
 open Env
 open Bddleaf
 
@@ -39,6 +39,30 @@ type 'a t = {
 }
 
 module O = struct
+
+  let print_elt env fmt elt =
+    fprintf fmt "@[<hv>(%a) and@ %a@]"
+      (Bdd.Expr0.O.print_bdd env)
+      elt.guard
+      Apron.Abstract1.print
+      {
+	Apron.Abstract1.abstract0 = elt.leaf;
+	Apron.Abstract1.env = env.ext.eapron
+      }
+
+  let myprint_elt fmt elt =
+    fprintf fmt "@[<hv>(%a) and@ %a@]"
+      (Cudd.Bdd.print_minterm pp_print_int)
+      elt.guard
+      (Apron.Abstract0.print (fun id -> sprintf "x%i" id))
+      elt.leaf
+
+  let myprint_list fmt lelt = Print.list myprint_elt fmt lelt
+
+  let myprint_glist fmt (g,list) =  myprint_list fmt list
+  let myprint_oglist fmt = function
+    | None -> pp_print_string fmt "None"
+    | Some glist -> myprint_glist fmt glist
 
   (*  ******************************************************************** *)
   (** {2 Functions on lists of elements} *)
@@ -109,9 +133,12 @@ module O = struct
       then append_disjoint man list1 list2
       else append_disjoint man list2 list1
     let merge ~disjoint ~unique man list1 list2 =
-      if disjoint && (List.length list1) >= (List.length list2)
-      then append ~disjoint ~unique man list1 list2
-      else append ~disjoint ~unique man list2 list1
+      let list =
+	if disjoint && (List.length list1) >= (List.length list2)
+	then append ~disjoint ~unique man list1 list2
+	else append ~disjoint ~unique man list2 list1
+      in
+      list
 
     let make_unique ~disjoint man list =
       Bddleaf.make_unique
@@ -158,8 +185,8 @@ module O = struct
     end;
     assert(check_wellformed man t);
     if apron then
-      List.iter 
-	(fun elt -> Apron.Abstract0.canonicalize man.apron elt.leaf) 
+      List.iter
+	(fun elt -> Apron.Abstract0.canonicalize man.apron elt.leaf)
 	t.list;
     ()
 
@@ -177,16 +204,7 @@ module O = struct
     else
       Print.list
 	~first:"{ @[<v>" ~sep:" or@," ~last:"@] }"
-	(begin fun fmt elt ->
-	  fprintf fmt "@[<hv>(%a) and@ %a@]"
-	    (Bdd.Expr0.O.print_bdd env)
-	    elt.guard
-	    Apron.Abstract1.print
-	    {
-	      Apron.Abstract1.abstract0 = elt.leaf;
-	      Apron.Abstract1.env = env.ext.eapron
-	    }
-	end)
+	(print_elt env)
 	fmt
 	t.list
 
@@ -292,30 +310,33 @@ module O = struct
     end
 
   let is_eq man t1 t2 =
-    Cudd.Bdd.is_equal t1.bottom.guard t2.bottom.guard && begin
-      canonicalize man t1;
-      canonicalize man t2;
-      (List.length t1.list) = (List.length t2.list) && begin
-	let cmp_elt elt1 elt2 = Pervasives.compare elt1.guard elt2.guard in
-	let list1 = List.fast_sort cmp_elt t1.list in
-	let list2 = List.fast_sort cmp_elt t2.list in
-	begin try
-	  List.iter2
-	    (begin fun elt1 elt2 ->
-	      if not (
-		(Cudd.Bdd.is_equal elt1.guard elt2.guard) &&
-		  (Apron.Abstract0.is_eq man.apron elt1.leaf elt2.leaf))
-	      then
-		raise Exit
-	    end)
-	    list1 list2
-	  ;
-	  true
-	with Exit ->
-	  false
+    let res =
+      Cudd.Bdd.is_equal t1.bottom.guard t2.bottom.guard && begin
+	canonicalize man t1;
+	canonicalize man t2;
+	(List.length t1.list) = (List.length t2.list) && begin
+	  let cmp_elt elt1 elt2 = Pervasives.compare elt1.guard elt2.guard in
+	  let list1 = List.fast_sort cmp_elt t1.list in
+	  let list2 = List.fast_sort cmp_elt t2.list in
+	  begin try
+	    List.iter2
+	      (begin fun elt1 elt2 ->
+		let is_eq =
+		  (Cudd.Bdd.is_equal elt1.guard elt2.guard) &&
+		    (Apron.Abstract0.is_eq man.apron elt1.leaf elt2.leaf)
+		in
+		if not is_eq then raise Exit
+	      end)
+	      list1 list2
+	    ;
+	    true
+	  with Exit ->
+	    false
+	  end
 	end
       end
-    end
+    in
+    res
 
   (*  ==================================================================== *)
   (** {3 Extractors} *)
@@ -524,7 +545,7 @@ module O = struct
     let ttcons0 =
       Array.map
 	(begin fun idb ->
-	  let `Apron condition = Cond.cond_of_idb cond idb in
+	  let `Apron condition = Bdd.Cond.cond_of_idb cond idb in
 	  let tcons0 = Apronexpr.Condition.to_tcons0 eapron condition in
 	  tcons0
 	end)
@@ -535,7 +556,7 @@ module O = struct
   (** Intersection of an element with a general cube *)
   let elt_meet_cube apron env cond (elt:'a elt) cube =
     let supp = Cudd.Bdd.support cube in
-    let suppbool = Cudd.Bdd.support_diff supp cond.cond_supp in
+    let suppbool = Cudd.Bdd.support_diff supp cond.supp in
     let cubecond = Cudd.Bdd.exist suppbool cube in
     let cubebool = Cudd.Bdd.cofactor cube cubecond in
     let nguard = Cudd.Bdd.dand elt.guard cubebool in
@@ -553,11 +574,13 @@ module O = struct
   (** bdd may contain constraints. *)
   let elt_descend_bdd ~merge ~maxdepth apron env cond =
     let cudd = env.cudd in
-    let cond_supp = cond.cond_supp in
     Descend.descend
       ~cudd ~maxdepth
       ~nocare:(begin fun (elt,bdd) ->
-	Cudd.Bdd.is_false bdd || elt_is_bottom apron elt
+	let res =
+	  Cudd.Bdd.is_false bdd || elt_is_bottom apron elt
+	in
+	res
       end)
       ~cube_of_down:(fun (elt,bdd) -> Cudd.Bdd.cube_of_bdd bdd)
       ~cofactor:(fun (elt,bdd) cube ->
@@ -566,16 +589,23 @@ module O = struct
       )
       ~select:(fun (elt,bdd) ->
 	let supp = Cudd.Bdd.support bdd in
-	let suppcond = Cudd.Bdd.support_inter supp cond_supp in
+	let suppcond = Cudd.Bdd.support_inter supp cond.supp in
 	if Cudd.Bdd.is_cst suppcond
 	then -1
-	else Cudd.Bdd.topvar suppcond
+	else begin
+	  let id = Cudd.Bdd.topvar suppcond in
+	  id
+	end
       )
       ~ite:(fun ~depth ~newcube ~cond ~dthen ~delse ->
-	match (dthen,delse) with
-	| None,x | x,None -> x
-	| Some(glista),Some(glistb) ->
-	    Some(descend_merge ~merge glista glistb)
+	let res =
+	  match (dthen,delse) with
+	  | None,x | x,None ->
+	      x
+	  | Some(glista),Some(glistb) ->
+	      Some(descend_merge ~merge glista glistb)
+	in
+	res
       )
 
   (* main function *)
@@ -585,8 +615,7 @@ module O = struct
     assert(if disjoint then unique else true);
     let cudd = Cudd.Bdd.manager t.bottom.guard in
     let dtrue = Cudd.Bdd.dtrue cudd in
-    let cond_supp = cond.cond_supp in
-    let supp = Cudd.Bdd.support_inter (Cudd.Bdd.support bdd) cond_supp in
+    let supp = Cudd.Bdd.support_inter (Cudd.Bdd.support bdd) cond.supp in
     if Cudd.Bdd.is_true supp then begin
       let nlist =
 	List.fold_left
@@ -607,7 +636,7 @@ module O = struct
 	      guard = Cudd.Bdd.dnot (Bddleaf.guard ~cudd nlist) }
       }
     end
-    else
+    else begin
       let nlist =
 	List.fold_left
 	  (begin fun res elt ->
@@ -621,14 +650,13 @@ module O = struct
 		  ~merge:(L.merge ~unique ~disjoint man)
 		  ~terminal:(fun ~depth ~newcube ~cube ~down ->
 		    let (elt,bdd) = down in
-		    let nbdd = if depth<max_int then Cudd.Bdd.exist cond_supp bdd else bdd in
-		    let nelt = {
-		      elt with
-			guard = Cudd.Bdd.dand elt.guard nbdd }
-		    in
-		    if elt_is_bottom man.apron nelt
-		    then None
-		    else Some(dtrue,[nelt])
+		    let nbdd = if depth<max_int then Cudd.Bdd.exist cond.supp bdd else bdd in
+		    let nguard = Cudd.Bdd.dand elt.guard nbdd in
+		    if Cudd.Bdd.is_false nguard then None
+		    else begin
+		      let nelt = { elt with guard = nguard } in
+		      Some(dtrue,[nelt])
+		    end
 		  )
 		  ~down:(elt,bdd)
 		  man.apron env cond
@@ -654,7 +682,7 @@ module O = struct
 	disjoint = disjoint;
 	unique = unique;
       }
-
+    end
   let meet_condition man env cond t bdd =
     let res =
       meet_cond_internal
@@ -670,74 +698,69 @@ module O = struct
   (** {2 Assignement/Substitution} *)
   (*  ******************************************************************** *)
 
-  let descend_texpr ~merge ~maxdepth ~asssub apron env cond org guard lvar lexpr dest =
+(* aaffectation: ca commence à être bon
+   substitution, par substitution des variables booleennes par leur expression (ce qui introduit des contraintes, puis parcours: à voir *)
+
+  let descend_texpr ~merge ~maxdepth ~asssub apron env cond org lvar lexpr dest =
     let texpr = Array.of_list lexpr in
 
     let cudd = env.cudd in
+    let dtrue = Cudd.Bdd.dtrue cudd in
     let eapron = env.ext.eapron in
     let tabsorbant = Array.make (Array.length texpr) None in
     let default = (Cudd.Bdd.dfalse env.cudd, []) in
-    let guard = Cudd.Bdd.dand guard org.guard in
     let (lbvar,tavar) = Descend.split_lvar lvar lexpr in
     let tadim = Array.map (Apron.Environment.dim_of_var eapron) tavar in
     let ores =
       Descend.descend
 	~cudd ~maxdepth
-	~nocare:(fun (guard,elt,texpr) ->
-	  Cudd.Bdd.is_false guard || elt_is_bottom apron elt
-	)
-	~cube_of_down:(fun (guard,elt,texpr) -> Cudd.Bdd.cube_of_bdd guard)
-	~cofactor:(fun (guard,elt,texpr) cube ->
-	  let nguard = Cudd.Bdd.cofactor guard cube in
+	~nocare:(fun (elt,texpr) -> elt_is_bottom apron elt)
+	~cube_of_down:(fun (elt,texpr) -> dtrue)
+	~cofactor:(fun (elt,texpr) cube ->
 	  let nelt = elt_meet_cube apron env cond elt cube in
-	  (nguard, nelt, Descend.texpr_cofactor Expr0.cofactor texpr cube)
+	  (nelt, Descend.texpr_cofactor Expr0.cofactor texpr cube)
 	)
-	~select:(fun (guard,elt,texpr) ->
-	  let suppcond =
-	    Cudd.Bdd.support_inter
-	      cond.cond_supp
-	      (Cudd.Bdd.support guard)
-	  in
-	  let suppcond =
-	    if Cudd.Bdd.is_cst suppcond then
-	      Descend.texpr_support cond texpr
-	    else
-	      suppcond
-	  in
+	~select:(fun (elt,texpr) ->
+	  let suppcond = Descend.texpr_support cond texpr in
 	  if Cudd.Bdd.is_cst suppcond
 	  then -1
 	  else Cudd.Bdd.topvar suppcond
 	)
 	~ite:(fun ~depth ~newcube ~cond ~dthen ~delse ->
-	  match (dthen,delse) with
-	  | None,x | x,None -> x
-	  | Some(glista),Some(glistb) ->
-	      Some(descend_merge ~merge glista glistb)
+	  let res = 
+	    match (dthen,delse) with
+	    | None,x | x,None -> x
+	    | Some(glista),Some(glistb) ->
+		Some(descend_merge ~merge glista glistb)
+	  in
+	  res
 	)
 	~terminal:(begin fun ~depth ~newcube ~cube ~down ->
 	  assert(depth=max_int);
-	  let (guard,org,texpr) = down in
-	  let org = { org with guard=guard } in
+	  let (org,texpr) = down in
 	  let (lbexpr,taexpr) = Descend.split_texpr texpr in
 	  let ((g,list) as glist) =
-	    Cudd.Mapleaf.combineleaf_array
-	      ~tabsorbant ~default
-	      ~combine:(descend_merge ~merge)
-	      (begin fun guard taexpr ->
-		let org = { org with guard=guard } in
-		let taexpr =
-		  Array.map
-		    (fun aexpr ->
-		      Apronexpr.to_texpr0 eapron (Cudd.Mtbdd.get aexpr))
-		    taexpr
-		in
-		asssub ~merge apron env org lbvar lbexpr tadim taexpr dest
-	      end)
-	      taexpr
+	    if taexpr=[||] then
+	      asssub ~merge apron env org lbvar lbexpr [||] [||] dest
+	    else
+	      Cudd.Mapleaf.combineleaf_array
+		~tabsorbant ~default
+		~combine:(descend_merge ~merge)
+		(begin fun guard taexpr ->
+		  let org = { org with guard = Cudd.Bdd.dand org.guard guard } in
+		  let taexpr = Array.map Cudd.Mtbdd.get taexpr in
+		  let taexpr =
+		    Array.map
+		      (Apronexpr.to_texpr0 eapron)
+		      taexpr
+		  in
+		  asssub ~merge apron env org lbvar lbexpr tadim taexpr dest
+		end)
+		taexpr
 	  in
 	  if list=[] then None else Some(glist)
 	end)
-	~down:(guard,org,texpr)
+	~down:(org,texpr)
     in
     ores
 
@@ -793,7 +816,6 @@ module O = struct
       man env cond org lvar (lexpr:Expr0.t list) odest
       =
     let cudd = env.cudd in
-    let dtrue = Cudd.Bdd.dtrue cudd in
     let oldest = match odest with
       | None -> None
       | Some dest -> Some dest.list
@@ -807,7 +829,7 @@ module O = struct
 	      ~merge:(L.merge ~unique ~disjoint man)
 	      ~maxdepth:max_int
 	      ~asssub:(assign_terminal ?relational ?nodependency)
-	      man.apron env cond elt dtrue lvar lexpr oldest
+	      man.apron env cond elt lvar lexpr oldest
 	  in
 	  match oglist with
 	  | None -> res
@@ -857,7 +879,7 @@ module O = struct
 	    else
 	      let nleaf =
 		Apron.Abstract0.substitute_texpr_array
-		  apron org.leaf tadim taexpr (Some dest.leaf)
+		  apron dest.leaf tadim taexpr (Some org.leaf)
 	      in
 	      if Apron.Abstract0.is_bottom apron nleaf
 	      then res
@@ -879,28 +901,21 @@ module O = struct
       | None -> top man env
       | Some dest -> dest
     in
-    let bdest = Cudd.Bdd.dnot (dest.bottom.guard) in
     let (lbvar,lbexpr,tavar,taexpr) = Descend.split_lvarlexpr lvar lexpr in
-    let nguard = Bdd.Domain0.O.substitute_lexpr env bdest lbvar lbexpr in
     let nlist =
       List.fold_left
-	(begin fun res elt ->
-	  let nguard = Cudd.Bdd.dand nguard elt.guard in
-	  if Cudd.Bdd.is_false nguard then
-	    res
-	  else begin
-	    let lexpr = List.map (fun e -> expr_restrict e elt.guard) lexpr in
-	    let oglist =
-	      descend_texpr
-		~merge:(L.merge ~unique ~disjoint man)
-		~maxdepth:max_int
-		~asssub:substitute_terminal
-		man.apron env cond elt nguard lvar lexpr dest.list
-	    in
-	    match oglist with
-	    | None -> res
-	    | Some(g,list) -> L.merge ~disjoint ~unique man res list
-	  end
+	(begin fun res org ->
+	  let lexpr = List.map (fun e -> expr_restrict e org.guard) lexpr in
+	  let oglist =
+	    descend_texpr
+	      ~merge:(L.merge ~unique ~disjoint man)
+	      ~maxdepth:max_int
+	      ~asssub:substitute_terminal
+	      man.apron env cond org lvar lexpr dest.list
+	  in
+	  match oglist with
+	  | None -> res
+	  | Some(g,list) -> L.merge ~disjoint ~unique man res list
 	end)
 	[] org.list
     in
@@ -975,20 +990,20 @@ module O = struct
 
   let apply_change ~bottom man t change =
     let notbdd =
-      change.cbdd.intro = None && 
-      change.cbdd.remove = None 
+      change.cbdd.intro = None &&
+      change.cbdd.remove = None
     in
-    let notapron = 
+    let notapron =
       change.capron.Apron.Dim.add=None && change.capron.Apron.Dim.remove=None
     in
     let nlist =
       List.map
 	(begin fun elt ->
-	  let nguard = 
+	  let nguard =
 	    if notbdd then elt.guard else
-	      Bdd.Domain0.O.apply_change elt.guard change.cbdd 
+	      Bdd.Domain0.O.apply_change elt.guard change.cbdd
 	  in
-	  let nleaf = 
+	  let nleaf =
 	    if notapron then elt.leaf else
 	      Apron.Abstract0.apply_dimchange2 man.apron elt.leaf change.capron false
 	  in
@@ -998,7 +1013,7 @@ module O = struct
     in
     let nbottom =
       let guardnonbottom = Bddleaf.guard ~cudd:(Cudd.Bdd.manager t.bottom.guard) nlist in
-      { guard = Cudd.Bdd.dnot guardnonbottom; leaf = bottom }
+      { guard = Cudd.Bdd.dnot guardnonbottom; leaf = bottom.bottom.leaf }
     in
     let unique = t.unique && change.capron.Apron.Dim.remove=None in
     let disjoint = t.disjoint && unique && change.cbdd.remove=None in
@@ -1062,18 +1077,18 @@ let make_man apron = {
   meet_disjoint = true;
   join_disjoint = true;
   meet_cond_unique = true;
-  meet_cond_disjoint = false;
+  meet_cond_disjoint = true; (* false *)
   meet_cond_depth = max_int;
   assign_unique = true;
-  assign_disjoint = false;
+  assign_disjoint = true; (* false *)
   substitute_unique = true;
-  substitute_disjoint = false;
+  substitute_disjoint = true; (* false *)
   forget_unique = true;
-  forget_disjoint = false;
+  forget_disjoint = true; (* false *)
   change_environment_unique = true;
-  change_environment_disjoint = false;
+  change_environment_disjoint = true; (* false *)
 }
-  
+
 let canonicalize = O.canonicalize
 let size = O.size
 let print = O.print
@@ -1092,3 +1107,5 @@ let assign_lexpr = O.assign_lexpr
 let substitute_lexpr = O.substitute_lexpr
 let forget_list = O.forget_list
 let widening = O.widening
+let apply_change = O.apply_change
+let apply_permutation = O.apply_permutation

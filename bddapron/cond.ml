@@ -1,6 +1,6 @@
-(** Environments for [Bddapron] modules *)
+(** Normalized condition environments *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 open Format
@@ -18,7 +18,7 @@ let negate_cond (env:('a,'b,'c) Env.O.t) (c:cond) : cond = match c with
   | `Apron x -> 
       `Apron (Apronexpr.Condition.negate (Env.typ_of_var env) x)
 
-let cond_support env cond = match cond with
+let support_cond env cond = match cond with
   | `Apron x -> Apronexpr.Condition.support x
 
 module O = struct
@@ -29,30 +29,11 @@ module O = struct
     Bdd.Cond.make ?bddindex0 ?bddsize cudd 
       ~compare_cond
       ~negate_cond
-      ~support_cond:cond_support
+      ~support_cond
       ~print_cond
 end
 
 type t = Env.t O.t
 
 let make = O.make
-let copy = Bdd.Cond.copy
-let print = Bdd.Cond.print
-let cond_of_idb = Bdd.Cond.cond_of_idb
-let idb_of_cond = Bdd.Cond.idb_of_cond
-let support_cond = cond_support
-let check_normalized = Bdd.Cond.check_normalized
-let is_leq = Bdd.Cond.is_leq
-let is_eq = Bdd.Cond.is_eq
-let shift = Bdd.Cond.shift
-let lce = Bdd.Cond.lce
-let permutation12 = Bdd.Cond.permutation12
-let permutation21 = Bdd.Cond.permutation21
-
-type ('a,'b) value = ('a,'b) Bdd.Cond.value = {
-  cond : 'a;
-  val1 : 'b
-}
-
-let make_value = Bdd.Cond.make_value
 

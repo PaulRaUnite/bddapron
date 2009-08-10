@@ -1,6 +1,6 @@
-(** MTBDDs represented as a list of guards and leafs *)
+(** Manipulation of lists of guards and leafs (internal) *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 open Format
@@ -69,7 +69,7 @@ let check_unicity ~is_equal list =
 	List.iter
 	  (begin fun elt2 ->
 	    if is_equal elt.leaf elt2.leaf then
-	      failwith "Bddapron.Domain0.check_unicity: two equal APRON values in a canonicalized abstract value."
+	      failwith "Bddapron.Bddleaf.check_unicity: two equal APRON values in a canonicalized abstract value."
 	    ;
 	  end)
 	  list

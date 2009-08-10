@@ -1,6 +1,6 @@
-(** Combined Boolean/Numerical domain *)
+(** Boolean/Numerical domain, with MTBDDs over APRON values *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 open Format
@@ -16,7 +16,6 @@ type 'a t = 'a ApronDD.t
 
 let make_man = ApronDD.make_man
 
-let size man = Cudd.Mtbddc.size
 
 (*  ********************************************************************** *)
 (** {2 Opened signature and Internal functions} *)
@@ -28,6 +27,7 @@ module O = struct
   (** {3 Interface to ApronDD} *)
   (*  ==================================================================== *)
 
+  let size man = Cudd.Mtbddc.size
   let print env =
     let eapron = env.ext.eapron in
     let string_of_dim dim =
@@ -84,7 +84,7 @@ module O = struct
       Cudd.Mtbddc.ite bdd t (bottom man env)
     end
     else begin
-      let `Apron condition = Cond.cond_of_idb cond (idcond,b) in
+      let `Apron condition = Bdd.Cond.cond_of_idb cond (idcond,b) in
       let tcons0 = Apronexpr.Condition.to_tcons0 env.ext.eapron condition in
       ApronDD.meet_tcons_array man t [|tcons0|]
     end
@@ -103,7 +103,7 @@ module O = struct
 	| _ -> failwith ""
       end)
       t [| `Bool condition |]
-
+    
   (*  ==================================================================== *)
   (** {3 Assignement/Substitution} *)
   (*  ==================================================================== *)
@@ -134,7 +134,7 @@ module O = struct
 	      Bdd.Domain0.O.assign_lexpr ?relational ?nodependency
 		env bdd lbvar lbexpr
 	    )
-	    Apron.Abstract0.assign_texpr_array
+	    ApronDD.Assign
 	    man eapron t tadim taexpr odest
 	in
 	res
@@ -155,38 +155,30 @@ module O = struct
     let (lbvar,tavar) = Descend.split_lvar lvar lexpr in
     let eapron = env.ext.eapron in
     let tadim = Array.map (Apron.Environment.dim_of_var eapron) tavar in
-    let dest0 = match odest with
-      | Some x -> x
-      | None -> top man env
+    let (org,dest) = match odest with
+      | Some x -> (x, t)
+      | None -> (top man env, t)
     in
     let texpr = Array.of_list lexpr in
     Descend.descend_mtbdd man env cond
-      (begin fun dest texpr ->
+      (begin fun org texpr ->
 	let (lbexpr,taexpr) = Descend.split_texpr texpr in
-	if tadim=[||] then
-	  let compose = Bdd.Expr0.O.composition_of_lvarlexpr env lbvar lbexpr in
-	  let res = Cudd.Mtbddc.vectorcompose compose t in
-	  if odest=None && is_eq man dest dest0 then
-	    res
+	let res = 
+	  if tadim=[||] then
+	    let compose = Bdd.Expr0.O.composition_of_lvarlexpr env lbvar lbexpr in
+	    let res = Cudd.Mtbddc.vectorcompose compose dest in
+	    meet man res org
 	  else
-	    meet man res dest
-	else
-	  let odest =
-	    if odest=None && is_eq man dest dest0
-	    then None
-	    else Some dest
-	  in
-	  let res =
 	    ApronDD.asssub_texpr_array
 	      ~asssub_bdd:(fun bdd ->
 		Bdd.Domain0.O.substitute_lexpr env bdd lbvar lbexpr
 	      )
-	      Apron.Abstract0.substitute_texpr_array
-	      man eapron t tadim taexpr odest
-	  in
-	  res
+	      ApronDD.Substitute
+	      man eapron org tadim taexpr (Some dest)
+	in
+	res
       end)
-      dest0 texpr
+      org texpr
 
   (*  ==================================================================== *)
   (** {3 Forget} *)
@@ -282,6 +274,7 @@ end
 (** {2 Closed signature} *)
 (*  ********************************************************************** *)
 
+let size = O.size
 let print = O.print
 let bottom = O.bottom
 let top = O.top
@@ -298,3 +291,6 @@ let assign_lexpr = O.assign_lexpr
 let substitute_lexpr = O.substitute_lexpr
 let forget_list = O.forget_list
 let widening = O.widening
+let apply_change = O.apply_change
+let apply_permutation = O.apply_permutation
+

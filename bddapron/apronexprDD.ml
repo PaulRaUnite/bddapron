@@ -1,12 +1,11 @@
-(** Decision Diagrams on top of arithmetic expressions *)
+(** DDs on top of arithmetic expressions (internal) *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 open Format
 open Bdd.Env
 open Env
-
 (*  ********************************************************************** *)
 (** {2 Decision diagram} *)
 (*  ********************************************************************** *)
@@ -283,7 +282,7 @@ module Condition = struct
 	    | `Bool b ->
 		if b then Cudd.Bdd.dtrue manager else Cudd.Bdd.dfalse manager
 	    | `Cond x ->
-		let (id,b) = Cond.idb_of_cond env cond (`Apron x) in
+		let (id,b) = Bdd.Cond.idb_of_cond env cond (`Apron x) in
 		let bdd = Cudd.Bdd.ithvar manager id in
 		if b then bdd else Cudd.Bdd.dnot bdd
 	  in

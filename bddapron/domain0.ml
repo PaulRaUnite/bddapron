@@ -1,6 +1,6 @@
-(** Combined Boolean/Numerical domain *)
+(** Boolean/Numerical domain: generic interface *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 (*  ********************************************************************** *)
@@ -10,6 +10,7 @@
 type ('a,'b,'c,'d) man = {
   typ : 'b;
   man : 'c;
+  canonicalize : ?apron:bool -> 'c -> 'd -> unit;
   size : 'c -> 'd -> int;
   print : Env.t -> Format.formatter -> 'd -> unit;
   bottom : 'c -> Env.t -> 'd;
@@ -27,8 +28,11 @@ type ('a,'b,'c,'d) man = {
   substitute_lexpr : 'c ->  Env.t -> Cond.t -> 'd -> string list -> Expr0.t list -> 'd option -> 'd;
   forget_list : 'c -> Env.t -> 'd -> string list -> 'd;
   widening : 'c -> 'd -> 'd -> 'd;
+  apply_change :  bottom:'d -> 'c -> 'd -> Env.change -> 'd;
+  apply_permutation : 'c -> 'd -> int array option * Apron.Dim.perm option -> 'd;
 }
 
+let canonicalize ?apron man = man.canonicalize ?apron man.man
 let size man = man.size man.man
 let print man = man.print
 let bottom man = man.bottom man.man
@@ -46,6 +50,8 @@ let assign_lexpr ?relational ?nodependency man = man.assign_lexpr ?relational ?n
 let substitute_lexpr man = man.substitute_lexpr man.man
 let forget_list man = man.forget_list man.man
 let widening man = man.widening man.man
+let apply_change ~bottom man = man.apply_change ~bottom man.man
+let apply_permutation man = man.apply_permutation man.man
 
 (*  ********************************************************************** *)
 (** {2 Implementation based on {!Mtbdddomain0}} *)
@@ -64,6 +70,7 @@ let make_mtbdd ?global (apron:'a Apron.Manager.t) : 'a mtbdd =
   {
     typ = `Mtbdd man;
     man = man;
+    canonicalize = (fun ?apron _ _ -> ());
     size = Mtbdddomain0.size;
     print = Mtbdddomain0.print;
     bottom = Mtbdddomain0.bottom;
@@ -80,7 +87,9 @@ let make_mtbdd ?global (apron:'a Apron.Manager.t) : 'a mtbdd =
     assign_lexpr = Mtbdddomain0.assign_lexpr;
     substitute_lexpr = Mtbdddomain0.substitute_lexpr;
     forget_list = Mtbdddomain0.forget_list;
-    widening = Mtbdddomain0.widening
+    widening = Mtbdddomain0.widening;
+    apply_change = Mtbdddomain0.apply_change;
+    apply_permutation = Mtbdddomain0.apply_permutation;
   }
 
 let to_mtbdd (man:('a, [> `Mtbdd of 'a Mtbdddomain0.man], 'c, 'd) man) = match man.typ with
@@ -104,6 +113,7 @@ let make_bdd (apron:'a Apron.Manager.t) : 'a bdd =
   {
     typ = `Bdd man;
     man = man;
+    canonicalize = (Bdddomain0.canonicalize ~unique:true ~disjoint:true);
     size = Bdddomain0.size;
     print = Bdddomain0.print;
     bottom = Bdddomain0.bottom;
@@ -120,15 +130,17 @@ let make_bdd (apron:'a Apron.Manager.t) : 'a bdd =
     assign_lexpr = Bdddomain0.assign_lexpr;
     substitute_lexpr = Bdddomain0.substitute_lexpr;
     forget_list = Bdddomain0.forget_list;
-    widening = Bdddomain0.widening
+    widening = Bdddomain0.widening;
+    apply_change = Bdddomain0.apply_change;
+    apply_permutation = Bdddomain0.apply_permutation;
   }
 
 let to_bdd (man:('a, [> `Bdd of 'a Bdddomain0.man], 'c, 'd) man) = match man.typ with
   | `Bdd man -> man
   | _ -> failwith ""
 
-(* *)
 
+(*
 let cudd = Cudd.Man.make_v ();;
 let env = Env.make cudd;;
 let apron = Oct.manager_alloc ();;
@@ -149,3 +161,4 @@ let abs man =
     with Failure _ -> ()
   end;
   bottom man env
+*)

@@ -1,3 +1,8 @@
+(** Recursive descend on sets of diagrams (internal) *)
+
+(* This file is part of the BDDAPRON Library, released under LGPL license.
+   Please read the COPYING file packaged in the distribution  *)
+
 val texpr_cofactor : (Expr0.t -> 'a -> 'b) -> Expr0.t array -> 'a -> 'b array
 val texpr_support :
   ('a, 'b, Cudd.Man.v) Bdd.Cond.t -> Expr0.t array -> Cudd.Man.v Cudd.Bdd.t

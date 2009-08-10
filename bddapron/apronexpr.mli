@@ -1,6 +1,6 @@
-(** Purely arithmetic expressions *)
+(** Purely arithmetic expressions (internal) *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 (** Types of numerical variables (distinction is exploited when

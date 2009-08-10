@@ -1,6 +1,6 @@
-(** Combined Boolean/Numerical domain *)
+(** Boolean/Numerical domain: generic interface *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 (*  ********************************************************************** *)
@@ -12,6 +12,7 @@
 type ('a,'b,'c,'d) man = {
   typ : 'b;
   man : 'c;
+  canonicalize : ?apron:bool -> 'c -> 'd -> unit;
   size : 'c -> 'd -> int;
   print : Env.t -> Format.formatter -> 'd -> unit;
   bottom : 'c -> Env.t -> 'd;
@@ -29,10 +30,13 @@ type ('a,'b,'c,'d) man = {
   substitute_lexpr : 'c ->  Env.t -> Cond.t -> 'd -> string list -> Expr0.t list -> 'd option -> 'd;
   forget_list : 'c -> Env.t -> 'd -> string list -> 'd;
   widening : 'c -> 'd -> 'd -> 'd;
+  apply_change : bottom:'d -> 'c -> 'd -> Env.change -> 'd;
+  apply_permutation : 'c -> 'd -> int array option * Apron.Dim.perm option -> 'd;
 }
 
 (** {3 Functions} *)
 
+val canonicalize : ?apron:bool -> ('a, 'b, 'c, 'd) man -> 'd -> unit
 val size : ('a, 'b, 'c, 'd) man -> 'd -> int
 val print : ('a, 'b, 'c, 'd) man -> Env.t -> Format.formatter -> 'd -> unit
 val bottom : ('a, 'b, 'c, 'd) man -> Env.t -> 'd
@@ -57,6 +61,8 @@ val substitute_lexpr :
   Env.t -> Cond.t -> 'd -> string list -> Expr0.t list -> 'd option -> 'd
 val forget_list : ('a, 'b, 'c, 'd) man -> Env.t -> 'd -> string list -> 'd
 val widening : ('a, 'b, 'c, 'd) man -> 'd -> 'd -> 'd
+val apply_change : bottom:'d -> ('a, 'b, 'c, 'd) man -> 'd -> Env.change -> 'd
+val apply_permutation : ('a, 'b, 'c, 'd) man -> 'd -> int array option * Apron.Dim.perm option -> 'd
 
 (*  ********************************************************************** *)
 (** {2 Implementation based on {!Mtbdddomain0}} *)

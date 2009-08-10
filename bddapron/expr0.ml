@@ -1,12 +1,12 @@
 (** Finite-type and arithmetical expressions *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 open Format
 open Bdd.Cond
-open Bdd.Env
 open Cond
+open Bdd.Env
 open Env
 
 type t = [
@@ -25,18 +25,20 @@ module O = struct
       =
     Bdd.Expr0.O.print_bdd
       ~print_external_idcondb:begin fun fmt idb ->
-	let condition = Cond.cond_of_idb cond idb in
+	let condition = Bdd.Cond.cond_of_idb cond idb in
 	Cond.print_cond env fmt condition
       end
       env fmt bdd
 
-  let typ_of_expr (expr:[<expr]) =
-    match expr with
-    | `Bool _ -> `Bool
-    | `Bint(x) -> `Bint(x.Bdd.Int.signed, Array.length x.Bdd.Int.reg)
-    | `Benum(x) -> `Benum(x.Bdd.Enum.typ)
-    | `Apron _ -> `Real
-
+  let typ_of_expr expr =
+    let typ =
+      match expr with
+      | `Bool _ -> `Bool
+      | `Bint(x) -> `Bint(x.Bdd.Int.signed, Array.length x.Bdd.Int.reg)
+      | `Benum(x) -> `Benum(x.Bdd.Enum.typ)
+      | `Apron _ -> `Real
+    in
+    (typ :> Env.typ)
 
   (*  ==================================================================== *)
   (** {3 General expressions} *)
@@ -111,7 +113,7 @@ module O = struct
       (* we now take care of other conditions *)
       for id=0 to pred(Array.length tab) do
 	begin try
-	  let condition = Cond.cond_of_idb cond (id,true) in
+	  let condition = Bdd.Cond.cond_of_idb cond (id,true) in
 	  let supp = Cond.support_cond env condition in
 	  let substitution = PMappe.interset osub supp in
 	  if not (PMappe.is_empty substitution) then begin
@@ -411,7 +413,7 @@ module O = struct
     List.iter
       (begin fun id ->
 	try
-	  let condition = Cond.cond_of_idb cond (id,true) in
+	  let condition = Bdd.Cond.cond_of_idb cond (id,true) in
 	  let supp = Cond.support_cond env condition in
 	  set := PSette.union supp !set
 	with Not_found ->
@@ -431,13 +433,13 @@ module O = struct
       ?(reduce=false) ?(careset=false) 
       ((cond:'a Cond.O.t),lexpr)
       =
-    let ncond = Cond.copy cond in
+    let ncond = Bdd.Cond.copy cond in
     let support lexpr =
       List.fold_left
 	(begin fun supp expr ->
 	  Cudd.Bdd.support_union supp 
 	    (Cudd.Bdd.support_inter 
-	      ncond.cond_supp 
+	      ncond.supp 
 	      (support_cond ncond.Bdd.Cond.cudd expr))
 	end)
 	(Cudd.Bdd.dtrue cond.Bdd.Cond.cudd)
@@ -445,7 +447,7 @@ module O = struct
     in
     if reduce then begin
       let supp = support lexpr in
-      Bdd.Cond.reduce_with ncond supp
+      Bdd.Cond.reduce_with ncond supp;
     end;
     let perm = Bdd.Cond.normalize_with ncond in
     let lexpr = List.map (fun e -> permute e perm) lexpr in
@@ -456,7 +458,7 @@ module O = struct
 	let lexpr = List.map (fun e -> tdrestrict e careset) lexpr in
 	if reduce then begin
 	  let supp = support lexpr in
-	  if not (Cudd.Bdd.is_equal supp ncond.cond_supp) then begin
+	  if not (Cudd.Bdd.is_equal supp ncond.supp) then begin
 	    Bdd.Cond.reduce_with ncond supp;
 	    let perm = Bdd.Cond.normalize_with ncond in
 	    let lexpr = List.map (fun e -> permute e perm) lexpr in

@@ -1,7 +1,12 @@
+(** Recursive descend on sets of diagrams (internal) *)
 
+(* This file is part of the BDDAPRON Library, released under LGPL license.
+   Please read the COPYING file packaged in the distribution  *)
+
+open Format
 open Bdd.Cond
-open Bdd.Env
 open Cond
+open Bdd.Env
 open Env
 
 (*  ********************************************************************** *)
@@ -16,7 +21,7 @@ let texpr_support cond (texpr: Expr0.t array) =
     (fun res expr ->
       let supp =
 	Cudd.Bdd.support_inter
-	  cond.cond_supp
+	  cond.supp
 	  (Expr0.O.support_cond cond.Bdd.Cond.cudd expr)
       in
       Cudd.Bdd.support_union res supp
@@ -122,8 +127,8 @@ let cofactors
   end
   else begin
     let eapron = env.ext.eapron in
-    let `Apron cond1 = Cond.cond_of_idb cond (idcond,true) in
-    let `Apron cond2 = Cond.cond_of_idb cond (idcond,false) in
+    let `Apron cond1 = Bdd.Cond.cond_of_idb cond (idcond,true) in
+    let `Apron cond2 = Bdd.Cond.cond_of_idb cond (idcond,false) in
     let tcons1 = Apronexpr.Condition.to_tcons0 eapron cond1 in
     let tcons2 = Apronexpr.Condition.to_tcons0 eapron cond2 in
     let t1 = ApronDD.meet_tcons_array man t [|tcons1|] in
@@ -147,16 +152,20 @@ let rec descend_mtbdd
   if ApronDD.is_bottom man t then t
   else begin
     let supp = texpr_support cond texpr in
-    if Cudd.Bdd.is_cst supp then
-      f t texpr
-    else begin
-      let topvar = Cudd.Bdd.topvar supp in
-      let (texpr1,texpr2) = texpr_cofactors env texpr topvar in
-      let (t1,t2) = cofactors man env cond t topvar in
-      let res1 = descend_mtbdd man env cond f t1 texpr1 in
-      let res2 = descend_mtbdd man env cond f t2 texpr2 in
-      ApronDD.join man res1 res2
-    end
+    let res = 
+      if Cudd.Bdd.is_cst supp then begin
+	f t texpr
+      end
+      else begin
+	let topvar = Cudd.Bdd.topvar supp in
+	let (texpr1,texpr2) = texpr_cofactors env texpr topvar in
+	let (t1,t2) = cofactors man env cond t topvar in
+	let res1 = descend_mtbdd man env cond f t1 texpr1 in
+	let res2 = descend_mtbdd man env cond f t2 texpr2 in
+	ApronDD.join man res1 res2 
+      end
+    in
+    res
   end
 
 let descend

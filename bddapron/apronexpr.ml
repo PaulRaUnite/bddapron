@@ -1,6 +1,6 @@
-(** Purely arithmetic expressions *)
+(** Purely arithmetic expressions (internal) *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 open Format
@@ -568,6 +568,14 @@ module Tree = struct
     | Unop of unop * t * typ * round
     | Binop of binop * t * t * typ * round
 
+  let is_zero = function
+    | Cst(coeff) when Apron.Coeff.is_zero coeff -> true
+    | _ -> false
+
+  let equal_int t b = match t with
+    | Cst(coeff) when Apron.Coeff.equal_int coeff b -> true
+    | _ -> false
+	
   let is_exact = function
     | Cst _ | Var _ -> true
     | Unop(Neg,_,_,_) -> true
@@ -577,6 +585,35 @@ module Tree = struct
     | Binop(Sub,_,_,Int,_) -> true
     | Binop(Mul,_,_,Int,_) -> true
     | _ -> false
+
+  let negate = function
+    | Unop(Neg,e,_,_) -> e 
+    | _ as e -> Unop(Neg,e,Real,Rnd)
+
+  let add ?(typ=Real) ?(round=Rnd) e1 e2 =
+    if is_zero e1 then e2 
+    else if is_zero e2 then e1 
+    else Binop(Add,e1,e2,typ,round)
+
+  let sub ?(typ=Real) ?(round=Rnd) e1 e2 =
+    if is_zero e1 then negate e2 
+    else if is_zero e2 then e1 
+    else Binop(Sub,e1,e2,typ,round)
+
+  let mul ?(typ=Real) ?(round=Rnd) e1 e2 =
+    if is_zero e1 then e1
+    else if is_zero e2 then e2 
+    else if equal_int e1 1 then e2
+    else if equal_int e2 1 then e1
+    else if equal_int e1 (-1) then negate e2
+    else if equal_int e2 (-1) then negate e1
+    else Binop(Mul,e1,e2,typ,round)
+
+  let div ?(typ=Real) ?(round=Rnd) e1 e2 =
+    if equal_int e2 1 then e1
+    else if equal_int e2 (-1) then negate e1
+    else Binop(Div,e1,e2,typ,round)
+
   let rec support = function
     | Cst _ -> (PSette.empty String.compare)
     | Var(var) -> PSette.singleton String.compare (Apron.Var.to_string var)
@@ -598,10 +635,6 @@ module Tree = struct
     | Binop(op,e1,e2,t,r) -> Binop(op,parcours e1, parcours e2, t, r)
     in
     parcours e
-
-  let is_zero = function
-    | Cst(coeff) when Apron.Coeff.is_zero coeff -> true
-    | _ -> false
 
   let print = Apron.Texpr1.print_expr
 
@@ -690,18 +723,11 @@ let rec poly_of_tree (x:Tree.t) : Poly.t =
 let tree_of_lin (lin:Lin.t) : Tree.t =
   List.fold_left
     (begin fun res (c,v) ->
-      Tree.Binop(
-	Tree.Add,
-	Tree.Binop(
-	  Tree.Mul,
-	  Tree.Cst(Apron.Coeff.s_of_mpqf c),
-	  Tree.Var(Apron.Var.of_string v),
-	  Tree.Real,
-	  Tree.Rnd),
-	res,
-	Tree.Real,
-	Tree.Rnd
-      )
+      Tree.add 
+	res
+	(Tree.mul 
+	  (Tree.Cst (Apron.Coeff.s_of_mpqf c))
+	  (Tree.Var(Apron.Var.of_string v)))
     end)
     (Tree.Cst (Apron.Coeff.s_of_mpqf lin.Lin.cst))
     lin.Lin.lterm
@@ -713,7 +739,7 @@ let tree_of_poly (poly:Poly.t) : Tree.t =
 	let t = Tree.Var (Apron.Var.of_string var) in
 	let res1 = ref res in
 	for i=1 to exp do
-	  res1 := Tree.Binop(Tree.Mul,t,!res1,Tree.Real,Tree.Rnd)
+	  res1 := Tree.mul t !res1;
 	done;
 	!res1
       end)
@@ -722,15 +748,10 @@ let tree_of_poly (poly:Poly.t) : Tree.t =
   in
   List.fold_left
     (begin fun res (c,mon) ->
-      Tree.Binop(
-	Tree.Add,
-	Tree.Binop(
-	  Tree.Mul,Tree.Cst(Apron.Coeff.s_of_mpqf c), tree_of_monomial mon,
-	  Tree.Real,Tree.Rnd
-	),
-	res,
-	Tree.Real,Tree.Rnd
-      )
+      Tree.add res
+	(Tree.mul 
+	  (Tree.Cst(Apron.Coeff.s_of_mpqf c))
+	  (tree_of_monomial mon))
     end)
     (Tree.Cst (Apron.Coeff.s_of_int 0))
     poly
@@ -937,6 +958,51 @@ let extract_cst expr =
       end
   | _ -> raise (Invalid_argument "")
 
+let extract_fstcoeff expr = 
+  match expr with
+  | Lin e ->  
+      if e.Lin.lterm <> [] then
+	fst (List.hd e.Lin.lterm)
+      else if Mpqf.sgn e.Lin.cst<>0 then
+	e.Lin.cst
+      else 
+	Mpqf.of_int 0
+  | Poly lterm ->
+      begin match lterm with
+      | (_,[])::term::_ 
+      | term::_ ->
+	  fst term
+      | [] ->
+	  Mpqf.of_int 0
+      end
+  | Tree expr ->
+      let rec parcours = function
+	| Tree.Cst coeff ->
+	    if Apron.Coeff.is_zero coeff then None
+	    else begin
+	      let sgn =
+		match coeff with
+		| Apron.Coeff.Scalar scalar -> Apron.Scalar.sgn scalar
+		| Apron.Coeff.Interval itv -> 
+		    let sgn = Apron.Scalar.sgn itv.Apron.Interval.inf in
+		    if sgn<>0 
+		    then sgn
+		    else Apron.Scalar.sgn itv.Apron.Interval.sup
+	      in
+	      assert(sgn<>0);
+	      Some(Mpqf.of_int sgn)
+	    end
+	| Tree.Var _ -> None
+	| Tree.Unop(_,e,_,_) -> parcours e
+	| Tree.Binop(_,e1,e2,_,_) ->
+	    match parcours e1 with
+	    | None -> parcours e2
+	    | _ as res -> res 
+      in
+      match parcours expr with
+      | Some coeff -> coeff
+      | None -> Mpqf.of_int 0
+
 let modify_cst expr cst = match expr with
   | Lin e ->
       Lin { Lin.cst = cst; Lin.lterm = e.Lin.lterm }
@@ -968,29 +1034,42 @@ module Condition = struct
   let normalize typ_of_var (cons:t) : [ `Cond of t | `Bool of bool ]
     =
     let (typ,expr) = cons in
-    if is_dependent_on_integer_only typ_of_var expr then begin
-      let cst = extract_cst expr in
-      let is_integer = (Mpzf.cmp_int (Mpqf.get_den cst) 1)=0 in
-      begin match (typ,is_integer) with
-      | (EQ,false) -> `Bool false
-      | (DISEQ,false) -> `Bool true
-      | (SUPEQ,false)
-      | (SUP,false) ->
-	  let
-	    ncst = Mpzf.fdiv_q (Mpqf.get_num cst) (Mpqf.get_den cst)
-	  in
-	  let ncst = Mpqf.of_mpzf ncst in
-	  `Cond(SUPEQ,modify_cst expr ncst)
-      | (SUP,true) ->
-	  let ncst = Mpqf.sub cst (Mpqf.of_int 1) in
-	  `Cond(SUPEQ,modify_cst expr ncst)
-      | _ ->
+    let cons = match typ with
+      | EQ | DISEQ ->
+	  let coeff = extract_fstcoeff expr in
+	  let sgn = Mpqf.sgn coeff in
+	  if sgn<0 then
+	    (typ,negate expr)
+	  else
+	    cons
+      | _ -> cons
+    in
+    match expr with
+    | Tree _ -> `Cond(cons)
+    | _ ->
+	if is_dependent_on_integer_only typ_of_var expr then begin
+	  let cst = extract_cst expr in
+	  let is_integer = (Mpzf.cmp_int (Mpqf.get_den cst) 1)=0 in
+	  begin match (typ,is_integer) with
+	  | (EQ,false) -> `Bool false
+	  | (DISEQ,false) -> `Bool true
+	  | (SUPEQ,false)
+	  | (SUP,false) ->
+	      let
+		  ncst = Mpzf.fdiv_q (Mpqf.get_num cst) (Mpqf.get_den cst)
+	      in
+	      let ncst = Mpqf.of_mpzf ncst in
+	      `Cond(SUPEQ,modify_cst expr ncst)
+	  | (SUP,true) ->
+	      let ncst = Mpqf.sub cst (Mpqf.of_int 1) in
+	      `Cond(SUPEQ,modify_cst expr ncst)
+	  | _ ->
+	      `Cond(cons)
+	  end
+	end
+	else
 	  `Cond(cons)
-      end
-    end
-    else
-      `Cond(cons)
-
+	    
   let make typ_of_var typ expr =
     begin try
       let nexpr = normalize_as_constraint expr in
@@ -1028,31 +1107,56 @@ module Condition = struct
     =
     let sgn = compare e1 e2 in
     let asgn = abs sgn in
-    if asgn >= 2 then
-      sgn
-    else if asgn = 1 then
-      begin match (t1,t2) with
-      | (EQ,_)
-      | (DISEQ,_)
-      | (_,EQ)
-      | (_,DISEQ) -> 2*sgn
-      | _ -> sgn
-      end
-    else begin
-      if t1=t2 then 0
-      else
-	(* order SUP,EQ,NEQ,SUPEQ *)
-	begin match (t1,t2) with
-	| (SUP,SUPEQ) -> -1
-	| (SUPEQ,SUP) -> 1
-	| (SUP,_) -> -2
-	| (SUPEQ,_) -> 2
-	| (_,SUP) -> 2
-	| (_,SUPEQ) -> -2
-	| _ -> if t1<t2 then -2 else 2
+    match (t1,t2) with
+    | (EQMOD m1, EQMOD m2) -> 
+	if asgn=0 then
+	  let cmp = Apron.Scalar.cmp m1 m2 in
+	  if cmp > 0 then 2 else (-2)
+	else
+	  (if sgn>0 then 3 else -3)
+    | (EQMOD _, _) ->
+	3
+    | (_, EQMOD _) ->
+	-3
+    | (_,_) -> 
+	if asgn >= 2 then
+	  (if sgn>0 then 3 else -3)
+	else if asgn = 1 then begin 
+	  match (t1,t2) with
+	  | (EQMOD _, _) 
+	  | (_, EQMOD _) -> failwith ""
+	  | (DISEQ,_) -> 2*sgn
+	  | (EQ,DISEQ) -> sgn
+	  | (_,DISEQ) -> 2*sgn
+	  | (_,EQ) -> 2*sgn
+	  | _ -> sgn
 	end
-    end
+	else begin
+	  if t1=t2 then 0
+	  else
+	    (* order SUP,EQ,DISEQ,SUPEQ *)
+	    begin match (t1,t2) with
+	    | (EQMOD _, _) 
+	    | (_, EQMOD _) -> failwith ""
 
+	    | (SUP,SUPEQ) -> -1
+	    | (SUPEQ,SUP) -> 1
+	    | (SUP,DISEQ) -> -1
+	    | (DISEQ,SUP) -> 1
+	    | (SUP,_) -> -2
+	    | (_,SUP) -> 2
+
+	    | (EQ,SUPEQ) -> -1
+	    | (SUPEQ,EQ) -> 1
+	    | (EQ,_) -> -2
+	    | (_,EQ) -> 2
+
+	    | (DISEQ,_) -> -2
+	    | (_,DISEQ) -> 2
+	    | _ -> assert(t1=t2); 0
+	    end
+	end
+	  
   let to_tcons1 env (typ,expr) =
     Apron.Tcons1.make (to_texpr1 env expr) typ
 

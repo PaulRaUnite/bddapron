@@ -1,7 +1,7 @@
-(** Finite-type and arithmetical expressions paired with condition
-    environment *)
+(** Finite-type and arithmetical expressions linked to variable
+    and condition environments *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 open Format
@@ -17,14 +17,14 @@ module O : sig
   (*  ==================================================================== *)
 
   module Bool : sig
-    type 'a t = ('a Cond.O.t, 'a Expr1.O.Bool.t) Cond.value
+    type 'a t = ('a Cond.O.t, 'a Expr1.O.Bool.t) Bdd.Cond.value
 
     val of_expr :
-      ('a Cond.O.t, ('a, [> `Bool of Expr0.Bool.t ]) Env.value) Cond.value ->
+      ('a Cond.O.t, ('a, [> `Bool of Expr0.Bool.t ]) Env.value) Bdd.Cond.value ->
       'a t
     val to_expr :
       'a t ->
-      ('a Cond.O.t, ('a, [> `Bool of Expr0.Bool.t ]) Env.value) Cond.value 
+      ('a Cond.O.t, ('a, [> `Bool of Expr0.Bool.t ]) Env.value) Bdd.Cond.value 
    val of_expr0 :
      ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
      'a -> 'a Cond.O.t -> Expr0.Bool.t -> 'a t
@@ -44,7 +44,7 @@ module O : sig
   (** {3 General expressions} *)
   (*  ==================================================================== *)
 
-  type 'a t = ('a Cond.O.t, 'a Expr1.O.t) Cond.value
+  type 'a t = ('a Cond.O.t, 'a Expr1.O.t) Bdd.Cond.value
 
   type 'a expr = 'a t
 
@@ -62,7 +62,7 @@ module O : sig
   (*  ==================================================================== *)
 
   module List : sig
-    type 'a t = ('a Cond.O.t, 'a Expr1.O.List.t) Cond.value
+    type 'a t = ('a Cond.O.t, 'a Expr1.O.List.t) Bdd.Cond.value
 
    val of_lexpr0 :
      ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
@@ -89,7 +89,7 @@ end
 (** {2 Closed signature} *)
 (*  ********************************************************************** *)
 
-type t = (Cond.t, Expr1.t) Cond.value
+type t = (Cond.t, Expr1.t) Bdd.Cond.value
 type expr = t
 
 val of_expr0 :
@@ -103,7 +103,7 @@ val extend_environment : t -> Env.t -> t
 val print : Format.formatter -> t -> unit
 
 module Bool : sig
-  type t = (Cond.t, Expr1.Bool.t) Cond.value
+  type t = (Cond.t, Expr1.Bool.t) Bdd.Cond.value
 
   val of_expr : expr -> t
   val to_expr : t -> expr
@@ -122,7 +122,7 @@ module Bool : sig
 end
 
 module List : sig
-  type t = (Cond.t, Expr1.List.t) Cond.value
+  type t = (Cond.t, Expr1.List.t) Bdd.Cond.value
 
   val of_lexpr0 :
     ?normalize:bool -> ?reduce:bool -> ?careset:bool ->

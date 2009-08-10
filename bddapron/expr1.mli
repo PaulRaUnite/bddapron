@@ -1,6 +1,6 @@
 (** Finite-type and arithmetical expressions linked to normalized environments *)
 
-(* This file is part of the FORMULA Library, released under LGPL license.
+(* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 (** Very important remark:
@@ -98,7 +98,7 @@ module O : sig
     val extend_environment : 'a t -> 'a -> 'a t
 
     val of_int :
-      'a -> 'a Cond.O.t -> [`Tbint of bool * int ] -> int -> 'a t
+      'a -> 'a Cond.O.t -> [`Bint of bool * int ] -> int -> 'a t
     val var : 'a -> 'a Cond.O.t -> string -> 'a t
 
     val neg : 'a Cond.O.t -> 'a t -> 'a t
@@ -211,12 +211,7 @@ module O : sig
     val print : 'a Cond.O.t -> Format.formatter -> 'a t -> unit
   end
 
-  val typ_of_expr : 'a t -> [
-    | `Bool
-    | `Bint of bool * int
-    | `Benum of string
-    | `Real
-  ]
+  val typ_of_expr : 'a t -> Env.typ
   (** Type of an expression *)
 
   val make : 'a -> Expr0.t -> 'a t
@@ -363,7 +358,7 @@ module Bint : sig
   val to_expr : t -> expr
   val extend_environment : t -> Env.t -> t
 
-  val of_int : Env.t -> Cond.t -> [`Tbint of bool * int ] -> int -> t
+  val of_int : Env.t -> Cond.t -> [`Bint of bool * int ] -> int -> t
   val var : Env.t -> Cond.t -> string -> t
 
   val neg : Cond.t -> t -> t
@@ -483,12 +478,7 @@ end
 (** {3 Operations on general expressions} *)
 (*  ====================================================================== *)
 
-val typ_of_expr : t -> [
-  | `Bool
-  | `Bint of bool * int
-  | `Benum of string
-  | `Real
-]
+val typ_of_expr : t -> Env.typ
   (** Type of an expression *)
 
 

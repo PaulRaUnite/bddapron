@@ -1,4 +1,7 @@
-(** Decision diagrams on top of Apron abstract values *)
+(** DDs on top of Apron abstract values (internal) *)
+
+(* This file is part of the BDDAPRON Library, released under LGPL license.
+   Please read the COPYING file packaged in the distribution  *)
 
 type 'a leaf = 'a Apron.Abstract0.t
 type 'a t = 'a leaf Cudd.Mtbddc.t
@@ -52,18 +55,16 @@ val add_dimensions : 'a man -> 'a t -> Apron.Dim.change -> bool -> 'a t
 val remove_dimensions : 'a man -> 'a t -> Apron.Dim.change -> 'a t
 val apply_dimchange2 : 'a man -> 'a t -> Apron.Dim.change2 -> bool -> 'a t
 
+type asssub = Assign | Substitute
+
 val asssub_texpr_array :
-  ?asssub_bdd:(Cudd.Man.v Cudd.Bdd.t -> Cudd.Man.v Cudd.Bdd.t) ->
-  ('a Apron.Manager.t ->
-    'a Apron.Abstract0.t ->
-      Apron.Dim.t array ->
-	Apron.Texpr0.t array ->
-	  'a Apron.Abstract0.t option -> 'a Apron.Abstract0.t) ->
-  'a man -> Apron.Environment.t ->
+  ?asssub_bdd:(Cudd.Bdd.vt -> Cudd.Man.v Cudd.Bdd.t) ->
+  asssub ->
+  'a man ->
+  Apron.Environment.t ->
   'a t ->
   Apron.Dim.t array -> ApronexprDD.t array -> 'a t option -> 'a t
-
-
+  
 val assign_texpr_array :
   'a man -> Apron.Environment.t ->
   'a t -> Apron.Dim.t array -> ApronexprDD.t array -> 'a t option -> 'a t
@@ -78,5 +79,5 @@ val make_funop :
 val exist : 'a man -> supp:Cudd.Man.v Cudd.Bdd.t -> 'a t -> 'a t
 val existand :
   'a man ->
-  bottom:'a Apron.Abstract0.t Cudd.Mtbddc.unique -> 
+  bottom:'a Apron.Abstract0.t Cudd.Mtbddc.unique ->
   supp:Cudd.Man.v Cudd.Bdd.t -> Cudd.Man.v Cudd.Bdd.t -> 'a t -> 'a t
