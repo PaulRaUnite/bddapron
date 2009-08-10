@@ -42,10 +42,11 @@ BDDAPRONMOD = \
 	bddapron/apronexprDD \
 	bddapron/apronDD \
 	bddapron/expr0 bddapron/expr1 bddapron/expr2 \
-        bddapron/descend \
-	bddapron/mtbdddomain0 bddapron/mtbdddomain1 \
-	bddapron/bddleaf bddapron/bdddomain0 bddapron/bdddomain1 \
-	bddapron/domain0 bddapron/domain1 \
+	bddapron/descend \
+	bddapron/mtbdddomain0 \
+	bddapron/bddleaf bddapron/bdddomain0 bddapron/domain0 \
+	bddapron/domainlevel1 \
+	bddapron/mtbdddomain1 bddapron/bdddomain1 bddapron/domain1 \
 	bddapron/syntax bddapron/yacc bddapron/lex bddapron/parser
 
 MLMOD = $(BDDMOD) $(BDDAPRONMOD)
@@ -82,7 +83,7 @@ clean:
 		cd $(SRCDIR)/$$i; \
 		/bin/rm -f *.[aoc] *.cm[ioxa] *.cmxa *.annot; \
 		/bin/rm -f *.log *.aux *.bbl *.blg *.toc **.idx *.ilg *.ind ocamldoc*.tex ocamldoc.sty *.dvi *.pdf *.out; \
-		/bin/rm -fr html; \
+		/bin/rm -fr html_bdd html_bddapron; \
 		/bin/rm -f bddtop bddaprontop example?.byte example?.opt; \
 	done
 	(cd bddapron; /bin/rm -f yacc.ml yacc.mli lex.ml)
@@ -120,12 +121,12 @@ bdd.cmx: $(BDDMOD:%=%.cmx)
 
 
 # TEX rules
-.PHONY: bddapron.dvi bddapron.pdf bdd.dvi bdd.pdf html depend
+.PHONY: bddapron.dvi bddapron.pdf bdd.dvi bdd.pdf html html_bdd html_bddapron depend
 
 bddapron.pdf: bddapron.dvi
 	$(DVIPDF) bddapron.dvi bddapron.pdf
 
-bddapron.dvi: $(BDDAPRONMOD:%=%.cmi) $(BDDAPRONMOD:%=%.mli)
+bddapron.dvi: $(BDDAPRONMOD:%=%.cmi) $(BDDAPRONMOD:%=%.mli) bdd.cmi
 	$(OCAMLDOC) -latextitle 1,chapter -latextitle 2,section -latextitle 3,subsection -latextitle 4,subsubsection -latextitle 5,paragraph -noheader -notrailer -latex -o ocamldoc.tex $(OCAMLINC) -I bddapron $(BDDAPRONMOD:%=%.mli)
 	$(LATEX) bddapron/bddapron
 	$(MAKEINDEX) bddapron
@@ -142,9 +143,23 @@ bdd.dvi: $(BDDMOD:%=%.cmi) $(BDDMOD:%=%.mli)
 	$(LATEX) bdd/bdd
 	$(LATEX) bdd/bdd
 
-html: $(MLINT) $(MLMOD:%=%.mli)
-	mkdir -p html
-	$(OCAMLDOC) -html -d html -colorize-code $(OCAMLINC) $(MLMOD:%=%.mli)
+html_bdd: $(BDDMOD:%=%.cmi) $(BDDMOD:%=%.mli)
+	mkdir -p html_bdd
+	$(OCAMLDOC) -html -d html_bdd -colorize-code $(OCAMLINC) -I bdd $(BDDMOD:%=%.mli)
+
+html_bddapron: bdd.cmi $(BDDAPRONMOD:%=%.cmi) $(BDDAPRONMOD:%=%.mli)
+	mkdir -p html_bddapron
+	$(OCAMLDOC) -html -d html_bddapron -colorize-code $(OCAMLINC) -I bddapron -intro bddapron/bddapron.odoc $(BDDAPRONMOD:%=%.mli)
+
+html: html_bdd html_bddapron
+
+homepage: html bdd.pdf bddapron.pdf
+	hyperlatex index
+	cp -r index.html html_bdd html_bddapron bdd.pdf bddapron.pdf Changes \
+		$(HOME)/web/mlxxxidl-forge/bddapron
+	chmod -R ugoa+rx $(HOME)/web/mlxxxidl-forge/bddapron
+	scp -r $(HOME)/web/mlxxxidl-forge/bddapron johns:/home/wwwpop-art/people/bjeannet/bjeannet-forge
+	ssh johns chmod -R ugoa+rx /home/wwwpop-art/people/bjeannet/bjeannet-forge/bddapron
 
 #---------------------------------------
 # Test
@@ -166,11 +181,17 @@ example1.byte: bdd/example1.ml bdd.cma
 example2.byte: bddapron/example2.ml bddapron.cma
 	$(OCAMLC) -g $(OCAMLFLAGS) $(OCAMLINC) -o $@ -custom cudd.cma camllib.cma bigarray.cma gmp.cma apron.cma box.cma polka.cma bddapron.cma  -cclib "-lboxMPQ -lpolkaMPQ" $<
 
+test_random.byte: bddapron/test_random.ml bddapron.cma
+	$(OCAMLC) -g $(OCAMLFLAGS) $(OCAMLINC) -o $@ -custom cudd.cma camllib.cma bigarray.cma gmp.cma apron.cma box.cma polka.cma bddapron.cma  -cclib "-lboxMPQ -lpolkaMPQ" $<
+
 example1.opt: bddapron/example2.ml bddapron.cmxa
 	$(OCAMLOPT) -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ cudd.cmxa camllib.cmxa bdd.cmxa $<
 
 example2.opt: bddapron/example2.ml bddapron.cmxa
-	$(OCAMLOPT) -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ cudd.cmxa camllib.cmxa bigarray.cmxa gmp.cmxa apron.cmxa box.cmxa polka.cmxa bddapron.cmxa -cclib "-lboxMPQ -lpolkaMPQ" $<
+	$(OCAMLOPT) -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ cudd.cmxa camllib.cmxa bigarray.cmxa gmp.cmxa apron.cmxa box.cmxa polka.cmxa bddapron.cmxa-cclib "-lboxMPQ -lpolkaMPQ" $<
+
+test_random.opt: bddapron/test_random.ml bddapron.cmxa
+	$(OCAMLOPT) -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ cudd.cmxa camllib.cmxa bigarray.cmxa gmp.cmxa apron.cmxa box.cmxa polka.cmxa bddapron.cmxa -noautolink -ccopt "$(LCFLAGS)" -cclib "-lpolkaGrid_caml -lap_pkgrid -lap_ppl_caml -lap_ppl -lppl -lgmpxx -lpolka_caml_debug -lpolkaMPQ_debug -loct_caml -loctMPQ -lbox_caml -lboxMPQ -lapron_caml_debug -lapron_debug -lgmp_caml -lmpfr -lgmp -lcamlidl_debug -lcudd_caml_debug -lcudd_debug -lmtr -lst -lutil -lepd -lbigarray -lunix" $<
 
 LCFLAGS = \
 -L$(GMP_PREFIX)/lib \

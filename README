@@ -14,7 +14,6 @@ This package contains two sublibraries/modules:
       implemented as MTBDDs with Boolean decisions and APRON
       abstract values as leaves.
 
-
 Required
 ========
 OCaml

@@ -19,13 +19,14 @@ C  libraries:
   GMP (http://gmplib.org)
   MPFR (http://www.mpfr.org/)
   CUDD (http://vlsi.colorado.edu/~fabio/CUDD/)
-  cuddaux (http://gforge.inria.fr/projects/mlxxxidl/)
+   only for bddapron:
+  GMP (http://gmplib.org)
+  MPFR (http://www.mpfr.org/)
   APRON (http://apron.cri.ensmp.fr/library/)
 C/OCaml libraries
-  mlgmpidl, mlcuddidl (http://gforge.inria.fr/projects/mlxxxidl/)
+  mlcuddidl, mlgmpidl (only for bddapron) (http://gforge.inria.fr/projects/mlxxxidl/)
 OCaml libraries
   camllib (http://gforge.inria.fr/projects/bjeannet/pkg/camllib)
-  formula (http://gforge.inria.fr/projects/bjeannet/pkg/formula)
 
 To configure
 ============
