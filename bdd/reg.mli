@@ -20,6 +20,9 @@
 type 'a t = 'a Cudd.Bdd.t array
   (** type of arrays of bits *)
 
+type dt = Cudd.Man.d t
+type vt = Cudd.Man.v t
+
 (*  *********************************************************************** *)
 (** {2 Logical operations} *)
 (*  *********************************************************************** *)
@@ -100,7 +103,7 @@ val higher: 'a Cudd.Man.t -> 'a t -> 'a t -> 'a Cudd.Bdd.t
 val min_size: int -> int
   (** [min_size cst] computes the minimum number of bits required
     to represent the given constant. We have for example [min_size
-    0=0], [min_size 1 = 2], [min_size 3 = 2], [min_size (-8) = 4]. *)
+    0=0], [min_size 1 = 1], [min_size 3 = 2], [min_size (-8) = 4]. *)
 val of_int: 'a Cudd.Man.t -> int -> int -> 'a t
    (** [of_int size cst] puts the constant integer [cst] in a constant register
      of size [size]. The fact that [size] is big enough is checked using the
@@ -116,7 +119,7 @@ val greater_int: 'a Cudd.Man.t -> 'a t -> int -> 'a Cudd.Bdd.t
 val highereq_int: 'a Cudd.Man.t -> 'a t -> int -> 'a Cudd.Bdd.t
 val higher_int: 'a Cudd.Man.t -> 'a t -> int -> 'a Cudd.Bdd.t
   (** Tests w.r.t. a constant register, the size of which is
-    defined by the first given register. *)
+     defined by the first given register. *)
 
 (*  *********************************************************************** *)
 (** {2 Decomposition in guarded form} *)
@@ -175,5 +178,7 @@ val print_minterm:
 
 val permute : 'a t -> int array -> 'a t
   (** Permutation (scale [Cudd.Bdd.permute]) *)
+val varmap : 'a t -> 'a t
+  (** Permutation (scale [Cudd.Bdd.varmap]) *)
 val vectorcompose : 'a Cudd.Bdd.t array -> 'a t -> 'a t
   (** Composition (scale [Cudd.Bdd.vectorcompose]) *)

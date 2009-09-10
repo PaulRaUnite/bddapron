@@ -31,6 +31,9 @@ type 'a t = {
     (** Value itself *)
 }
 
+type dt = Cudd.Man.d t
+type vt = Cudd.Man.v t
+
 (** {3 Database} *)
 
 (** We need a global store where we register type names with their type
@@ -38,7 +41,7 @@ type 'a t = {
   labels. *)
 
 type ('a,'b,'c,'d) env0 = {
-  cudd : 'c Cudd.Man.t;
+  mutable cudd : 'c Cudd.Man.t;
     (** CUDD manager *)
   mutable typdef : (string, 'b) PMappe.t;
     (** Named types definitions *)
@@ -50,7 +53,7 @@ type ('a,'b,'c,'d) env0 = {
     (** Number of indices dedicated to finite-type variables *)
   mutable bddindex : int;
     (** Next free index in BDDs used by [self#add_var]. *)
-  bddincr : int;
+  mutable bddincr : int;
     (** Increment used by [self#add_var] for incrementing
 	[self#_bddindex] *)
   mutable idcondvar : (int, string) PMappe.t;
@@ -293,4 +296,5 @@ let print_minterm
   end
 
 let permute x tab = { x with reg = Reg.permute x.reg tab }
+let varmap x = { x with reg = Reg.varmap x.reg }
 let vectorcompose tab x =  { x with reg = Reg.vectorcompose tab x.reg }

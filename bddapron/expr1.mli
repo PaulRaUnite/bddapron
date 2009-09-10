@@ -117,6 +117,7 @@ module O : sig
     val sup : 'a Cond.O.t -> 'a t -> 'a t -> 'a Bool.t
     val eq_int : 'a Cond.O.t -> 'a t -> int -> 'a Bool.t
     val supeq_int : 'a Cond.O.t -> 'a t -> int -> 'a Bool.t
+    val sup_int : 'a Cond.O.t -> 'a t -> int -> 'a Bool.t
 
     val cofactor : 'a t -> 'a Bool.t -> 'a t
     val restrict : 'a t -> 'a Bool.t -> 'a t
@@ -377,6 +378,7 @@ module Bint : sig
   val sup : Cond.t -> t -> t -> Bool.t
   val eq_int : Cond.t -> t -> int -> Bool.t
   val supeq_int : Cond.t -> t -> int -> Bool.t
+  val sup_int : Cond.t -> t -> int -> Bool.t
 
   val cofactor : t -> Bool.t -> t
   val restrict : t -> Bool.t -> t

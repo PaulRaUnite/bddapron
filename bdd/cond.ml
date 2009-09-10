@@ -15,7 +15,7 @@ type ('a,'b,'c) t = {
   support_cond : 'b -> 'a -> string PSette.t;
   mutable print_cond : 'b -> Format.formatter -> 'a -> unit;
 
-  cudd : 'c Cudd.Man.t;
+  mutable cudd : 'c Cudd.Man.t;
     (** CUDD manager *)
   mutable bddindex0 : int;
     (** First index for conditions *)
@@ -23,7 +23,7 @@ type ('a,'b,'c) t = {
     (** Number of indices dedicated to conditions *)
   mutable bddindex : int;
     (** Next free index in BDDs used by {!idb_of_cond}. *)
-  bddincr : int;
+  mutable bddincr : int;
   mutable condidb : ('a,int*bool) PDMappe.t;
     (** Two-way association between a condition and a pair of a
 	BDD index and a polarity *)

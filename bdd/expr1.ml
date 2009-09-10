@@ -19,6 +19,9 @@ module O = struct
   type ('a,'b) t = ('a, 'b Expr0.expr) Env.value
   constraint 'a = ('c,'d,'b,'e) Env.O.t
 
+  type 'a dt = ('a,Cudd.Man.d) t
+  type 'a vt = ('a,Cudd.Man.v) t
+
   type ('a,'b) expr = ('a,'b) t
     (** Type of general expressions *)
 
@@ -59,6 +62,9 @@ module O = struct
   module Bool = struct
     type ('a,'b) t = ('a, 'b Cudd.Bdd.t) Env.value
     constraint 'a = ('c,'d,'b,'e) Env.O.t
+
+    type 'a dt = ('a,Cudd.Man.d) t
+    type 'a vt = ('a,Cudd.Man.v) t
 
     let of_expr e : ('a,'b) t =
       match e.val0 with
@@ -140,6 +146,9 @@ module O = struct
     type ('a,'b) t = ('a, 'b Int.t) Env.value
     constraint 'a = ('c,'d,'b,'e) Env.O.t
 
+    type 'a dt = ('a,Cudd.Man.d) t
+    type 'a vt = ('a,Cudd.Man.v) t
+
     let of_expr e : ('a,'b) t =
       match e.val0 with
       | `Bint x -> make_value e.env x
@@ -176,7 +185,8 @@ module O = struct
     let supeq e1 e2 = Env.mapbinop (Int.greatereq e1.env.cudd) e1 e2
     let sup e1 e2 = Env.mapbinop (Int.greater e1.env.cudd) e1 e2
     let eq_int e n = make_value e.env (Int.equal_int e.env.cudd e.val0 n)
-    let supeq_int e n = make_value e.env (Int.greatereq_int e.env.cudd e.val0 n)
+    let supeq_int e n = make_value e.env (Int.greatereq_int e.env.cudd e.val0 n)    
+    let sup_int e n = make_value e.env (Int.greater_int e.env.cudd e.val0 n)
 
     let cofactor e1 e2 = Env.mapbinop Int.cofactor e1 e2
     let restrict e1 e2 = Env.mapbinop Int.restrict e1 e2
@@ -207,6 +217,9 @@ module O = struct
   module Benum = struct
     type ('a,'b) t = ('a, 'b Enum.t) Env.value
     constraint 'a = ('c,'d,'b,'e) Env.O.t
+
+    type 'a dt = ('a,Cudd.Man.d) t
+    type 'a vt = ('a,Cudd.Man.v) t
 
     let of_expr e : ('a,'b) t =
       match e.val0 with
@@ -268,6 +281,9 @@ module O = struct
     type ('a,'b) t = ('a, 'b Expr0.t list) Env.value
     constraint 'a = ('c,'d,'b,'e) Env.O.t
       
+    type 'a dt = ('a,Cudd.Man.d) t
+    type 'a vt = ('a,Cudd.Man.v) t
+
     let of_lexpr0 = make_value
     let of_lexpr env lexpr1 =
       let lexpr0 = Env.check_lvalue env lexpr1 in
@@ -297,6 +313,9 @@ type 'a t = ('a Env.t, 'a Expr0.expr) Env.value
 
 type 'a expr = 'a t
 
+type dt = Cudd.Man.d t
+type vt = Cudd.Man.v t
+
 let typ_of_expr = O.typ_of_expr
 let make = O.make
 let extend_environment = O.extend_environment
@@ -314,6 +333,10 @@ let print = O.print
 
 module Bool = struct
   type 'a t = ('a Env.t, 'a Cudd.Bdd.t) Env.value
+    
+  type dt = Cudd.Man.d t
+  type vt = Cudd.Man.v t
+
   let of_expr = O.Bool.of_expr
   let to_expr = O.Bool.to_expr
   let extend_environment = O.Bool.extend_environment
@@ -348,6 +371,10 @@ module Bool = struct
 end
 module Bint = struct
   type 'a t = ('a Env.t, 'a Int.t) Env.value
+  
+  type dt = Cudd.Man.d t
+  type vt = Cudd.Man.v t
+
   let of_expr = O.Bint.of_expr
   let to_expr = O.Bint.to_expr
   let extend_environment = O.Bint.extend_environment
@@ -369,6 +396,7 @@ module Bint = struct
   let sup = O.Bint.sup
   let eq_int = O.Bint.eq_int
   let supeq_int = O.Bint.supeq_int
+  let sup_int = O.Bint.sup_int
   let cofactor = O.Bint.cofactor
   let restrict = O.Bint.restrict
   let tdrestrict = O.Bint.tdrestrict
@@ -380,6 +408,10 @@ module Bint = struct
 end
 module Benum = struct
   type 'a t = ('a Env.t, 'a Enum.t) Env.value
+
+  type dt = Cudd.Man.d t
+  type vt = Cudd.Man.v t
+
   let of_expr = O.Benum.of_expr
   let to_expr = O.Benum.to_expr
   let extend_environment = O.Benum.extend_environment
@@ -399,6 +431,9 @@ end
 module List = struct
   type 'a t = ('a Env.t, 'a Expr0.t list) Env.value
     
+  type dt = Cudd.Man.d t
+  type vt = Cudd.Man.v t
+
   let of_lexpr0 = O.List.of_lexpr0
   let of_lexpr = O.List.of_lexpr
   let extend_environment = O.List.extend_environment

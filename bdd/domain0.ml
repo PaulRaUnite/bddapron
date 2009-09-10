@@ -7,6 +7,8 @@ open Format
 open Env
 
 type 'a t = 'a Expr0.Bool.t
+type dt = Cudd.Man.d t
+type vt = Cudd.Man.v t
 
 let size = Cudd.Bdd.size
 

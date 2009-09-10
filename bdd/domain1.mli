@@ -10,6 +10,9 @@
 type 'a t = 'a Expr1.Bool.t
   (** Abstract value *)
   
+type dt = Cudd.Man.d t
+type vt = Cudd.Man.v t
+
 val size : 'a t -> int
   (** Size of an abstract value (number of nodes) *)
 val print : Format.formatter -> 'a t -> unit
@@ -76,6 +79,9 @@ module O : sig
   type ('a,'b) t = ('a,'b) Expr1.O.Bool.t
   constraint 'a = ('c,'d,'b,'e) Env.O.t
     
+  type 'a dt = ('a,Cudd.Man.d) t
+  type 'a vt = ('a,Cudd.Man.v) t
+
   val size : ('a,'b) t -> int
   val print : Format.formatter -> ('a,'b) t -> unit
     

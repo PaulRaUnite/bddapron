@@ -37,3 +37,4 @@ type t = Env.t O.t
 
 let make = O.make
 
+let print = Bdd.Cond.print

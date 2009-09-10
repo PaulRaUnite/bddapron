@@ -112,6 +112,7 @@ module O = struct
     let supeq cond = Bdd.Expr1.O.Bint.supeq
     let supeq_int cond = Bdd.Expr1.O.Bint.supeq_int
     let sup cond = Bdd.Expr1.O.Bint.sup
+    let sup_int cond = Bdd.Expr1.O.Bint.sup_int
 
     let cofactor = Bdd.Expr1.O.Bint.cofactor
     let restrict = Bdd.Expr1.O.Bint.restrict
@@ -420,6 +421,7 @@ module Bint = struct
   let sup = O.Bint.sup
   let eq_int = O.Bint.eq_int
   let supeq_int = O.Bint.supeq_int
+  let sup_int = O.Bint.sup_int
   let cofactor = O.Bint.cofactor
   let restrict = O.Bint.restrict
   let tdrestrict = O.Bint.tdrestrict

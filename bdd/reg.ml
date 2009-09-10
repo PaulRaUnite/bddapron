@@ -19,6 +19,9 @@ This module requires the mlcuddidl library.
 type 'a t = 'a Cudd.Bdd.t array
   (** type of arrays of bits *)
 
+type dt = Cudd.Man.d t
+type vt = Cudd.Man.v t
+
 (*  *********************************************************************** *)
 (** {2 Logical operations} *)
 (*  *********************************************************************** *)
@@ -551,6 +554,8 @@ let print_minterm
 
 let permute reg tab =
   Array.map (fun x -> Cudd.Bdd.permute x tab) reg
+let varmap reg =
+  Array.map Cudd.Bdd.varmap reg
 
 let vectorcompose tab reg = Array.map (Cudd.Bdd.vectorcompose tab) reg
 

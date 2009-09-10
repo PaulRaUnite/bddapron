@@ -16,14 +16,22 @@ This package contains two sublibraries/modules:
 
 Required
 ========
+
+1)
 OCaml
 Camlidl
-C  libraries: 
-  GMP (http://gmplib.org)
-  MPFR (http://www.mpfr.org/)
-  CUDD (http://vlsi.colorado.edu/~fabio/CUDD/)
+C  libraries and interfaces
+  CUDD (http://vlsi.colorado.edu/~fabio/CUDD/)	
+  MLCUDDIDL (http://pop-art.inrialpes.fr/~bjeannet/mlxxxidl-forge/mlcuddidl/index.html)
 OCaml libraries:
   camllib (http://http://pop-art.inrialpes.fr/~bjeannet/bjeannet-forge/camllib/)
+2) Same as above plus
+C  libraries and interfaces
+  GMP (http://gmplib.org)
+  MPFR (http://www.mpfr.org/)
+  MLGMPIDL (http://pop-art.inrialpes.fr/~bjeannet/mlxxxidl-forge/mlgmpidl/index.html)
+  APRON (http://apron.cri.ensmp.fr/library/)
+
 To configure
 ============
 - copy Makefile.config.model into Makefile.config
@@ -32,9 +40,16 @@ To configure
 To compile and install
 ========================
 make all        # for bytecode and nativecode compilation of bdd and bddapron
+make example1.byte
+make example2.byte
+make example1.opt
+make example2.opt 
+		# examples
+
 make bddtop     # for a custom toplevel for Bdd (contains CUDD C library 
                                                  + extension)
 make bddaprontop # for a custom toplevel for Bddapron (adds APRON C library)
+
 make bdd.pdf bddapron.pdf # doc
 make html        # doc
 ...

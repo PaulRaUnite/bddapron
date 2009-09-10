@@ -85,6 +85,12 @@ module O = struct
       =
     List.map (fun e -> permute e tab) le
 
+  let varmap (e:t) : t
+      =
+    match e with
+    | #Bdd.Expr0.t as x -> ((Bdd.Expr0.O.varmap x):>expr)
+    | `Apron x -> `Apron (Cudd.Mtbdd.varmap x)
+
   let compose_of_lvarexpr
       env cond
       (substitution:(string*expr) list)
@@ -244,6 +250,7 @@ module O = struct
     let restrict = Bdd.Expr0.O.Bool.restrict
     let tdrestrict = Bdd.Expr0.O.Bool.tdrestrict
     let permute = Bdd.Expr0.O.Bool.permute
+    let varmap = Bdd.Expr0.O.Bool.varmap
 
     let substitute_by_var env cond (e:t) sub = of_expr (ddsubstitute_by_var env cond (to_expr e) sub)
     let substitute env cond (e:t) sub = of_expr (ddsubstitute env cond (to_expr e) sub)
@@ -279,11 +286,13 @@ module O = struct
     let supeq env cond = Bdd.Expr0.O.Bint.supeq env
     let supeq_int env cond = Bdd.Expr0.O.Bint.supeq_int env
     let sup env cond = Bdd.Expr0.O.Bint.sup env
+    let sup_int env cond = Bdd.Expr0.O.Bint.sup_int env
 
     let cofactor = Bdd.Expr0.O.Bint.cofactor
     let restrict = Bdd.Expr0.O.Bint.restrict
     let tdrestrict = Bdd.Expr0.O.Bint.tdrestrict
     let permute = Bdd.Expr0.O.Bint.permute
+    let varmap = Bdd.Expr0.O.Bint.varmap
 
     let substitute_by_var env cond (e:t) sub = of_expr (ddsubstitute_by_var env cond (to_expr e) sub)
     let substitute env cond (e:t) sub = of_expr (ddsubstitute env cond (to_expr e) sub)
@@ -309,6 +318,7 @@ module O = struct
     let restrict = Bdd.Expr0.O.Benum.restrict
     let tdrestrict = Bdd.Expr0.O.Benum.tdrestrict
     let permute = Bdd.Expr0.O.Benum.permute
+    let varmap = Bdd.Expr0.O.Benum.varmap
     let substitute_by_var env cond (e:t) sub = of_expr (ddsubstitute_by_var env cond (to_expr e) sub)
     let substitute env cond (e:t) sub = of_expr (ddsubstitute env cond (to_expr e) sub)
     let guard_of_label env cond = Bdd.Expr0.O.Benum.guard_of_label env
@@ -350,6 +360,7 @@ module O = struct
     let restrict = Cudd.Mtbdd.restrict
     let tdrestrict = Cudd.Mtbdd.tdrestrict
     let permute = Cudd.Mtbdd.permute
+    let varmap = Cudd.Mtbdd.varmap
     let support = Cudd.Mtbdd.support
     let support_leaf = ApronexprDD.support_leaf
 
@@ -495,6 +506,7 @@ let cofactor = O.cofactor
 let restrict = O.restrict
 let tdrestrict = O.tdrestrict
 let permute = O.permute
+let varmap = O.varmap
 let substitute_by_var = O.substitute_by_var
 let substitute = O.substitute  
 let support = O.support
@@ -534,6 +546,7 @@ module Apron = struct
   let restrict = O.Apron.restrict
   let tdrestrict = O.Apron.tdrestrict
   let permute = O.Apron.permute
+  let varmap = O.Apron.varmap
   let substitute_by_var = O.Apron.substitute_by_var
   let substitute = O.Apron.substitute
   let print = O.Apron.print

@@ -11,12 +11,18 @@ type 'a t = ('a Env.t, 'a Expr0.t) Env.value
 type 'a expr = 'a t
   (** Type of general expressions *)
 
+type dt = Cudd.Man.d t
+type vt = Cudd.Man.v t
+
 (*  ********************************************************************** *)
 (** {2 Boolean expressions} *)
 (*  ********************************************************************** *)
 
 module Bool : sig
   type 'a t = ('a Env.t, 'a Cudd.Bdd.t) Env.value
+
+  type dt = Cudd.Man.d t
+  type vt = Cudd.Man.v t
 
   val of_expr : 'a expr -> 'a t
   val to_expr : 'a t -> 'a expr
@@ -77,6 +83,9 @@ end
 module Bint : sig
   type 'a t = ('a Env.t, 'a Int.t) Env.value
 
+  type dt = Cudd.Man.d t
+  type vt = Cudd.Man.v t
+
   val of_expr : 'a expr -> 'a t
   val to_expr : 'a t -> 'a expr
   val extend_environment : 'a t -> 'a Env.t -> 'a t
@@ -101,6 +110,7 @@ module Bint : sig
   val sup : 'a t -> 'a t -> 'a Bool.t
   val eq_int : 'a t -> int -> 'a Bool.t
   val supeq_int : 'a t -> int -> 'a Bool.t
+  val sup_int : 'a t -> int -> 'a Bool.t
 
   val cofactor : 'a t -> 'a Bool.t -> 'a t
   val restrict : 'a t -> 'a Bool.t -> 'a t
@@ -123,6 +133,9 @@ end
 
 module Benum : sig
   type 'a t = ('a Env.t, 'a Enum.t) Env.value
+
+  type dt = Cudd.Man.d t
+  type vt = Cudd.Man.v t
 
   val of_expr : 'a expr -> 'a t
   val to_expr : 'a t -> 'a expr
@@ -232,6 +245,9 @@ module O : sig
   type ('a,'b) expr = ('a,'b) t
     (** Type of general expressions *)
 
+  type 'a dt = ('a,Cudd.Man.d) t
+  type 'a vt = ('a,Cudd.Man.v) t
+
   (*  -------------------------------------------------------------------- *)
   (** {4 Boolean expressions} *)
   (*  -------------------------------------------------------------------- *)
@@ -239,6 +255,8 @@ module O : sig
   module Bool : sig
     type ('a,'b) t = ('a, 'b Cudd.Bdd.t) Env.value
     constraint 'a = ('c,'d,'b,'e) Env.O.t
+    type 'a dt = ('a,Cudd.Man.d) t
+    type 'a vt = ('a,Cudd.Man.v) t
 
     val of_expr : ('a, [> `Bool of 'b Cudd.Bdd.t ]) Env.value -> ('a,'b) t
     val to_expr : ('a,'b) t -> ('a, [> `Bool of 'b Cudd.Bdd.t ]) Env.value
@@ -300,6 +318,9 @@ module O : sig
     type ('a,'b) t = ('a, 'b Int.t) Env.value
     constraint 'a = ('c,'d,'b,'e) Env.O.t
 
+    type 'a dt = ('a,Cudd.Man.d) t
+    type 'a vt = ('a,Cudd.Man.v) t
+
     val of_expr : ('a, [> `Bint of 'b Int.t ]) Env.value -> ('a,'b) t
     val to_expr : ('a,'b) t -> ('a, [> `Bint of 'b Int.t ]) Env.value
     val extend_environment : ('a,'b) t -> 'a -> ('a,'b) t
@@ -324,6 +345,7 @@ module O : sig
     val sup : ('a,'b) t -> ('a,'b) t -> ('a,'b) Bool.t
     val eq_int : ('a,'b) t -> int -> ('a,'b) Bool.t
     val supeq_int : ('a,'b) t -> int -> ('a,'b) Bool.t
+    val sup_int : ('a,'b) t -> int -> ('a,'b) Bool.t
 
     val cofactor : ('a,'b) t -> ('a,'b) Bool.t -> ('a,'b) t
     val restrict : ('a,'b) t -> ('a,'b) Bool.t -> ('a,'b) t
@@ -347,6 +369,9 @@ module O : sig
   module Benum : sig
     type ('a,'b) t = ('a, 'b Enum.t) Env.value
     constraint 'a = ('c,'d,'b,'e) Env.O.t
+
+    type 'a dt = ('a,Cudd.Man.d) t
+    type 'a vt = ('a,Cudd.Man.v) t
 
     val of_expr : ('a, [> `Benum of 'b Enum.t ]) Env.value -> ('a,'b) t
     val to_expr : ('a,'b) t -> ('a, [> `Benum of 'b Enum.t ]) Env.value
@@ -422,6 +447,9 @@ module O : sig
   module List : sig
     type ('a,'b) t = ('a, 'b Expr0.t list) Env.value
     constraint 'a = ('c,'d,'b,'e) Env.O.t
+
+    type 'a dt = ('a,Cudd.Man.d) t
+    type 'a vt = ('a,Cudd.Man.v) t
 
     val of_lexpr0 : 'a -> 'b Expr0.t list -> ('a,'b) t
     val of_lexpr : 'a -> ('a,'b) expr list -> ('a,'b) t

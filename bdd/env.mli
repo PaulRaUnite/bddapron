@@ -33,7 +33,7 @@ type 'a expr = [
 
 (** Environment *)
 type ('a,'b,'c,'d) t0 = ('a,'b,'c,'d) Enum.env0 = {
-  cudd : 'c Cudd.Man.t;
+  mutable cudd : 'c Cudd.Man.t;
     (** CUDD manager *)
   mutable typdef : (string, 'b) PMappe.t;
     (** Named types definitions *)
@@ -45,9 +45,9 @@ type ('a,'b,'c,'d) t0 = ('a,'b,'c,'d) Enum.env0 = {
     (** Number of indices dedicated to finite-type variables *)
   mutable bddindex : int;
     (** Next free index in BDDs used by [self#add_var]. *)
-  bddincr : int;
-    (** Increment used by [self#add_var] for incrementing
-	[self#_bddindex] *)
+  mutable bddincr : int;
+    (** Increment used by {!add_var} for incrementing
+	[bddindex] *)
   mutable idcondvar : (int, string) PMappe.t;
     (** Associates to a BDD index the variable involved by it *)
   mutable vartid : (string, int array) PMappe.t;
@@ -165,7 +165,7 @@ val rename_vars : ('a,'b,'c,'d) O.t -> (string * string) list -> ('a,'b,'c,'d) O
   (** Functional versions of the previous functions *)
 
 val add_var_with : ('a,'b,'c,'d) O.t -> string -> 'a -> unit
-    (** Private function *)
+    (** Addition without normalization (internal) *)
 
 (* ********************************************************************** *)
 (** {2 Operations} *)
@@ -209,6 +209,8 @@ val compute_change : ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t -> 'c change
 (*  ********************************************************************** *)
 (** {2 Utilities} *)
 (*  ********************************************************************** *)
+
+val notfound : ('a, Format.formatter, unit, 'b) format4 -> 'a
 
 (** Type of pairs [(environment, value)] *)
 type ('a, 'b) value = { env : 'a; val0 : 'b; }

@@ -49,6 +49,7 @@ type t = (typ,typdef,unit) O.t
 (*  ********************************************************************** *)
 (** {2 Printing} *)
 (*  ********************************************************************** *)
+
 val print_typ : Format.formatter -> [> typ] -> unit
   (** Print a type *)
 val print_typdef : Format.formatter -> [> typdef] -> unit
@@ -64,7 +65,6 @@ val print : Format.formatter -> ('a,'b,'c) O.t -> unit
 (*  ********************************************************************** *)
 (** {2 Constructors} *)
 (*  ********************************************************************** *)
-
 
 val make :
   ?bddindex0:int -> ?bddsize:int -> ?relational:bool -> Cudd.Man.vt -> t
@@ -127,7 +127,6 @@ val add_vars : ('a,'b,'c) O.t -> (string * 'a) list -> ('a,'b,'c) O.t
 val remove_vars : ('a,'b,'c) O.t -> string list -> ('a,'b,'c) O.t
 val rename_vars : ('a,'b,'c) O.t -> (string * string) list -> ('a,'b,'c) O.t
   (** Functional versions of the previous functions *)
-
 
 (* ********************************************************************** *)
 (** {2 Operations} *)

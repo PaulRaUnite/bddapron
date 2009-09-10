@@ -33,6 +33,9 @@ type 'a t = {
   }
   (** type of an enumerated variable *)
 
+type dt = Cudd.Man.d t
+type vt = Cudd.Man.v t
+
 exception Typing of string
   (** Raised when operands are of incompatible type (sign and size) *)
 
@@ -75,6 +78,7 @@ val of_int: 'a Cudd.Man.t -> bool -> int -> int -> 'a t
 val to_int: 'a t -> int
 val equal_int: 'a Cudd.Man.t -> 'a t -> int -> 'a Cudd.Bdd.t
 val greatereq_int: 'a Cudd.Man.t -> 'a t -> int -> 'a Cudd.Bdd.t
+val greater_int: 'a Cudd.Man.t -> 'a t -> int -> 'a Cudd.Bdd.t
 
 (** {2 Decomposition in guarded form} *)
 
@@ -113,5 +117,7 @@ val print_minterm:
 
 val permute : 'a t -> int array -> 'a t
   (** Permutation (scale [Cudd.Bdd.permute]) *)
+val varmap : 'a t -> 'a t
+  (** Permutation (scale [Cudd.Bdd.varmap]) *)
 val vectorcompose : 'a Cudd.Bdd.t array -> 'a t -> 'a t
   (** Composition (scale [Cudd.Bdd.vectorcompose]) *)

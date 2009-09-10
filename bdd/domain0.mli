@@ -10,6 +10,9 @@
 type 'a t = 'a Expr0.Bool.t
   (** Abstract value *)
 
+type dt = Cudd.Man.d t
+type vt = Cudd.Man.v t
+
 val size : 'a t -> int
   (** Size of an abstract value (number of nodes) *)
 val print :     

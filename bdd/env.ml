@@ -34,7 +34,7 @@ type 'a expr = [
 ]
 
 type ('a,'b,'c,'d) t0 = ('a,'b,'c,'d) Enum.env0 = {
-  cudd : 'c Cudd.Man.t;
+  mutable cudd : 'c Cudd.Man.t;
     (** CUDD manager *)
   mutable typdef : (string, 'b) PMappe.t;
     (** Named types definitions *)
@@ -46,9 +46,9 @@ type ('a,'b,'c,'d) t0 = ('a,'b,'c,'d) Enum.env0 = {
     (** Number of indices dedicated to finite-type variables *)
   mutable bddindex : int;
     (** Next free index in BDDs used by [self#add_var]. *)
-  bddincr : int;
-    (** Increment used by [self#add_var] for incrementing
-	[self#_bddindex] *)
+  mutable bddincr : int;
+    (** Increment used by {!add_var} for incrementing
+	[bddindex] *)
   mutable idcondvar : (int, string) PMappe.t;
     (** Associates to a BDD index the variable involved by it *)
   mutable vartid : (string, int array) PMappe.t;
@@ -86,6 +86,19 @@ let print_typdef (fmt:Format.formatter) typdef = match typdef with
 let print_tid (fmt:Format.formatter) (tid:int array) : unit =
   Print.array Format.pp_print_int fmt tid
 
+let notfound format =
+  let buffer = Buffer.create 128 in
+  let fmt = Format.formatter_of_buffer buffer in
+  Format.kfprintf
+    (begin fun fmt ->
+      Format.pp_print_flush fmt ();
+      let s = Buffer.contents buffer in
+      Buffer.clear buffer;
+      raise (Failure s)
+    end)
+    fmt
+    format
+    
 module O = struct
   type ('a,'b,'c,'d) t = ('a,'b,'c,'d) t0
   constraint 'a = [>typ]
@@ -143,7 +156,7 @@ let typ_of_var env (label:string) : 'a
   try
     PMappe.find label env.vartyp
   with Not_found ->
-    failwith ("Bdd.Env.typ_of_var: unknwon label/variable "^label)
+    notfound "Bdd.Env.typ_of_var: unknwon label/variable %s" label
 
 let print_idcondb env fmt ((id,b) as idb) =
   try
@@ -356,7 +369,7 @@ let typdef_of_typ env (typ:string) : 'b
   try
     PMappe.find typ env.typdef
   with Not_found ->
-    failwith ("Bdd.Env.t#typdef_of_typ: unknown type "^typ)
+    notfound "Bdd.Env.t#typdef_of_typ: unknown type %s" typ
 
 let vars env =
   PMappe.maptoset env.vartid
@@ -782,6 +795,7 @@ let compute_change env1 env2 =
 (*  ********************************************************************** *)
 (** {2 Utilities} *)
 (*  ********************************************************************** *)
+
 
 type ('a,'b) value = {
   env : 'a;

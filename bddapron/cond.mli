@@ -33,3 +33,4 @@ val make :
   ?bddsize:int ->
   Cudd.Man.vt -> t
 
+val print : Env.t -> Format.formatter -> t -> unit

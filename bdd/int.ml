@@ -23,6 +23,9 @@ type 'a t = {
   }
   (** Type of an enumerated variable *)
 
+type dt = Cudd.Man.d t
+type vt = Cudd.Man.v t
+
 exception Typing of string
   (** Raised when operands are of incompatible type (sign and size) *)
 
@@ -208,6 +211,10 @@ let greatereq_int man a cst =
   let b = of_int man a.signed (Array.length a.reg) cst in
   greatereq man a b
 
+let greater_int man a cst =
+  let b = of_int man a.signed (Array.length a.reg) cst in
+  greater man a b
+
 (*  *********************************************************************** *)
 (** {2 Decomposition in guarded form} *)
 (*  *********************************************************************** *)
@@ -272,4 +279,5 @@ let print_minterm print_bdd fmt t =
   Reg.print_minterm ~signed:t.signed print_bdd fmt t.reg
 
 let permute x tab = { x with reg = Reg.permute x.reg tab }
+let varmap x = { x with reg = Reg.varmap x.reg }
 let vectorcompose tab x =  { x with reg = Reg.vectorcompose tab x.reg }

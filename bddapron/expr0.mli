@@ -52,6 +52,7 @@ module O : sig
     val restrict :  t -> t -> t
     val tdrestrict :  t -> t -> t
     val permute : t -> int array -> t
+    val varmap : t -> t
 
     val substitute_by_var : 'a -> 'a Cond.O.t -> t -> (string*string) list -> t
     val substitute : 'a -> 'a Cond.O.t -> t -> (string*expr) list -> t
@@ -83,11 +84,13 @@ module O : sig
     val supeq : 'a -> 'a Cond.O.t -> t -> t -> Bool.t
     val supeq_int : 'a -> 'a Cond.O.t -> t -> int -> Bool.t
     val sup : 'a -> 'a Cond.O.t -> t -> t -> Bool.t
+    val sup_int : 'a -> 'a Cond.O.t -> t -> int -> Bool.t
 
     val cofactor :  t -> Bool.t -> t
     val restrict :  t -> Bool.t -> t
     val tdrestrict :  t -> Bool.t -> t
     val permute : t -> int array -> t
+    val varmap : t -> t
 
     val substitute_by_var : 'a -> 'a Cond.O.t -> t -> (string*string) list -> t
     val substitute : 'a -> 'a Cond.O.t -> t -> (string*expr) list -> t
@@ -107,6 +110,7 @@ module O : sig
     val restrict :  t -> Bool.t -> t
     val tdrestrict :  t -> Bool.t -> t
     val permute : t -> int array -> t
+    val varmap : t -> t
     val substitute_by_var : 'a -> 'a Cond.O.t -> t -> (string*string) list -> t
     val substitute : 'a -> 'a Cond.O.t -> t -> (string*expr) list -> t
     val print : 'a -> 'a Cond.O.t -> Format.formatter -> t -> unit
@@ -151,6 +155,7 @@ module O : sig
     val restrict : t -> Bool.t -> t
     val tdrestrict : t -> Bool.t -> t
     val permute : t -> int array -> t
+    val varmap : t -> t
 
     val substitute_by_var : 'a -> 'a Cond.O.t -> t -> (string*string) list -> t
     val substitute : 'a -> 'a Cond.O.t -> t -> (string*expr) list -> t
@@ -175,6 +180,7 @@ module O : sig
   val tdrestrict : t -> Bool.t -> t
   val permute : t -> int array -> t
   val permute_list : t list -> int array -> t list
+  val varmap : t -> t
 
   val substitute_by_var : 'a -> 'a Cond.O.t -> t -> (string*string) list -> t
     (** Parallel substitution of variables by variables *)
@@ -249,6 +255,7 @@ module Bool : sig
   val restrict : t -> t -> t
   val tdrestrict : t -> t -> t
   val permute : t -> int array -> t
+  val varmap : t -> t
 
   val substitute_by_var : Env.t -> Cond.t -> t -> (string*string) list -> t
   val substitute : Env.t -> Cond.t -> t -> (string*expr) list -> t
@@ -284,12 +291,14 @@ module Bint : sig
   val supeq : Env.t -> Cond.t -> t -> t -> Bool.t
   val supeq_int : Env.t -> Cond.t -> t -> int -> Bool.t
   val sup : Env.t -> Cond.t -> t -> t -> Bool.t
+  val sup_int : Env.t -> Cond.t -> t -> int -> Bool.t
 
   val cofactor : t -> Bool.t -> t
   val restrict : t -> Bool.t -> t
   val tdrestrict : t -> Bool.t -> t
   val permute : t -> int array -> t
-
+  val varmap : t -> t
+      
   val substitute_by_var : Env.t -> Cond.t -> t -> (string*string) list -> t
   val substitute : Env.t -> Cond.t -> t -> (string*expr) list -> t
 
@@ -312,6 +321,7 @@ module Benum : sig
   val restrict : t -> Bool.t -> t
   val tdrestrict : t -> Bool.t -> t
   val permute : t -> int array -> t
+  val varmap : t -> t
   val substitute_by_var : Env.t -> Cond.t -> t -> (string*string) list -> t
   val substitute : Env.t -> Cond.t -> t -> (string*expr) list -> t
   val print : Env.t -> Cond.t -> Format.formatter -> t -> unit
@@ -360,6 +370,7 @@ module Apron : sig
   val restrict : t -> Bool.t -> t
   val tdrestrict : t -> Bool.t -> t
   val permute : t -> int array -> t
+  val varmap : t -> t
 
   val substitute_by_var : Env.t -> Cond.t -> t -> (string*string) list -> t
   val substitute : Env.t -> Cond.t -> t -> (string*expr) list -> t
@@ -397,6 +408,7 @@ val tdrestrict : t -> Bool.t -> t
 	[cofactor]. *)
 
 val permute : t -> int array -> t
+val varmap : t -> t
   (** Permutation (rather internal) *)
 
 val support : Env.t -> Cond.t -> t -> string PSette.t

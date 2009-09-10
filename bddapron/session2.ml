@@ -1,28 +1,40 @@
 (* essai BddApronDomain *)
 
-open Format;;
-open Bddapron;;
+(*
+if you have dynamic libraries:
+
+ocaml -I $CAMLLIB_INSTALL/lib -I $MLCUDDIDL_INSTALL/lib -I $BDDAPRON_INSTALL/lib -I $MLGMPIDL_INSTALL/lib -I $APRON_INSTALL/lib
+
+#load "cudd.cma";;
+#load "bigarray.cma";;
+#load "gmp.cma";;
+#load "apron.cma";;
+#load "polkaMPQ.cma";;
+#load "camllib.cma";;
+#load "bddapron.cma";;
+
+
+Otherwise:
+bddaprontop -I $CAMLLIB_INSTALL/lib -I $MLCUDDIDL_INSTALL/lib -I $BDDAPRON_INSTALL/lib -I $MLGMPIDL_INSTALL/lib -I $APRON_INSTALL/lib
+*)
 
 (*
-bddaprontop -I $CAMLLIB_INSTALL/lib -I $MLCUDDIDL_INSTALL/lib -I $BDDAPRON_INSTALL/lib -I $MLGMPIDL_INSTALL/lib -I $APRON_INSTALL/lib
-
-Gc.set { (Gc.get()) with Gc.verbose = 0x11 };;
-
 open Format;;
 open Bddapron;;
 #install_printer Apron.Abstract1.print;;
 #install_printer Cudd.Bdd.print__minterm;;
 let print fmt x = Apron.Environment.print fmt x;;
 #install_printer print;;
-#install_printer Apronexpr.print;;
+#install_printer Bddapron.Apronexpr.print;;
 let print fmt x = Cudd.Weakke.print Apronexpr.print fmt x;;
 #install_printer print;;
 let print fmt x = Cudd.Weakke.print Apron.Abstract1.print fmt x ;;
 #install_printer print;;
-#install_printer Domain1.print;;
 #install_printer Env.print;;
-#install_printer Cond.print;;
 *)
+
+open Format;;
+open Bddapron;;
 
 let cudd = Cudd.Man.make_v ();;
 Cudd.Man.print_limit := 200;;
@@ -31,27 +43,10 @@ Cudd.Man.set_gc 10000
   (begin fun () -> printf "@.CUDD REORDER@." end)
 ;;
 
-let cond = Bddapron.Cond.make cudd;;
-(*
-let p = Expr1.print cond;;
-#install_printer p;;
-let p = Expr1.Bool.print cond;;
-#install_printer p;;
-let p = Expr1.Bint.print cond;;
-#install_printer p;;
-let p = Expr1.Benum.print cond;;
-#install_printer p;;
-let p = Expr1.Apron.print cond;;
-#install_printer p;;
-*)
-
-
-let apron = Polka.manager_alloc_loose ();;
-let bddapron = Domain1.make_man apron;;
 let env = Env.make cudd;;
-env#add_typ "enum2" (`Benum [|"l1"; "l2"; "l3"|]);;
+Env.add_typ_with env "enum2" (`Benum [|"l1"; "l2"; "l3"|]);;
 env;;
-env#add_vars [
+Env.add_vars_with env [
   ("q",`Bint(false,3));
   ("e",`Benum("enum2"));
   ("b0",`Bool);
@@ -64,6 +59,34 @@ env#add_vars [
   ("x3",`Real);
 ];;
 env;;
+
+let cond = Bddapron.Cond.make cudd;;
+
+let apron = Polka.manager_alloc_loose ();;
+let bddapron = Domain1.make_mtbdd apron;;
+
+(*
+let p = Cond.print env;;
+#install_printer p;;
+let p = Expr1.print cond;;
+#install_printer p;;
+let p = Expr1.Bool.print cond;;
+#install_printer p;;
+let p = Expr1.Bint.print cond;;
+#install_printer p;;
+let p = Expr1.Benum.print cond;;
+#install_printer p;;
+let p = Expr1.Apron.print cond;;
+#install_printer p;;
+let p = Bdddomain1.print;;
+#install_printer p;;
+let p = Mtbdddomain1.print;;
+#install_printer p;;
+let p = Domain1.print bddapron;;
+#install_printer p;;
+*)
+
+
 
 let expr0 = Parser.expr1_of_string env cond "if b0 then x0 else 2*x1";;
 
@@ -181,15 +204,15 @@ let nabs = Domain1.assign_lexpr bddapron cond abs ["x0";"x3"]
   ]
   None;;
 printf "After nabs@.";;
-printf "abs=%a@." Domain1.print abs;;
+printf "abs=%a@." (Domain1.print bddapron) abs;;
 Gc.full_major();;
-printf "nabs=%a@." Domain1.print nabs;;
+printf "nabs=%a@." (Domain1.print bddapron) nabs;;
 printf "env=%a@." Env.print nabs.Env.env;;
 let env = nabs.Env.env;;
 let env2 = Env.rename_vars env [("x1","y"); ("b0","c");("q","r")];;
 let nabs2 = Domain1.rename bddapron nabs [("x1","y"); ("b0","c");("q","r")];;
 printf "After nabs2@.";;
-printf "nabs2=%a@." Domain1.print nabs2;;
+printf "nabs2=%a@." (Domain1.print bddapron) nabs2;;
 printf "env=%a@." Env.print nabs2.Env.env;;
 
 

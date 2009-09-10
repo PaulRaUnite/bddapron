@@ -42,7 +42,7 @@ let p fmt x = Domain0.print env fmt x;;
 let p fmt (x: Polka.loose Polka.t ApronDD.table) = Cudd.Mtbdd.print_table (fun x -> Apron.Abstract0.print string_of_int x) fmt x;;
 #install_printer p;;
 *)
-env#add_vars [
+Env.add_vars_with [
   ("b0",`Bool);
   ("b1",`Bool);
   ("b2",`Bool);

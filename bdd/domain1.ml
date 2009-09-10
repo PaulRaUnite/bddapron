@@ -15,6 +15,9 @@ module O = struct
   type ('a,'b) t = ('a,'b) Expr1.O.Bool.t
   constraint 'a = ('c,'d,'b,'e) Env.O.t
 
+  type 'a dt = ('a,Cudd.Man.d) t
+  type 'a vt = ('a,Cudd.Man.v) t
+
   let size t = Domain0.size t.val0
   let print fmt t = Domain0.O.print t.env fmt t.val0
 
@@ -105,6 +108,10 @@ end
 (*  ********************************************************************** *)
 
 type 'a t = 'a Expr1.Bool.t
+
+type dt = Cudd.Man.d t
+type vt = Cudd.Man.v t
+
 type 'a expr = ('a Env.t, 'a Expr0.t list) Env.value
 
 let size = O.size

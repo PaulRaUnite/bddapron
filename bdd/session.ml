@@ -1,10 +1,17 @@
 (* essai BddApronDomain *)
 
-open Format;;
-
-Gc.set { (Gc.get()) with Gc.verbose=0x13; Gc.space_overhead=5; };;
 (*
-bddtop -I $CAMLLIB_INSTALL/lib -I $MLCUDDIDL_INSTALL/lib
+if you have dynamic libraries:
+
+ocaml -I $CAMLLIB_INSTALL/lib -I $MLCUDDIDL_INSTALL/lib -I $BDDAPRON_INSTALL/lib 
+
+#load "cudd.cma";;
+#load "camllib.cma";;
+#load "bdd.cma";;
+
+Otherwise:
+
+bddtop -I $CAMLLIB_INSTALL/lib -I $MLCUDDIDL_INSTALL/lib -I $BDDAPRON_INSTALL/lib
 
 #install_printer Bdd.Expr1.print;;
 #install_printer Bdd.Expr1.Bool.print;;
@@ -14,6 +21,9 @@ bddtop -I $CAMLLIB_INSTALL/lib -I $MLCUDDIDL_INSTALL/lib
 #install_printer Bdd.Env.print;;
 *)
 
+open Format;;
+open Bdd
+
 let cudd = Cudd.Man.make_d ();;
 Cudd.Man.print_limit := 200;;
 Cudd.Man.set_gc 10000
@@ -21,9 +31,9 @@ Cudd.Man.set_gc 10000
   (begin fun () -> printf "@.CUDD REORDER@." end)
 ;;
 let env = Bdd.Env.make cudd;;
-env#add_typ "enum2" (`Benum [|"l1"; "l2"; "l3"|]);;
+Env.add_typ_with env "enum2" (`Benum [|"l1"; "l2"; "l3"|]);;
 env;;
-env#add_vars [
+Env.add_vars_with env [
   ("q1",`Bint(false,3));
   ("q2",`Bint(false,3));
   ("e",`Benum("enum2"));

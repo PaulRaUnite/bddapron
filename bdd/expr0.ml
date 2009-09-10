@@ -23,6 +23,10 @@ type 'a t = [
 ]
 type 'a expr = 'a t
 
+type dt = Cudd.Man.d t
+type vt = Cudd.Man.v t
+
+
 (*  ********************************************************************** *)
 (** {2 Opened signatures and Internal functions} *)
 (*  ********************************************************************** *)
@@ -61,7 +65,7 @@ module O = struct
 	with Not_found ->
 	  `Benum (Enum.of_label env var)
 	end
-    | _ -> failwith (Format.sprintf "unknown type for variable %s" var)
+    | _ -> Env.notfound "unknown type for variable %s" var
     end
 
   (*  ---------------------------------------------------------------------- *)
@@ -94,7 +98,7 @@ module O = struct
     (** Syntax tree for printing *)
     
     (** Atom *)
-    type 'a atom =
+    type atom =
       | Tbool of string * bool
 	  (** variable name and sign *)
       | Tint of string * int list
@@ -103,8 +107,8 @@ module O = struct
 	  (** variable name, possibly primed, and list of possible labels *)
 
     (** Basic term *)
-    type 'a term =
-      | Tatom of 'a atom
+    type term =
+      | Tatom of atom
 	  (** *)
       | Texternal of (int * bool)
 	  (** Unregistered BDD identifier and a Boolean for
@@ -113,16 +117,33 @@ module O = struct
 	  (** Boolean constant *)
 
     (** Conjunction *)
-    type 'a conjunction =
-      | Conjunction of 'a term list
+    type conjunction =
+      | Conjunction of term list
          (** Conjunction of terms. Empty list means true. *)
       | Cfalse
 
     (** Disjunction *)
-    type 'a disjunction =
-      | Disjunction of 'a conjunction list
+    type disjunction =
+      | Disjunction of conjunction list
         (** Disjunction of conjunctions. Empty list means false *)
       | Dtrue
+
+    let map_atom f = function
+      | Tbool(n,b) -> Tbool(f n,b)
+      | Tint(n,l) -> Tint(f n,l)
+      | Tenum(n,l) -> Tenum(f n, List.map f l)
+
+    let map_term f = function
+      | Tatom atom -> Tatom (map_atom f atom)
+      | _ as x -> x
+	  
+    let map_conjunction f = function
+      | Conjunction lterm -> Conjunction (List.map (map_term f) lterm)
+      | Cfalse -> Cfalse
+
+    let map_disjunction f = function
+      | Disjunction l -> Disjunction (List.map (map_conjunction f) l)
+      | Dtrue -> Dtrue
 
     (*  -------------------------------------------------------------------- *)
     (** {4 Internal conversion functions} *)
@@ -135,7 +156,7 @@ module O = struct
 	(var:string) (reg:'c Int.t)
 	(minterm:Cudd.Man.tbool array)
 	:
-	'a term
+	term
 	=
       let lcode =
 	Reg.Minterm.map
@@ -149,7 +170,7 @@ module O = struct
 	(var:string) (reg:'c Enum.t)
 	(minterm:Cudd.Man.tbool array)
 	:
-	'c term
+	term
 	=
       let labels = ref [] in
       Reg.Minterm.iter
@@ -178,7 +199,7 @@ module O = struct
     (** {4 Converts a BDD condition} *)
     (*  -------------------------------------------------------------------- *)
 
-    let term_of_idcondb (env:('a,'b,'c,'d) Env.O.t) (idcondb:int*bool) : 'c term
+    let term_of_idcondb (env:('a,'b,'c,'d) Env.O.t) (idcondb:int*bool) : term
 	=
       let (idcond,b) = idcondb in
       if mem_id env idcond then begin
@@ -221,7 +242,7 @@ module O = struct
       | Cudd.Man.Top -> failwith ""
 
     (** Raises Exit if false value *)
-    let mand (rconjunction:'a term list ref) (term:'a term) : unit
+    let mand (rconjunction:term list ref) (term:term) : unit
 	=
       match term with
       | Tcst(true) -> ()
@@ -232,10 +253,10 @@ module O = struct
 	(env:('a,'b,'c,'d) Env.O.t)
 	(gminterm:Cudd.Man.tbool array)
 	:
-	'c conjunction
+	conjunction
 	=
       try
-	let res = ref ([]:'c term list) in
+	let res = ref ([]:term list) in
         (* We iterate first on the Boolean variables *)
 	PMappe.iter
 	  (begin fun var tid ->
@@ -291,7 +312,7 @@ module O = struct
 	(env:('a,'b,'c,'d) Env.O.t)
 	(bdd:'c Cudd.Bdd.t)
 	:
-	'c disjunction
+	disjunction
 	=
       if Cudd.Bdd.is_true bdd then
 	Dtrue
@@ -299,7 +320,7 @@ module O = struct
 	Disjunction([])
       else begin
 	try
-	  let res = ref ([]:'c conjunction list) in
+	  let res = ref ([]:conjunction list) in
 	  Cudd.Bdd.iter_cube
 	    (begin fun cube ->
 	      let conjunction = conjunction_of_minterm env cube in
@@ -318,7 +339,7 @@ module O = struct
     (** {4 Printing} *)
     (*  -------------------------------------------------------------------- *)
 
-    let print_term ?print_external_idcondb (env:('a,'b,'c,'d) Env.O.t) fmt (term:'c term) =
+    let print_term ?print_external_idcondb (env:('a,'b,'c,'d) Env.O.t) fmt (term:term) =
       match term with
       | Tatom(atom) ->
 	  begin match atom with
@@ -357,7 +378,7 @@ module O = struct
       | Tcst(b) ->
 	  pp_print_bool fmt b
 
-    let print_conjunction ?print_external_idcondb env fmt (conjunction:'c conjunction) =
+    let print_conjunction ?print_external_idcondb env fmt (conjunction:conjunction) =
       match conjunction with
       | Cfalse -> pp_print_string fmt "false"
       | Conjunction([]) -> pp_print_string fmt "true"
@@ -368,7 +389,7 @@ module O = struct
 	    fmt
 	    conjunction
 
-    let print_disjunction ?print_external_idcondb env fmt (disjunction:'c disjunction) =
+    let print_disjunction ?print_external_idcondb env fmt (disjunction:disjunction) =
       match disjunction with
       | Dtrue -> pp_print_string fmt "true"
       | Disjunction([]) -> pp_print_string fmt "false"
@@ -693,6 +714,10 @@ module O = struct
       =
     List.map (fun e -> permute e permutation) lexpr
       
+  let varmap (expr:'a expr) : 'a expr
+      =
+    mapmonop Cudd.Bdd.varmap expr
+
   let compose (expr:'a expr) (composition:'a Cudd.Bdd.t array) : 'a expr
       =
     mapmonop (Cudd.Bdd.vectorcompose composition) expr
@@ -719,6 +744,7 @@ module O = struct
   let restrict expr bdd = mapmonop (fun x -> Cudd.Bdd.restrict x bdd) expr
   let tdrestrict expr bdd = mapmonop (fun x -> Cudd.Bdd.tdrestrict x bdd) expr
   let permute expr tab = mapmonop (fun x -> Cudd.Bdd.permute x tab) expr
+  let varmap expr = mapmonop Cudd.Bdd.varmap expr
     
   (*  ---------------------------------------------------------------------- *)
   (** {4 Boolean expressions} *)
@@ -727,6 +753,8 @@ module O = struct
   module Bool = struct
 
     type 'c t = 'c Cudd.Bdd.t
+    type dt = Cudd.Man.d t
+    type vt = Cudd.Man.v t
 
     let of_expr = function
       | `Bool x -> x
@@ -774,6 +802,7 @@ module O = struct
     let restrict = Cudd.Bdd.restrict
     let tdrestrict = Cudd.Bdd.tdrestrict
     let permute = Cudd.Bdd.permute
+    let varmap = Cudd.Bdd.varmap
 
     let substitute_by_var (env:('a,'b,'c,'d) Env.O.t) expr (substitution:(string*string) list)
 	=
@@ -797,6 +826,8 @@ module O = struct
   module Bint = struct
 
     type 'c t = 'c Int.t
+    type dt = Cudd.Man.d t
+    type vt = Cudd.Man.v t
 
     let of_expr = function
       | `Bint x -> x
@@ -833,11 +864,13 @@ module O = struct
     let supeq (env:('a,'b,'c,'d) Env.O.t) = Int.greatereq env.cudd
     let supeq_int (env:('a,'b,'c,'d) Env.O.t) = Int.greatereq_int env.cudd
     let sup (env:('a,'b,'c,'d) Env.O.t) = Int.greater env.cudd
+    let sup_int (env:('a,'b,'c,'d) Env.O.t) = Int.greater_int env.cudd
 
     let cofactor = Int.cofactor
     let restrict = Int.restrict
     let tdrestrict = Int.tdrestrict
     let permute = Int.permute
+    let varmap = Int.varmap
 
     let substitute_by_var env expr (substitution:(string*string) list)
 	=
@@ -862,6 +895,8 @@ module O = struct
 
   module Benum = struct
     type 'c t = 'c Enum.t
+    type dt = Cudd.Man.d t
+    type vt = Cudd.Man.v t
 
     let of_expr = function
       | `Benum x -> x
@@ -884,6 +919,7 @@ module O = struct
     let restrict = Enum.restrict
     let tdrestrict = Enum.tdrestrict
     let permute = Enum.permute
+    let varmap = Enum.varmap
 
     let substitute_by_var env expr (substitution:(string*string) list)
 	=
