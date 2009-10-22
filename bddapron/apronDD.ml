@@ -26,7 +26,11 @@ let make_table (apron:'a Apron.Manager.t) : 'a table =
   Cudd.Mtbddc.make_table
     ~hash:Hashtbl.hash
     ~equal:(fun (x:'a Apron.Abstract0.t) (y:'a Apron.Abstract0.t) ->
-      x==y || Apron.Abstract0.is_eq apron x y)
+      x==y ||
+	(let dimx = Apron.Abstract0.dimension apron x in
+	let dimy = Apron.Abstract0.dimension apron y in
+	dimx=dimy && Apron.Abstract0.is_eq apron x y)
+    )
 (*
 let myunique table abs0 =
   Apron.Abstract0.canonicalize (Apron.Abstract0.manager abs0) abs0;

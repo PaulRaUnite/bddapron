@@ -13,9 +13,18 @@ open Env
 (** {2 Generic interface} *)
 (*  ********************************************************************** *)
 
-type ('a,'b,'c,'d) man = ('a,'b,'c,'d) Domain0.man
-type 'd t = (Env.t, 'd) Env.value
-  
+type ('a, 'b, 'c) man = ('a, 'b, 'c) Domain0.man
+(**  Type of generic managers.
+ 
+    - ['a]: as in ['a Apron.Manager.t] 
+            ([Box.t], [Polka.strict Polka.t], etc);
+    - ['b]: type of the underlying manager;
+    - ['c]: type of the underlying abstract values of level 0
+*)
+
+type 'c t = (Env.t, 'c) Env.value
+(** Type of generic abstract values *)
+
 let canonicalize ?apron man t = Domain0.canonicalize ?apron man t.val0
 let print man fmt t = Domain0.print man t.env fmt t.val0
 let size man t = Domain0.size man t.val0
@@ -160,11 +169,43 @@ let rename man t lvarvar =
 (*  ********************************************************************** *)
 
 let make_mtbdd = Domain0.make_mtbdd
-let to_mtbdd = Domain0.to_mtbdd
+
+let man_is_mtbdd = Domain0.man_is_mtbdd
+let man_of_mtbdd = Domain0.man_of_mtbdd
+let man_to_mtbdd = Domain0.man_to_mtbdd
+let of_mtbdd (manabs:'a Domain0.mtbdd * 'a Mtbdddomain0.t t)
+    :
+    ('a, 'b, 'c) man * 'c t
+    =
+  Obj.magic manabs
+let to_mtbdd (manabs:('a, 'b, 'c) man * 'c t) 
+    :
+    'a Domain0.mtbdd * 'a Mtbdddomain0.t t
+    =
+  if man_is_mtbdd (fst manabs) then
+    Obj.magic manabs
+  else
+    failwith ""
 
 (*  ********************************************************************** *)
 (** {2 Implementation based on {!Bdddomain1}} *)
 (*  ********************************************************************** *)
 
 let make_bdd = Domain0.make_bdd
-let to_bdd = Domain0.to_bdd
+
+let man_is_bdd = Domain0.man_is_bdd
+let man_of_bdd = Domain0.man_of_bdd
+let man_to_bdd = Domain0.man_to_bdd
+let of_bdd (manabs:'a Domain0.bdd * 'a Bdddomain0.t t)
+    :
+    ('a, 'b, 'c) man * 'c t
+    =
+  Obj.magic manabs
+let to_bdd (manabs:('a, 'b, 'c) man * 'c t) 
+    :
+    'a Domain0.bdd * 'a Bdddomain0.t t
+    =
+  if man_is_bdd (fst manabs) then
+    Obj.magic manabs
+  else
+    failwith ""

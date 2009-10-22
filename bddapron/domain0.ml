@@ -7,30 +7,40 @@
 (** {2 Generic interface} *)
 (*  ********************************************************************** *)
 
-type ('a,'b,'c,'d) man = {
-  typ : 'b;
-  man : 'c;
-  canonicalize : ?apron:bool -> 'c -> 'd -> unit;
-  size : 'c -> 'd -> int;
-  print : Env.t -> Format.formatter -> 'd -> unit;
-  bottom : 'c -> Env.t -> 'd;
-  top : 'c -> Env.t -> 'd;
-  of_apron : 'c -> Env.t -> 'a Apron.Abstract0.t -> 'd;
-  is_bottom : 'c -> 'd -> bool;
-  is_top : 'c -> 'd -> bool;
-  is_leq : 'c -> 'd -> 'd -> bool;
-  is_eq : 'c -> 'd -> 'd -> bool;
-  to_bddapron : 'c -> 'd -> (Expr0.Bool.t * 'a Apron.Abstract0.t) list;
-  meet : 'c -> 'd -> 'd -> 'd;
-  join : 'c -> 'd -> 'd -> 'd;
-  meet_condition : 'c -> Env.t -> Cond.t -> 'd -> Expr0.Bool.t -> 'd;
-  assign_lexpr : ?relational:bool -> ?nodependency:bool -> 'c ->  Env.t -> Cond.t -> 'd -> string list -> Expr0.t list -> 'd option -> 'd;
-  substitute_lexpr : 'c ->  Env.t -> Cond.t -> 'd -> string list -> Expr0.t list -> 'd option -> 'd;
-  forget_list : 'c -> Env.t -> 'd -> string list -> 'd;
-  widening : 'c -> 'd -> 'd -> 'd;
-  apply_change :  bottom:'d -> 'c -> 'd -> Env.change -> 'd;
-  apply_permutation : 'c -> 'd -> int array option * Apron.Dim.perm option -> 'd;
+type ('a,'b,'c) man = {
+  typ : string;
+  man : 'b;
+  canonicalize : ?apron:bool -> 'b -> 'c -> unit;
+  size : 'b -> 'c -> int;
+  print : Env.t -> Format.formatter -> 'c -> unit;
+  bottom : 'b -> Env.t -> 'c;
+  top : 'b -> Env.t -> 'c;
+  of_apron : 'b -> Env.t -> 'a Apron.Abstract0.t -> 'c;
+  is_bottom : 'b -> 'c -> bool;
+  is_top : 'b -> 'c -> bool;
+  is_leq : 'b -> 'c -> 'c -> bool;
+  is_eq : 'b -> 'c -> 'c -> bool;
+  to_bddapron : 'b -> 'c -> (Expr0.Bool.t * 'a Apron.Abstract0.t) list;
+  meet : 'b -> 'c -> 'c -> 'c;
+  join : 'b -> 'c -> 'c -> 'c;
+  meet_condition : 'b -> Env.t -> Cond.t -> 'c -> Expr0.Bool.t -> 'c;
+  assign_lexpr : ?relational:bool -> ?nodependency:bool -> 'b ->  Env.t -> Cond.t -> 'c -> string list -> Expr0.t list -> 'c option -> 'c;
+  substitute_lexpr : 'b ->  Env.t -> Cond.t -> 'c -> string list -> Expr0.t list -> 'c option -> 'c;
+  forget_list : 'b -> Env.t -> 'c -> string list -> 'c;
+  widening : 'b -> 'c -> 'c -> 'c;
+  apply_change :  bottom:'c -> 'b -> 'c -> Env.change -> 'c;
+  apply_permutation : 'b -> 'c -> int array option * Apron.Dim.perm option -> 'c;
 }
+(** Type of generic managers.
+
+    - ['a]: as in ['a Apron.Manager.t]
+	    ([Box.t], [Polka.strict Polka.t], etc);
+    - ['b]: type of the underlying manager;
+    - ['c]: type of the underlying abstract values of level 0.
+*)
+
+type 'c t = 'c
+(** Type of generic abstract values *)
 
 let canonicalize ?apron man = man.canonicalize ?apron man.man
 let size man = man.size man.man
@@ -60,7 +70,6 @@ let apply_permutation man = man.apply_permutation man.man
 type 'a mtbdd =
   (
     'a,
-    [`Mtbdd of 'a Mtbdddomain0.man],
     'a Mtbdddomain0.man,
     'a Mtbdddomain0.t
   ) man
@@ -68,7 +77,7 @@ type 'a mtbdd =
 let make_mtbdd ?global (apron:'a Apron.Manager.t) : 'a mtbdd =
   let man = Mtbdddomain0.make_man ?global apron in
   {
-    typ = `Mtbdd man;
+    typ = "mtbdd";
     man = man;
     canonicalize = (fun ?apron _ _ -> ());
     size = Mtbdddomain0.size;
@@ -92,9 +101,24 @@ let make_mtbdd ?global (apron:'a Apron.Manager.t) : 'a mtbdd =
     apply_permutation = Mtbdddomain0.apply_permutation;
   }
 
-let to_mtbdd (man:('a, [> `Mtbdd of 'a Mtbdddomain0.man], 'c, 'd) man) = match man.typ with
-  | `Mtbdd man -> man
-  | _ -> failwith ""
+let man_of_mtbdd (man:'a mtbdd) : ('a,'b,'c) man =
+  Obj.magic man
+let of_mtbdd (manabs:'a mtbdd * 'a Mtbdddomain0.t) : ('a,'b,'c) man * 'c t =
+  Obj.magic manabs
+    
+let man_is_mtbdd man = 
+  man.typ="mtbdd"
+
+let man_to_mtbdd (man:('a,'b,'c) man) : 'a mtbdd =
+  if man_is_mtbdd man then
+    Obj.magic man
+  else
+    failwith ""
+let to_mtbdd (manabs:('a,'b,'c) man * 'c t) : 'a mtbdd * 'a Mtbdddomain0.t =
+  if man_is_mtbdd (fst manabs) then
+    Obj.magic manabs
+  else
+    failwith ""
 
 (*  ********************************************************************** *)
 (** {2 Implementation based on {!Bdddomain0}} *)
@@ -103,7 +127,6 @@ let to_mtbdd (man:('a, [> `Mtbdd of 'a Mtbdddomain0.man], 'c, 'd) man) = match m
 type 'a bdd =
   (
     'a,
-    [`Bdd of 'a Bdddomain0.man],
     'a Bdddomain0.man,
     'a Bdddomain0.t
   ) man
@@ -111,7 +134,7 @@ type 'a bdd =
 let make_bdd (apron:'a Apron.Manager.t) : 'a bdd =
   let man = Bdddomain0.make_man apron in
   {
-    typ = `Bdd man;
+    typ = "bdd";
     man = man;
     canonicalize = (Bdddomain0.canonicalize ~unique:true ~disjoint:true);
     size = Bdddomain0.size;
@@ -135,28 +158,53 @@ let make_bdd (apron:'a Apron.Manager.t) : 'a bdd =
     apply_permutation = Bdddomain0.apply_permutation;
   }
 
-let to_bdd (man:('a, [> `Bdd of 'a Bdddomain0.man], 'c, 'd) man) = match man.typ with
-  | `Bdd man -> man
-  | _ -> failwith ""
+let man_of_bdd (man:'a bdd) : ('a,'b,'c) man =
+  Obj.magic man
+let of_bdd (manabs:'a bdd * 'a Bdddomain0.t) : ('a,'b,'c) man * 'c t =
+  Obj.magic manabs
 
+let man_is_bdd man = 
+  man.typ="bdd"
+
+let man_to_bdd (man:('a,'b,'c) man) : 'a bdd =
+  if man_is_bdd man then
+    Obj.magic man
+  else
+    failwith ""
+let to_bdd (manabs:('a,'b,'c) man * 'c t) : 'a bdd * 'a Bdddomain0.t =
+  if man_is_bdd (fst manabs) then
+    Obj.magic manabs
+  else
+    failwith ""
 
 (*
 let cudd = Cudd.Man.make_v ();;
 let env = Env.make cudd;;
 let apron = Oct.manager_alloc ();;
+
+let make () =
+  let man =
+    if true then 
+      man_of_bdd (make_bdd apron)
+    else
+      man_of_mtbdd (make_mtbdd apron)
+  in
+  let bottom = bottom man env in
+  ((man,bottom),to_bdd (man,bottom))
+
 let bdd = make_bdd apron;;
 let mtbdd = make_mtbdd apron;;
 
-let abs man = 
+let abs man =
   begin
     try
-      let bdd = to_bdd man in
-      bdd.Bdddomain0.meet_disjoint <- false;
+      let bdd = man_to_bdd man in
+      bdd.man.Bdddomain0.meet_disjoint <- false;
     with Failure _ -> ()
   end;
   begin
     try
-      let mtbdd = to_mtbdd man in
+      let mtbdd = man_to_mtbdd man in
       ()
     with Failure _ -> ()
   end;

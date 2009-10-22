@@ -7,62 +7,76 @@
 (** {2 Generic interface} *)
 (*  ********************************************************************** *)
 
-(** {3 Generic manager (normally a private type)} *)
+(*  ====================================================================== *)
+(** {3 Types} *)
+(*  ====================================================================== *)
 
-type ('a,'b,'c,'d) man = {
-  typ : 'b;
-  man : 'c;
-  canonicalize : ?apron:bool -> 'c -> 'd -> unit;
-  size : 'c -> 'd -> int;
-  print : Env.t -> Format.formatter -> 'd -> unit;
-  bottom : 'c -> Env.t -> 'd;
-  top : 'c -> Env.t -> 'd;
-  of_apron : 'c -> Env.t -> 'a Apron.Abstract0.t -> 'd;
-  is_bottom : 'c -> 'd -> bool;
-  is_top : 'c -> 'd -> bool;
-  is_leq : 'c -> 'd -> 'd -> bool;
-  is_eq : 'c -> 'd -> 'd -> bool;
-  to_bddapron : 'c -> 'd -> (Expr0.Bool.t * 'a Apron.Abstract0.t) list;
-  meet : 'c -> 'd -> 'd -> 'd;
-  join : 'c -> 'd -> 'd -> 'd;
-  meet_condition : 'c -> Env.t -> Cond.t -> 'd -> Expr0.Bool.t -> 'd;
-  assign_lexpr : ?relational:bool -> ?nodependency:bool -> 'c ->  Env.t -> Cond.t -> 'd -> string list -> Expr0.t list -> 'd option -> 'd;
-  substitute_lexpr : 'c ->  Env.t -> Cond.t -> 'd -> string list -> Expr0.t list -> 'd option -> 'd;
-  forget_list : 'c -> Env.t -> 'd -> string list -> 'd;
-  widening : 'c -> 'd -> 'd -> 'd;
-  apply_change : bottom:'d -> 'c -> 'd -> Env.change -> 'd;
-  apply_permutation : 'c -> 'd -> int array option * Apron.Dim.perm option -> 'd;
+type ('a,'b,'c) man = private {
+  typ : string;
+  man : 'b;
+  canonicalize : ?apron:bool -> 'b -> 'c -> unit;
+  size : 'b -> 'c -> int;
+  print : Env.t -> Format.formatter -> 'c -> unit;
+  bottom : 'b -> Env.t -> 'c;
+  top : 'b -> Env.t -> 'c;
+  of_apron : 'b -> Env.t -> 'a Apron.Abstract0.t -> 'c;
+  is_bottom : 'b -> 'c -> bool;
+  is_top : 'b -> 'c -> bool;
+  is_leq : 'b -> 'c -> 'c -> bool;
+  is_eq : 'b -> 'c -> 'c -> bool;
+  to_bddapron : 'b -> 'c -> (Expr0.Bool.t * 'a Apron.Abstract0.t) list;
+  meet : 'b -> 'c -> 'c -> 'c;
+  join : 'b -> 'c -> 'c -> 'c;
+  meet_condition : 'b -> Env.t -> Cond.t -> 'c -> Expr0.Bool.t -> 'c;
+  assign_lexpr : ?relational:bool -> ?nodependency:bool -> 'b ->  Env.t -> Cond.t -> 'c -> string list -> Expr0.t list -> 'c option -> 'c;
+  substitute_lexpr : 'b ->  Env.t -> Cond.t -> 'c -> string list -> Expr0.t list -> 'c option -> 'c;
+  forget_list : 'b -> Env.t -> 'c -> string list -> 'c;
+  widening : 'b -> 'c -> 'c -> 'c;
+  apply_change :  bottom:'c -> 'b -> 'c -> Env.change -> 'c;
+  apply_permutation : 'b -> 'c -> int array option * Apron.Dim.perm option -> 'c;
 }
+(** Type of generic managers 
 
+    - ['a]: as in ['a Apron.Manager.t]
+	    ([Box.t], [Polka.strict Polka.t], etc);
+    - ['b]: type of the underlying manager;
+    - ['c]: type of the underlying abstract values of level 0.
+*)
+
+type 'c t = 'c
+(** Type of generic abstract values *)
+
+(*  ====================================================================== *)
 (** {3 Functions} *)
+(*  ====================================================================== *)
 
-val canonicalize : ?apron:bool -> ('a, 'b, 'c, 'd) man -> 'd -> unit
-val size : ('a, 'b, 'c, 'd) man -> 'd -> int
-val print : ('a, 'b, 'c, 'd) man -> Env.t -> Format.formatter -> 'd -> unit
-val bottom : ('a, 'b, 'c, 'd) man -> Env.t -> 'd
-val top : ('a, 'b, 'c, 'd) man -> Env.t -> 'd
-val of_apron : ('a, 'b, 'c, 'd) man -> Env.t -> 'a Apron.Abstract0.t -> 'd
-val is_bottom : ('a, 'b, 'c, 'd) man -> 'd -> bool
-val is_top : ('a, 'b, 'c, 'd) man -> 'd -> bool
-val is_leq : ('a, 'b, 'c, 'd) man -> 'd -> 'd -> bool
-val is_eq : ('a, 'b, 'c, 'd) man -> 'd -> 'd -> bool
+val canonicalize : ?apron:bool -> ('a, 'b, 'c) man -> 'c t -> unit
+val size : ('a, 'b, 'c) man -> 'c t -> int
+val print : ('a, 'b, 'c) man -> Env.t -> Format.formatter -> 'c t -> unit
+val bottom : ('a, 'b, 'c) man -> Env.t -> 'c t
+val top : ('a, 'b, 'c) man -> Env.t -> 'c t
+val of_apron : ('a, 'b, 'c) man -> Env.t -> 'a Apron.Abstract0.t -> 'c t
+val is_bottom : ('a, 'b, 'c) man -> 'c t -> bool
+val is_top : ('a, 'b, 'c) man -> 'c t -> bool
+val is_leq : ('a, 'b, 'c) man -> 'c t -> 'c t -> bool
+val is_eq : ('a, 'b, 'c) man -> 'c t -> 'c t -> bool
 val to_bddapron :
-  ('a, 'b, 'c, 'd) man -> 'd -> (Expr0.Bool.t * 'a Apron.Abstract0.t) list
-val meet : ('a, 'b, 'c, 'd) man -> 'd -> 'd -> 'd
-val join : ('a, 'b, 'c, 'd) man -> 'd -> 'd -> 'd
+  ('a, 'b, 'c) man -> 'c t -> (Expr0.Bool.t * 'a Apron.Abstract0.t) list
+val meet : ('a, 'b, 'c) man -> 'c t -> 'c t -> 'c t
+val join : ('a, 'b, 'c) man -> 'c t -> 'c t -> 'c t
 val meet_condition :
-  ('a, 'b, 'c, 'd) man -> Env.t -> Cond.t -> 'd -> Expr0.Bool.t -> 'd
+  ('a, 'b, 'c) man -> Env.t -> Cond.t -> 'c t -> Expr0.Bool.t -> 'c t
 val assign_lexpr :
   ?relational:bool -> ?nodependency:bool -> 
-  ('a, 'b, 'c, 'd) man ->
-  Env.t -> Cond.t -> 'd -> string list -> Expr0.t list -> 'd option -> 'd
+  ('a, 'b, 'c) man ->
+  Env.t -> Cond.t -> 'c t -> string list -> Expr0.t list -> 'c t option -> 'c t
 val substitute_lexpr :
-  ('a, 'b, 'c, 'd) man ->
-  Env.t -> Cond.t -> 'd -> string list -> Expr0.t list -> 'd option -> 'd
-val forget_list : ('a, 'b, 'c, 'd) man -> Env.t -> 'd -> string list -> 'd
-val widening : ('a, 'b, 'c, 'd) man -> 'd -> 'd -> 'd
-val apply_change : bottom:'d -> ('a, 'b, 'c, 'd) man -> 'd -> Env.change -> 'd
-val apply_permutation : ('a, 'b, 'c, 'd) man -> 'd -> int array option * Apron.Dim.perm option -> 'd
+  ('a, 'b, 'c) man ->
+  Env.t -> Cond.t -> 'c t -> string list -> Expr0.t list -> 'c t option -> 'c t
+val forget_list : ('a, 'b, 'c) man -> Env.t -> 'c t -> string list -> 'c t
+val widening : ('a, 'b, 'c) man -> 'c t -> 'c t -> 'c t
+val apply_change : bottom:'c t -> ('a, 'b, 'c) man -> 'c t -> Env.change -> 'c t
+val apply_permutation : ('a, 'b, 'c) man -> 'c t -> int array option * Apron.Dim.perm option -> 'c t
 
 (*  ********************************************************************** *)
 (** {2 Implementation based on {!Mtbdddomain0}} *)
@@ -71,13 +85,30 @@ val apply_permutation : ('a, 'b, 'c, 'd) man -> 'd -> int array option * Apron.D
 type 'a mtbdd =
   (
     'a,
-    [`Mtbdd of 'a Mtbdddomain0.man],
     'a Mtbdddomain0.man,
     'a Mtbdddomain0.t
   ) man
 
 val make_mtbdd : ?global:bool -> 'a Apron.Manager.t -> 'a mtbdd
-val to_mtbdd : ('a, [> `Mtbdd of 'a Mtbdddomain0.man], 'c, 'd) man -> 'a Mtbdddomain0.man
+  (** Make a mtbdd manager *)
+
+(*  ====================================================================== *)
+(** {3 Type conversion functions} *)
+(*  ====================================================================== *)
+
+val man_is_mtbdd : ('a, 'b, 'c) man -> bool
+  (** Return [true] iff the argument manager is a mtbdd manager *)
+val man_of_mtbdd : 'a mtbdd -> ('a, 'b, 'c) man
+  (** Makes a mtbdd manager generic *)
+val man_to_mtbdd : ('a, 'b, 'c) man -> 'a mtbdd
+  (** Instanciate the type of a mtbdd manager.
+      Raises [Failure] if the argument manager is not a mtbdd manager *)
+
+val of_mtbdd : 'a mtbdd * 'a Mtbdddomain0.t t -> ('a, 'b, 'c) man * 'c t
+  (** Makes a pair (mtbdd manager,mtbdd abstract value) generic *)
+val to_mtbdd : ('a, 'b, 'c) man * 'c t -> 'a mtbdd * 'a Mtbdddomain0.t t
+  (** Instanciate the type of a pair (mtbdd manager,mtbdd abstract value).
+      Raises [Failure] if the argument manager is not a mtbdd manager *)
 
 (*  ********************************************************************** *)
 (** {2 Implementation based on {!Bdddomain0}} *)
@@ -86,10 +117,28 @@ val to_mtbdd : ('a, [> `Mtbdd of 'a Mtbdddomain0.man], 'c, 'd) man -> 'a Mtbdddo
 type 'a bdd =
   (
     'a,
-    [`Bdd of 'a Bdddomain0.man],
     'a Bdddomain0.man,
     'a Bdddomain0.t
   ) man
 
 val make_bdd : 'a Apron.Manager.t -> 'a bdd
-val to_bdd : ('a, [> `Bdd of 'a Bdddomain0.man], 'c, 'd) man -> 'a Bdddomain0.man
+  (** Make a bdd manager *)
+
+(*  ====================================================================== *)
+(** {3 Type conversion functions} *)
+(*  ====================================================================== *)
+
+val man_is_bdd : ('a, 'b, 'c) man -> bool
+  (** Return [true] iff the argument manager is a bdd manager *)
+val man_of_bdd : 'a bdd -> ('a, 'b, 'c) man
+  (** Makes a bdd manager generic *)
+val man_to_bdd : ('a, 'b, 'c) man -> 'a bdd
+  (** Instanciate the type of a bdd manager.
+      Raises [Failure] if the argument manager is not a bdd manager *)
+
+val of_bdd : 'a bdd * 'a Bdddomain0.t t -> ('a, 'b, 'c) man * 'c t
+  (** Makes a pair (bdd manager,bdd abstract value) generic *)
+val to_bdd : ('a, 'b, 'c) man * 'c t -> 'a bdd * 'a Bdddomain0.t t
+  (** Instanciate the type of a pair (bdd manager,bdd abstract value).
+      Raises [Failure] if the argument manager is not a bdd manager *)
+
