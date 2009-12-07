@@ -3,28 +3,30 @@
 (* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
-val texpr_cofactor : (Expr0.t -> 'a -> 'b) -> Expr0.t array -> 'a -> 'b array
+val texpr_cofactor :
+  ('a Expr0.t -> 'b -> 'a Expr0.t) ->
+  'a Expr0.t array -> 'b -> 'a Expr0.t array
 val texpr_support :
-  ('a, 'b, Cudd.Man.v) Bdd.Cond.t -> Expr0.t array -> Cudd.Man.v Cudd.Bdd.t
+  ('a,'b) Cond.O.t -> 'a Expr0.t array -> Cudd.Man.v Cudd.Bdd.t
 val texpr_cofactors :
-  ('a, 'b, Cudd.Man.v, 'c) Bdd.Env.t0 ->
-  Expr0.t array -> int -> Expr0.t array * Expr0.t array
+  ('a,'b,'c,'d) Env.O.t ->
+  'a Expr0.t array -> int -> 'a Expr0.t array * 'a Expr0.t array
 val split_lvar :
-  string list -> Expr0.t list -> string list * Apron.Var.t array
+  'a Bdd.Env.symbol ->
+  'a list -> 'a Expr0.t list -> 'a list * Apron.Var.t array
 val split_texpr :
-  Expr0.t array -> Cudd.Man.v Bdd.Expr0.t list * ApronexprDD.t array
+  'a Expr0.t array -> Cudd.Man.v Bdd.Expr0.t list * 'a ApronexprDD.t array
 val split_lvarlexpr :
-  string list ->
-  Expr0.t list ->
-  string list * Cudd.Man.v Bdd.Expr0.t list * Apron.Var.t array *
-  ApronexprDD.t array
+  'a Bdd.Env.symbol -> 'a list -> 'a Expr0.t list ->
+  'a list * Cudd.Man.v Bdd.Expr0.t list * Apron.Var.t array *
+  'a ApronexprDD.t array
 val cofactors :
-  'a ApronDD.man -> 'b -> 'b Cond.O.t ->
+  'a ApronDD.man -> 'c -> ('b,'c) Cond.O.t ->
   'a ApronDD.t -> int -> 'a ApronDD.t * 'a ApronDD.t
 val descend_mtbdd :
-  'a ApronDD.man -> 'b -> 'b Cond.O.t ->
-  ('a ApronDD.t -> Expr0.t array -> 'a ApronDD.t) ->
-  'a ApronDD.t -> Expr0.t array -> 'a ApronDD.t
+  'a ApronDD.man -> 'c -> ('b,'c) Cond.O.t ->
+  ('a ApronDD.t -> 'b Expr0.t array -> 'a ApronDD.t) ->
+  'a ApronDD.t -> 'b Expr0.t array -> 'a ApronDD.t
 val descend :
   cudd:Cudd.Man.vt ->
   maxdepth:int ->
@@ -33,7 +35,7 @@ val descend :
   cofactor:('a -> Cudd.Bdd.vt -> 'a) ->
   select:('a -> int) ->
   terminal:(depth:int ->
-            newcube:Cudd.Bdd.vt -> cube:Cudd.Bdd.vt -> down:'a -> 'b option) ->
+	    newcube:Cudd.Bdd.vt -> cube:Cudd.Bdd.vt -> down:'a -> 'b option) ->
   ite:(depth:int ->
        newcube:Cudd.Bdd.vt ->
        cond:int -> dthen:'b option -> delse:'b option -> 'b option) ->

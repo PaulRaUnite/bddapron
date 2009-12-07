@@ -8,58 +8,68 @@
 (*  ********************************************************************** *)
 
 (** Types *)
-type typ = [
-  | Bdd.Env.typ
+type 'a typ = [
+  | 'a Bdd.Env.typ
   | Apronexpr.typ
 ]
 
 (** Type definitions *)
-type typdef = Bdd.Env.typdef
+type 'a typdef = 'a Bdd.Env.typdef
 
 (** Environment *)
-type 'a ext = {
+type ('a,'b) ext = {
+  mutable table : 'a Apronexpr.t Cudd.Mtbdd.table;
   mutable eapron : Apron.Environment.t;
-  mutable aext : 'a;
+  mutable aext : 'b;
 }
-type ('a,'b,'c) t0 = ('a,'b,Cudd.Man.v,'c ext) Bdd.Env.t0
+type ('a,'b,'c,'d) t0 = ('a,'b,'c,Cudd.Man.v,('a,'d) ext) Bdd.Env.t0
 
 (** {3 Opened signature} *)
 module O : sig
-  type ('a,'b,'c) t = ('a,'b,'c) t0
-  constraint 'a = [>typ]
-  constraint 'b = [>typdef]
+  type ('a,'b,'c,'d) t = ('a,'b,'c,'d) t0
+  constraint 'b = [>'a typ]
+  constraint 'c = [>'a typdef]
 
-  val make : 
-    ?bddindex0:int -> ?bddsize:int -> ?relational:bool -> 
-    Cudd.Man.vt -> 'c -> ('c -> 'c) -> ('a,'b,'c) t
+  val make :
+    ?compare_symbol:('a -> 'a -> int) ->
+    ?marshal_symbol:('a -> string) ->
+    ?unmarshal_symbol:(string -> 'a) ->
+    print_symbol:(Format.formatter -> 'a -> unit) ->
+    copy_aext:('d -> 'd) ->
+    ?bddindex0:int -> ?bddsize:int -> ?relational:bool ->
+    Cudd.Man.vt -> 'd -> ('a,'b,'c,'d) t
       (** Create a new database.  Default values for
 	  [bddindex0,bddsize,relational] are [0,100,false].
 	  [bddincr] is initialized to 1 if [relational=false], 2
 	  otherwise. *)
   val print :
-    (Format.formatter -> 'a -> unit) ->
     (Format.formatter -> 'b -> unit) ->
     (Format.formatter -> 'c -> unit) ->
-    Format.formatter -> ('a,'b,'c) t -> unit
+    (Format.formatter -> 'd -> unit) ->
+    Format.formatter -> ('a,'b,'c,'d) t -> unit
       (** Print an environment *)
 end
 
-type t = (typ,typdef,unit) O.t
+type 'a t = ('a, 'a typ,'a typdef,unit) O.t
 
 (*  ********************************************************************** *)
 (** {2 Printing} *)
 (*  ********************************************************************** *)
 
-val print_typ : Format.formatter -> [> typ] -> unit
+val print_typ :
+  (Format.formatter -> 'a -> unit) ->
+  Format.formatter -> [> 'a typ] -> unit
   (** Print a type *)
-val print_typdef : Format.formatter -> [> typdef] -> unit
+val print_typdef :
+  (Format.formatter -> 'a -> unit) ->
+  Format.formatter -> [> 'a typdef] -> unit
   (** Print a type definition *)
 
-val print_idcondb : ('a,'b,'c) O.t -> Format.formatter -> int * bool -> unit
-val print_order : ('a,'b,'c) O.t -> Format.formatter -> unit
+val print_idcondb : ('a,'b,'c,'d) O.t -> Format.formatter -> int * bool -> unit
+val print_order : ('a,'b,'c,'d) O.t -> Format.formatter -> unit
     (** Print the BDD variable ordering *)
 
-val print : Format.formatter -> ('a,'b,'c) O.t -> unit
+val print : Format.formatter -> ('a,'b,'c,'d) O.t -> unit
     (** Print an environment *)
 
 (*  ********************************************************************** *)
@@ -67,78 +77,82 @@ val print : Format.formatter -> ('a,'b,'c) O.t -> unit
 (*  ********************************************************************** *)
 
 val make :
-  ?bddindex0:int -> ?bddsize:int -> ?relational:bool -> Cudd.Man.vt -> t
+  ?compare_symbol:('a -> 'a -> int) ->
+  ?marshal_symbol:('a -> string) ->
+  ?unmarshal_symbol:(string -> 'a) ->
+  print_symbol:(Format.formatter -> 'a -> unit) ->
+  ?bddindex0:int -> ?bddsize:int -> ?relational:bool -> Cudd.Man.vt -> 'a t
       (** Same as [O.make], but constrained signature. *)
 
-val copy : ('a,'b,'c) O.t -> ('a,'b,'c) O.t 
+val copy : ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t
       (** Copy *)
 
 (*  ********************************************************************** *)
 (** {2 Accessors} *)
 (*  ********************************************************************** *)
 
-val mem_typ : ('a,'b,'c) O.t -> string -> bool
+val mem_typ : ('a,'b,'c,'d) O.t -> 'a -> bool
     (** Is the type defined in the database ? *)
-val mem_var : ('a,'b,'c) O.t -> string -> bool
+val mem_var : ('a,'b,'c,'d) O.t -> 'a -> bool
     (** Is the label/var defined in the database ? *)
-val mem_label : ('a,'b,'c) O.t -> string -> bool
+val mem_label : ('a,'b,'c,'d) O.t -> 'a -> bool
     (** Is the label a label defined in the database ? *)
 
-val typdef_of_typ : ('a,'b,'c) O.t -> string -> 'b
+val typdef_of_typ : ('a,'b,'c,'d) O.t -> 'a -> 'c
     (** Return the definition of the type *)
 
-val typ_of_var : ('a,'b,'c) O.t -> string -> 'a
+val typ_of_var : ('a,'b,'c,'d) O.t -> 'a -> 'b
     (** Return the type of the label/variable *)
 
-val vars : ('a,'b,'c) O.t -> string PSette.t
+val vars : ('a,'b,'c,'d) O.t -> 'a PSette.t
     (** Return the list of variables (not labels) *)
-val labels : ('a,'b,'c) O.t -> String.t PSette.t
+val labels : ('a,'b,'c,'d) O.t -> 'a PSette.t
     (** Return the list of labels (not variables) *)
 
 (*  ********************************************************************** *)
 (** {2 Adding types and variables} *)
 (*  ********************************************************************** *)
 
-val add_typ_with : ('a,'b,'c) O.t -> string -> 'b -> unit
+val add_typ_with : ('a,'b,'c,'d) O.t -> 'a -> 'c -> unit
     (** Declaration of a new type *)
 
 val add_vars_with :
-  ('a,'b,'c) O.t -> (string * 'a) list -> 
+  ('a,'b,'c,'d) O.t -> ('a * 'b) list ->
   int array option
     (** Add the set of variables, possibly normalize the
 	environment and return the applied permutation (that
 	should also be applied to expressions defined in this
 	environment) *)
-val remove_vars_with : 
-  ('a,'b,'c) O.t -> string list -> 
+val remove_vars_with :
+  ('a,'b,'c,'d) O.t -> 'a list ->
   int array option
     (** Remove the set of variables, as well as all constraints,
 	and possibly normalize the environment and return the
 	applied permutation. *)
-val rename_vars_with : 
-  ('a,'b,'c) O.t -> (string * string) list -> 
+val rename_vars_with :
+  ('a,'b,'c,'d) O.t -> ('a * 'a) list ->
   int array option * Apron.Dim.perm option
     (** Rename the variables, and remove all constraints,possibly
 	normalize the environment and return the applied
 	permutation. *)
 
-val add_typ : ('a,'b,'c) O.t -> string -> 'b -> ('a,'b,'c) O.t 
-val add_vars : ('a,'b,'c) O.t -> (string * 'a) list -> ('a,'b,'c) O.t
-val remove_vars : ('a,'b,'c) O.t -> string list -> ('a,'b,'c) O.t
-val rename_vars : ('a,'b,'c) O.t -> (string * string) list -> ('a,'b,'c) O.t
+val add_typ : ('a,'b,'c,'d) O.t -> 'a -> 'c -> ('a,'b,'c,'d) O.t
+val add_vars : ('a,'b,'c,'d) O.t -> ('a * 'b) list -> ('a,'b,'c,'d) O.t
+val remove_vars : ('a,'b,'c,'d) O.t -> 'a list -> ('a,'b,'c,'d) O.t
+val rename_vars : ('a,'b,'c,'d) O.t -> ('a * 'a) list -> ('a,'b,'c,'d) O.t
   (** Functional versions of the previous functions *)
 
 (* ********************************************************************** *)
 (** {2 Operations} *)
 (* ********************************************************************** *)
 
-val is_leq : ('a,'b,'c) O.t -> ('a,'b,'c) O.t -> bool
+val is_leq : ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t -> bool
     (** Test inclusion of environments in terms of types and
 	variables (but not in term of indexes) *)
-val is_eq : ('a,'b,'c) O.t -> ('a,'b,'c) O.t -> bool
+val is_eq : ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t -> bool
     (** Test equality of environments in terms of types and
 	variables (but not in term of indexes) *)
-val lce : ('a,'b,'c) O.t -> ('a,'b,'c) O.t -> ('a,'b,'c) O.t
+val lce : ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t
     (** Least common environment *)
 
 (*  ********************************************************************** *)
@@ -150,7 +164,7 @@ type change = {
   capron : Apron.Dim.change2;
 }
 
-val compute_change : ('a,'b,'c) O.t -> ('a,'b,'c) O.t -> change
+val compute_change : ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t -> change
 
 (*  ********************************************************************** *)
 (** {2 Utilities} *)
@@ -160,51 +174,50 @@ val compute_change : ('a,'b,'c) O.t -> ('a,'b,'c) O.t -> change
 type ('a, 'b) value = ('a, 'b) Bdd.Env.value = { env : 'a; val0 : 'b; }
 
 val make_value :
-  ('a,'b,'c) O.t ->
-  'd -> (('a,'b,'c) O.t, 'd) value
+  ('a,'b,'c,'d) O.t ->
+  'e -> (('a,'b,'c,'d) O.t, 'e) value
   (** Constructor *)
 
-val check_var : ('a,'b,'c) O.t -> string -> unit
-val check_lvar : ('a,'b,'c) O.t -> string list -> unit
+val check_var : ('a,'b,'c,'d) O.t -> 'a -> unit
+val check_lvar : ('a,'b,'c,'d) O.t -> 'a list -> unit
 val check_value :
-  ('a,'b,'c) O.t -> 
-  (('a,'b,'c) O.t, 'd) value -> unit
+  ('a,'b,'c,'d) O.t ->
+  (('a,'b,'c,'d) O.t, 'e) value -> unit
 val check_value2 :
-  (('a,'b,'c) O.t, 'd) value ->
-  (('a,'b,'c) O.t, 'e) value -> unit
+  (('a,'b,'c,'d) O.t, 'e) value ->
+  (('a,'b,'c,'d) O.t, 'f) value -> unit
 val check_value3 :
-  (('a,'b,'c) O.t, 'd) value ->
-  (('a,'b,'c) O.t, 'e) value -> 
-  (('a,'b,'c) O.t, 'f) value -> unit
+  (('a,'b,'c,'d) O.t, 'e) value ->
+  (('a,'b,'c,'d) O.t, 'f) value ->
+  (('a,'b,'c,'d) O.t, 'g) value -> unit
 
 val check_lvarvalue :
-  ('a,'b,'c) O.t ->
-  (string * (('a,'b,'c) O.t, 'd) value) list -> (string * 'd) list
+  ('a,'b,'c,'d) O.t ->
+  ('a * (('a,'b,'c,'d) O.t, 'e) value) list -> ('a * 'e) list
 val check_lvalue :
-  ('a,'b,'c) O.t ->
-  (('a,'b,'c) O.t, 'd) value list -> 'd list
+  ('a,'b,'c,'d) O.t ->
+  (('a,'b,'c,'d) O.t, 'e) value list -> 'e list
 val check_ovalue :
-  ('a,'b,'c) O.t ->
-  (('a,'b,'c) O.t, 'd) value option -> 'd option
+  ('a,'b,'c,'d) O.t ->
+  (('a,'b,'c,'d) O.t, 'e) value option -> 'e option
 
 val mapunop :
-  ('d -> 'e) ->
-  (('a,'b,'c) O.t, 'd) value ->
-  (('a,'b,'c) O.t, 'e) value
+  ('e -> 'f) ->
+  (('a,'b,'c,'d) O.t, 'e) value ->
+  (('a,'b,'c,'d) O.t, 'f) value
 
 val mapbinop :
-  ('d -> 'e -> 'f) ->
-  (('a,'b,'c) O.t, 'd) value ->
-  (('a,'b,'c) O.t, 'e) value ->
-  (('a,'b,'c) O.t, 'f) value
+  ('e -> 'f -> 'g) ->
+  (('a,'b,'c,'d) O.t, 'e) value ->
+  (('a,'b,'c,'d) O.t, 'f) value ->
+  (('a,'b,'c,'d) O.t, 'g) value
 val mapbinope :
-  (('a,'b,'c) O.t -> 'd -> 'e -> 'f) ->
-  (('a,'b,'c) O.t, 'd) value ->
-  (('a,'b,'c) O.t, 'e) value -> (('a,'b,'c) O.t, 'f) value
+  (('a,'b,'c,'d) O.t -> 'e -> 'f -> 'g) ->
+  (('a,'b,'c,'d) O.t, 'e) value ->
+  (('a,'b,'c,'d) O.t, 'f) value -> (('a,'b,'c,'d) O.t, 'g) value
 val mapterop :
-  ('d -> 'e -> 'f -> 'g) ->
-  (('a,'b,'c) O.t, 'd) value ->
-  (('a,'b,'c) O.t, 'e) value ->
-  (('a,'b,'c) O.t, 'f) value ->
-  (('a,'b,'c) O.t, 'g) value
-
+  ('e -> 'f -> 'g -> 'h) ->
+  (('a,'b,'c,'d) O.t, 'e) value ->
+  (('a,'b,'c,'d) O.t, 'f) value ->
+  (('a,'b,'c,'d) O.t, 'g) value ->
+  (('a,'b,'c,'d) O.t, 'h) value

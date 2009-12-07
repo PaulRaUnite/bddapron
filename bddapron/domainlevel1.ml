@@ -11,103 +11,103 @@ open Bdd.Env
 open Env
 
 module type Level0 = sig
-  type 'a man
-  type 'a t
-    
-  val size : 'a man -> 'a t -> int
-  val print : Env.t -> Format.formatter -> 'c t -> unit
+  type ('a,'b) man
+  type 'b t
 
-  val bottom : 'a man -> Env.t -> 'a t
-  val top : 'a man -> Env.t -> 'a t
-  val of_apron : 'a man -> Env.t -> 'a Apron.Abstract0.t -> 'a t
+  val size : ('a,'b) man -> 'b t -> int
+  val print : 'a Env.t -> Format.formatter -> 'c t -> unit
 
-  val is_bottom : 'a man -> 'a t -> bool
-  val is_top : 'a man -> 'a t -> bool
-  val is_leq : 'a man -> 'a t -> 'a t -> bool
-  val is_eq : 'a man -> 'a t -> 'a t -> bool
-  val to_bddapron : 
-    'a man -> 'a t -> (Expr0.Bool.t * 'a Apron.Abstract0.t) list
-  val meet : 'a man -> 'a t -> 'a t -> 'a t
-  val join : 'a man -> 'a t -> 'a t -> 'a t
-  val meet_condition : 
-    'a man -> Env.t -> Cond.t -> 'a t -> Expr0.Bool.t -> 'a t
+  val bottom : ('a,'b) man -> 'a Env.t -> 'b t
+  val top : ('a,'b) man -> 'a Env.t -> 'b t
+  val of_apron : ('a,'b) man -> 'a Env.t -> 'b Apron.Abstract0.t -> 'b t
+
+  val is_bottom : ('a,'b) man -> 'b t -> bool
+  val is_top : ('a,'b) man -> 'b t -> bool
+  val is_leq : ('a,'b) man -> 'b t -> 'b t -> bool
+  val is_eq : ('a,'b) man -> 'b t -> 'b t -> bool
+  val to_bddapron :
+    ('a,'b) man -> 'b t -> ('a Expr0.Bool.t * 'b Apron.Abstract0.t) list
+  val meet : ('a,'b) man -> 'b t -> 'b t -> 'b t
+  val join : ('a,'b) man -> 'b t -> 'b t -> 'b t
+  val meet_condition :
+    ('a,'b) man -> 'a Env.t -> 'a Cond.t -> 'b t -> 'a Expr0.Bool.t -> 'b t
   val assign_lexpr :
     ?relational:bool -> ?nodependency:bool ->
-    'a man -> Env.t -> Cond.t ->
-    'a t -> string list -> Expr0.t list -> 'a t option -> 'a t
+    ('a,'b) man -> 'a Env.t -> 'a Cond.t ->
+    'b t -> 'a list -> 'a Expr0.t list -> 'b t option -> 'b t
   val substitute_lexpr :
-    'a man -> Env.t -> Cond.t ->
-    'a t -> string list -> Expr0.t list -> 'a t option -> 'a t
-  val forget_list : 'a man -> Env.t -> 'a t -> string list -> 'a t
-  val widening : 'a man -> 'a t -> 'a t -> 'a t
+    ('a,'b) man -> 'a Env.t -> 'a Cond.t ->
+    'b t -> 'a list -> 'a Expr0.t list -> 'b t option -> 'b t
+  val forget_list : ('a,'b) man -> 'a Env.t -> 'b t -> 'a list -> 'b t
+  val widening : ('a,'b) man -> 'b t -> 'b t -> 'b t
   val apply_change :
-    bottom:'a t -> 'a man -> 'a t -> Env.change -> 'a t
+    bottom:'b t -> ('a,'b) man -> 'b t -> Env.change -> 'b t
   val apply_permutation :
-    'a man -> 'a t -> int array option * Apron.Dim.perm option -> 'a t
+    ('a,'b) man -> 'b t -> int array option * Apron.Dim.perm option -> 'b t
 end
 
 module type Level1 = sig
-  type 'a man
-  type 'a t0
-  type 'a t = (Env.t, 'a t0) Env.value
-    
-  val size : 'a man -> 'a t -> int
-  val print : Format.formatter -> 'c t -> unit
-  val bottom : 'a man -> Env.t -> 'a t
-  val top : 'a man -> Env.t -> 'a t
-  val of_apron : 'a man -> Env.t -> 'a Apron.Abstract1.t -> 'a t
-  val is_bottom : 'a man -> 'a t -> bool
-  val is_top : 'a man -> 'a t -> bool
-  val is_leq : 'a man -> 'a t -> 'a t -> bool
-  val is_eq : 'a man -> 'a t -> 'a t -> bool
-  val to_bddapron : 'a man -> 'a t -> (Expr1.Bool.t * 'a Apron.Abstract1.t) list
-  val meet : 'a man -> 'a t -> 'a t -> 'a t
-  val join : 'a man -> 'a t -> 'a t -> 'a t
-  val meet_condition : 'a man -> Cond.t -> 'a t -> Expr1.Bool.t -> 'a t
-  val meet_condition2 : 'a man -> 'a t -> Expr2.Bool.t -> 'a t
-    
+  type ('a,'b) man
+  type 'b t0
+  type ('a,'b) t = ('a Env.t, 'b t0) Env.value
+
+  val size : ('a,'b) man -> ('a,'b) t -> int
+  val print : Format.formatter -> ('a,'b) t -> unit
+  val bottom : ('a,'b) man -> 'a Env.t -> ('a,'b) t
+  val top : ('a,'b) man -> 'a Env.t -> ('a,'b) t
+  val of_apron : ('a,'b) man -> 'a Env.t -> 'b Apron.Abstract1.t -> ('a,'b) t
+  val is_bottom : ('a,'b) man -> ('a,'b) t -> bool
+  val is_top : ('a,'b) man -> ('a,'b) t -> bool
+  val is_leq : ('a,'b) man -> ('a,'b) t -> ('a,'b) t -> bool
+  val is_eq : ('a,'b) man -> ('a,'b) t -> ('a,'b) t -> bool
+  val to_bddapron : ('a,'b) man -> ('a,'b) t -> ('a Expr1.Bool.t * 'b Apron.Abstract1.t) list
+  val meet : ('a,'b) man -> ('a,'b) t -> ('a,'b) t -> ('a,'b) t
+  val join : ('a,'b) man -> ('a,'b) t -> ('a,'b) t -> ('a,'b) t
+  val meet_condition : ('a,'b) man -> 'a Cond.t -> ('a,'b) t -> 'a Expr1.Bool.t -> ('a,'b) t
+  val meet_condition2 : ('a,'b) man -> ('a,'b) t -> 'a Expr2.Bool.t -> ('a,'b) t
+
   val assign_lexpr :
     ?relational:bool -> ?nodependency:bool ->
-    'a man -> Cond.t ->
-    'a t -> string list -> Expr1.t list -> 'a t option -> 'a t
+    ('a,'b) man -> 'a Cond.t ->
+    ('a,'b) t -> 'a list -> 'a Expr1.t list -> ('a,'b) t option -> ('a,'b) t
   val assign_listexpr2 :
     ?relational:bool -> ?nodependency:bool ->
-    'a man ->
-    'a t -> string list -> Expr2.List.t -> 'a t option ->
-    'a t
+    ('a,'b) man ->
+    ('a,'b) t -> 'a list -> 'a Expr2.List.t -> ('a,'b) t option ->
+    ('a,'b) t
   val substitute_lexpr :
-    'a man -> Cond.t ->
-    'a t -> string list -> Expr1.t list -> 'a t option -> 'a t
+    ('a,'b) man -> 'a Cond.t ->
+    ('a,'b) t -> 'a list -> 'a Expr1.t list -> ('a,'b) t option -> ('a,'b) t
   val substitute_listexpr2 :
-    'a man ->
-    'a t -> string list -> Expr2.List.t -> 'a t option -> 'a t
+    ('a,'b) man ->
+    ('a,'b) t -> 'a list -> 'a Expr2.List.t -> ('a,'b) t option -> ('a,'b) t
   val forget_list :
-    'a man -> 'a t -> string list -> 'a t
-  val widening : 'a man -> 'a t -> 'a t -> 'a t
-  val change_environment : 'a man -> 'a t -> Env.t -> 'a t
-  val rename : 'a man -> 'a t -> (string*string) list -> 'a t
-  val unify : 'a man -> 'a t -> 'a t -> 'a t
+    ('a,'b) man -> ('a,'b) t -> 'a list -> ('a,'b) t
+  val widening : ('a,'b) man -> ('a,'b) t -> ('a,'b) t -> ('a,'b) t
+  val change_environment : ('a,'b) man -> ('a,'b) t -> 'a Env.t -> ('a,'b) t
+  val rename : ('a,'b) man -> ('a,'b) t -> ('a*'a) list -> ('a,'b) t
+  val unify : ('a,'b) man -> ('a,'b) t -> ('a,'b) t -> ('a,'b) t
 end
 
-module Make(Level0:Level0) : 
-  (Level1 with type 'a man = 'a Level0.man
-	  and type 'a t0 = 'a Level0.t)
-  = 
+module Make(Level0:Level0) :
+  (Level1 with type ('a,'b) man = ('a,'b) Level0.man
+	  and type 'b t0 = 'b Level0.t)
+  =
 struct
-  type 'a man = 'a Level0.man
-  type 'a t0 = 'a Level0.t
-  type 'a t = (Env.t, 'a t0) Env.value
+  type ('a,'b) man = ('a,'b) Level0.man
+  type 'b t0 = 'b Level0.t
+  type ('a,'b) t = ('a Env.t, 'b t0) Env.value
 
   let print fmt t = Level0.print t.env fmt t.val0
   let size man t = Level0.size man t.val0
   let bottom man env = make_value env (Level0.bottom man env)
   let top man env = make_value env (Level0.top man env)
-  let of_apron man env abs1 = 
+  let of_apron man env abs1 =
     let eapron = env.ext.eapron in
     if not (Apron.Environment.equal eapron abs1.Apron.Abstract1.env) then
       failwith "Bddapron.domainlevel1.of_apron: the APRON environment of the APRON abstract value is different from the numerical part of the BDDAPRON environment"
     ;
-    make_value env 
+    make_value env
       (Level0.of_apron man env abs1.Apron.Abstract1.abstract0)
 
   let is_bottom man t = Level0.is_bottom man t.val0
@@ -122,9 +122,9 @@ struct
     let eapron = t.env.ext.eapron in
     let list0 = Level0.to_bddapron man t.val0 in
     List.map
-      (fun (bdd,abs0) -> 
+      (fun (bdd,abs0) ->
 	(Env.make_value t.Env.env bdd,
-	{ 
+	{
 	  Apron.Abstract1.env = eapron;
 	  Apron.Abstract1.abstract0 = abs0
 	}
@@ -145,23 +145,23 @@ struct
 
   let meet_condition man cond t condition
       =
-    let condition0 = 
-      Bdd.Domain1.O.check_value Expr0.O.Bool.permute 
+    let condition0 =
+      Bdd.Domain1.O.check_value Expr0.O.Bool.permute
 	condition t.env
     in
     make_value t.env
       (Level0.meet_condition man t.env cond t.val0 condition0)
-      
+
   let meet_condition2 man t condition2
       =
-    let condition0 = 
-      Bdd.Domain1.O.check_value Expr0.O.Bool.permute 
+    let condition0 =
+      Bdd.Domain1.O.check_value Expr0.O.Bool.permute
 	condition2.val1 t.env
     in
     make_value t.env
       (Level0.meet_condition man t.env condition2.cond
 	t.val0 condition0)
-      
+
   let assign_lexpr
       ?relational ?nodependency
       man cond
@@ -178,7 +178,7 @@ struct
       man
        t lvar listexpr2 odest
       =
-    let lexpr0 = 
+    let lexpr0 =
       Bdd.Domain1.O.check_value Expr0.O.permute_list listexpr2.val1 t.env
     in
     let odest0 = Env.check_ovalue t.env odest in
@@ -200,7 +200,7 @@ struct
       man
       t lvar listexpr2 odest
       =
-    let lexpr0 = 
+    let lexpr0 =
       Bdd.Domain1.O.check_value Expr0.O.permute_list listexpr2.val1 t.env
     in
     let odest0 = Env.check_ovalue t.env odest in
@@ -233,8 +233,7 @@ struct
   let rename man t lvarvar =
     let nenv = Env.copy t.env in
     let perm = Env.rename_vars_with nenv lvarvar in
-    make_value nenv 
+    make_value nenv
       (Level0.apply_permutation man t.val0 perm)
 
 end
-  

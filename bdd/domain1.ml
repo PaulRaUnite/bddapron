@@ -12,11 +12,10 @@ open Env
 
 module O = struct
 
-  type ('a,'b) t = ('a,'b) Expr1.O.Bool.t
-  constraint 'a = ('c,'d,'b,'e) Env.O.t
-
-  type 'a dt = ('a,Cudd.Man.d) t
-  type 'a vt = ('a,Cudd.Man.v) t
+  type ('a,'b,'c) t = ('a,'b,'c) Expr1.O.Bool.t
+    
+  type ('a,'b) dt = ('a,'b,Cudd.Man.d) t
+  type ('a,'b) vt = ('a,'b,Cudd.Man.v) t
 
   let size t = Domain0.size t.val0
   let print fmt t = Domain0.O.print t.env fmt t.val0
@@ -52,7 +51,7 @@ module O = struct
     let bexpr0 = check_value Expr0.O.Bool.permute bexpr t.env in
     make_value t.env (Expr0.O.Bool.dand t.env t.val0 bexpr0)
 
-  let assign_lexpr ?relational ?nodependency (t:('a,'b) t) lvar lexpr =
+  let assign_lexpr ?relational ?nodependency (t:('a,'b,'c) t) lvar lexpr =
     if lvar=[] && lexpr=[] then t
     else begin
       Env.check_lvar t.env lvar;
@@ -60,7 +59,7 @@ module O = struct
       make_value t.env (Domain0.O.assign_lexpr ?relational ?nodependency t.env t.val0 lvar lexpr0)
     end
 
-  let assign_listexpr ?relational ?nodependency (t:('a,'b) t) lvar lexpr =
+  let assign_listexpr ?relational ?nodependency (t:('a,'b,'c) t) lvar lexpr =
     let lexpr0 = check_value Expr0.O.permute_list lexpr t.env in
     if lvar=[] && lexpr0=[] then t
     else begin
@@ -68,7 +67,7 @@ module O = struct
       make_value t.env (Domain0.O.assign_lexpr ?relational ?nodependency t.env t.val0 lvar lexpr0)
     end
 
-  let substitute_lexpr (t:('a,'b) t) lvar lexpr =
+  let substitute_lexpr (t:('a,'b,'c) t) lvar lexpr =
     if lvar=[] && lexpr=[] then t
     else begin
       Env.check_lvar t.env lvar;
@@ -76,7 +75,7 @@ module O = struct
       make_value t.env (Domain0.O.substitute_lexpr t.env t.val0 lvar lexpr0)
     end
       
-  let substitute_listexpr (t:('a,'b) t) lvar lexpr =
+  let substitute_listexpr (t:('a,'b,'c) t) lvar lexpr =
     let lexpr0 = check_value Expr0.O.permute_list lexpr t.env in
     if lvar=[] && lexpr.val0=[] then t
     else begin
@@ -107,12 +106,11 @@ end
 (** {2 Closed signature} *)
 (*  ********************************************************************** *)
 
-type 'a t = 'a Expr1.Bool.t
-
-type dt = Cudd.Man.d t
-type vt = Cudd.Man.v t
-
-type 'a expr = ('a Env.t, 'a Expr0.t list) Env.value
+type ('a,'b) t = ('a,'b) Expr1.Bool.t
+  (** Abstract value *)
+  
+type 'a dt = ('a,Cudd.Man.d) t
+type 'a vt = ('a,Cudd.Man.v) t
 
 let size = O.size
 let print = O.print

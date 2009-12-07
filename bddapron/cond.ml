@@ -4,36 +4,40 @@
    Please read the COPYING file packaged in the distribution  *)
 
 open Format
+open Bdd.Env
 
-type cond = [`Apron of Apronexpr.Condition.t]
+type 'a cond = [`Apron of 'a Apronexpr.Condition.t]
 
-let print_cond env fmt (cond:[< cond]) =
+let print_cond (env:('a,'b,'c,'d) Env.O.t) fmt (cond:[< 'a cond]) =
   match cond with
-  | `Apron x -> Apronexpr.Condition.print fmt x
+  | `Apron x -> Apronexpr.Condition.print env.symbol fmt x
 
-let compare_cond c1 c2 = match (c1,c2) with
-  (`Apron c1, `Apron c2) -> Apronexpr.Condition.compare c1 c2
+let compare_cond symbol c1 c2 = match (c1,c2) with
+  (`Apron c1, `Apron c2) -> Apronexpr.Condition.compare symbol c1 c2
 
-let negate_cond (env:('a,'b,'c) Env.O.t) (c:cond) : cond = match c with
-  | `Apron x -> 
+let negate_cond (env:('a,'b,'c,'d) Env.O.t) (c:'a cond) : 'a cond =
+  match c with
+  | `Apron x ->
       `Apron (Apronexpr.Condition.negate (Env.typ_of_var env) x)
 
 let support_cond env cond = match cond with
-  | `Apron x -> Apronexpr.Condition.support x
+  | `Apron x -> Apronexpr.Condition.support env.symbol x
 
 module O = struct
-  type 'a t = (cond,'a,Cudd.Man.v) Bdd.Cond.t
-  constraint 'a = ('b,'c,'d) Env.O.t
-    
-  let make ?bddindex0 ?bddsize (cudd:Cudd.Man.vt) : 'a t =
-    Bdd.Cond.make ?bddindex0 ?bddsize cudd 
-      ~compare_cond
+  type ('a,'b) t = ('a, 'b, 'a cond, Cudd.Man.v) Bdd.Cond.t
+  constraint 'b = ('a,'c,'d,'e) Env.O.t
+
+  let make ~symbol ?bddindex0 ?bddsize (cudd:Cudd.Man.vt) : ('a, 'b) t =
+    Bdd.Cond.make
+      ~symbol
+      ~compare_cond:(compare_cond symbol)
       ~negate_cond
       ~support_cond
       ~print_cond
+      ?bddindex0 ?bddsize cudd
 end
 
-type t = Env.t O.t
+type 'a t = ('a, 'a Env.t) O.t
 
 let make = O.make
 

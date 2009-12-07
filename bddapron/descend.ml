@@ -13,10 +13,10 @@ open Env
 (** {2 Arrays of expressions} *)
 (*  ********************************************************************** *)
 
-let texpr_cofactor cofactor (texpr:Expr0.t array) bdd =
+let texpr_cofactor cofactor (texpr:'a Expr0.t array) bdd : 'a Expr0.t array =
   Array.map (fun expr -> cofactor expr bdd) texpr
 
-let texpr_support cond (texpr: Expr0.t array) =
+let texpr_support (cond:('a,'b) Cond.O.t) (texpr: 'a Expr0.t array) =
   Array.fold_left
     (fun res expr ->
       let supp =
@@ -29,7 +29,7 @@ let texpr_support cond (texpr: Expr0.t array) =
     (Cudd.Bdd.dtrue cond.Bdd.Cond.cudd)
     texpr
 
-let texpr_cofactors env (texpr: Expr0.t array) topvar =
+let texpr_cofactors (env:('a,'b,'c,'d) Env.O.t) (texpr: 'a Expr0.t array) topvar =
   let bdd = Cudd.Bdd.ithvar env.cudd topvar in
   let nbdd = Cudd.Bdd.dnot bdd in
   let t1 = Array.map (fun e -> Expr0.cofactor e bdd) texpr in
@@ -41,10 +41,11 @@ let texpr_cofactors env (texpr: Expr0.t array) topvar =
 (*  ********************************************************************** *)
 
 let split_lvar
-    (lvar:string list)
-    (lexpr:Expr0.t list)
+    symbol
+    (lvar:'a list)
+    (lexpr:'a Expr0.t list)
     :
-    string list * Apron.Var.t array
+    'a list * Apron.Var.t array
     =
   let lbvar = ref [] in
   let lavar = ref [] in
@@ -54,7 +55,7 @@ let split_lvar
       | #Bdd.Expr0.t ->
 	  lbvar := var :: !lbvar;
       | `Apron _ ->
-	  let var = Apron.Var.of_string var in
+	  let var = Apron.Var.of_string (symbol.marshal var) in
 	  lavar := var :: !lavar;
     end)
     lvar lexpr
@@ -62,9 +63,9 @@ let split_lvar
   (!lbvar, Array.of_list !lavar)
 
 let split_texpr
-    (texpr:Expr0.t array)
+    (texpr:'a Expr0.t array)
     :
-    Cudd.Man.v Bdd.Expr0.t list * ApronexprDD.t array
+    Cudd.Man.v Bdd.Expr0.t list * 'a ApronexprDD.t array
     =
   let lbexpr = ref [] in
   let laexpr = ref [] in
@@ -81,11 +82,12 @@ let split_texpr
   (!lbexpr, Array.of_list !laexpr)
 
 let split_lvarlexpr
-    (lvar:string list)
-    (lexpr:Expr0.t list)
+    symbol
+    (lvar:'a list)
+    (lexpr:'a Expr0.t list)
     :
-    string list * Cudd.Man.v Bdd.Expr0.t list *
-    Apron.Var.t array * ApronexprDD.t array
+    'a list * Cudd.Man.v Bdd.Expr0.t list *
+    Apron.Var.t array * 'a ApronexprDD.t array
     =
   let lbvar = ref [] in
   let lavar = ref [] in
@@ -98,7 +100,7 @@ let split_lvarlexpr
 	  lbvar := var :: !lbvar;
 	  lbexpr := e :: !lbexpr
       | `Apron e ->
-	  let var = Apron.Var.of_string var in
+	  let var = Apron.Var.of_string (symbol.marshal var) in
 	  lavar := var :: !lavar;
 	  laexpr := e :: !laexpr
      end)
@@ -113,8 +115,8 @@ let split_lvarlexpr
 
 let cofactors
     (man:'a ApronDD.man)
-    (env:'b)
-    (cond:'b Cond.O.t)
+    (env:'c)
+    (cond:('b,'c) Cond.O.t)
     (t:'a ApronDD.t)
     (idcond:int)
     :
@@ -129,8 +131,8 @@ let cofactors
     let eapron = env.ext.eapron in
     let `Apron cond1 = Bdd.Cond.cond_of_idb cond (idcond,true) in
     let `Apron cond2 = Bdd.Cond.cond_of_idb cond (idcond,false) in
-    let tcons1 = Apronexpr.Condition.to_tcons0 eapron cond1 in
-    let tcons2 = Apronexpr.Condition.to_tcons0 eapron cond2 in
+    let tcons1 = Apronexpr.Condition.to_tcons0 env.symbol eapron cond1 in
+    let tcons2 = Apronexpr.Condition.to_tcons0 env.symbol eapron cond2 in
     let t1 = ApronDD.meet_tcons_array man t [|tcons1|] in
     let t2 = ApronDD.meet_tcons_array man t [|tcons2|] in
     (t1,t2)
@@ -143,16 +145,16 @@ let cofactors
 
 let rec descend_mtbdd
     (man:'a ApronDD.man)
-    (env:'b)
-    (cond:'b Cond.O.t)
-    (f:'a ApronDD.t -> Expr0.t array -> 'a ApronDD.t)
+    (env:'c)
+    (cond:('b,'c) Cond.O.t)
+    (f:'a ApronDD.t -> 'b Expr0.t array -> 'a ApronDD.t)
     (t:'a ApronDD.t)
-    (texpr:Expr0.t array)
+    (texpr:'b Expr0.t array)
     =
   if ApronDD.is_bottom man t then t
   else begin
     let supp = texpr_support cond texpr in
-    let res = 
+    let res =
       if Cudd.Bdd.is_cst supp then begin
 	f t texpr
       end
@@ -162,7 +164,7 @@ let rec descend_mtbdd
 	let (t1,t2) = cofactors man env cond t topvar in
 	let res1 = descend_mtbdd man env cond f t1 texpr1 in
 	let res2 = descend_mtbdd man env cond f t2 texpr2 in
-	ApronDD.join man res1 res2 
+	ApronDD.join man res1 res2
       end
     in
     res

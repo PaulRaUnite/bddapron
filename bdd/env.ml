@@ -12,33 +12,30 @@ open Format
 exception Bddindex
 
 (** Type defintion *)
-type typdef = [
-  | `Benum of string array
+type 'a typdef = [
+  | `Benum of 'a array
 ]
 
 (** Types *)
-type typ = [
+type 'a typ = [
   | `Bool
   | `Bint of (bool * int)
-  | `Benum of string
+  | `Benum of 'a
 ]
 
-(** (Internal type:) Expressions *)
-type 'a expr = [
-  | `Bool of 'a Cudd.Bdd.t
-      (** Boolean *)
-  | `Bint of 'a Int.t
-      (** Bounded integer *)
-  | `Benum of 'a Enum.t
-      (** Enumerated *)
-]
-
-type ('a,'b,'c,'d) t0 = ('a,'b,'c,'d) Enum.env0 = {
-  mutable cudd : 'c Cudd.Man.t;
+(** Environment *)
+type 'a symbol = {
+  compare : 'a -> 'a -> int;
+  marshal : 'a -> string;
+  unmarshal : string -> 'a;
+  mutable print : Format.formatter -> 'a -> unit;
+}
+type ('a,'b,'c,'d,'e) t0 = {
+  mutable cudd : 'd Cudd.Man.t;
     (** CUDD manager *)
-  mutable typdef : (string, 'b) PMappe.t;
+  mutable typdef : ('a, 'c) PMappe.t;
     (** Named types definitions *)
-  mutable vartyp : (string, 'a) PMappe.t;
+  mutable vartyp : ('a, 'b) PMappe.t;
     (** Associate to a var/label its type *)
   mutable bddindex0 : int;
     (** First index for finite-type variables *)
@@ -49,18 +46,19 @@ type ('a,'b,'c,'d) t0 = ('a,'b,'c,'d) Enum.env0 = {
   mutable bddincr : int;
     (** Increment used by {!add_var} for incrementing
 	[bddindex] *)
-  mutable idcondvar : (int, string) PMappe.t;
+  mutable idcondvar : (int, 'a) PMappe.t;
     (** Associates to a BDD index the variable involved by it *)
-  mutable vartid : (string, int array) PMappe.t;
+  mutable vartid : ('a, int array) PMappe.t;
     (** (Sorted) array of BDD indices associated to finite-type variables. *)
-  mutable varset : (string, 'c Cudd.Bdd.t) PMappe.t;
+  mutable varset : ('a, 'd Cudd.Bdd.t) PMappe.t;
     (** Associates to enumerated variable the (care)set of
 	possibled values. *)
   mutable print_external_idcondb : Format.formatter -> int*bool -> unit;
     (** Printing conditions not managed by the environment..
 	By default, [pp_print_int]. *)
-  mutable ext : 'd;
-  copy_ext : 'd -> 'd;
+  mutable ext : 'e;
+  symbol : 'a symbol;
+  copy_ext : 'e -> 'e;
 }
 
 let compare_idb (id1,b1) (id2,b2) =
@@ -70,19 +68,19 @@ let compare_idb (id1,b1) (id2,b2) =
   else
     (if b1 then 1 else 0) - (if b2 then 1 else 0)
 
-let print_typ (fmt:Format.formatter) typ = match typ with
+let print_typ print_symbol (fmt:Format.formatter) typ = match typ with
   | `Bool -> pp_print_string fmt "bool"
   | `Bint(sign,size) -> fprintf fmt "bint(%b,%i)" sign size
-  | `Benum s -> pp_print_string fmt s
+  | `Benum s -> print_symbol fmt s
   | _ -> pp_print_string fmt "Bdd.Env.print_typ: unknown type"
-	
-let print_typdef (fmt:Format.formatter) typdef = match typdef with
+
+let print_typdef print_symbol (fmt:Format.formatter) typdef = match typdef with
   | `Benum array ->
       fprintf fmt "benum{%a}"
-	(Print.array ~first:"" ~sep:"," ~last:"" pp_print_string)
+	(Print.array ~first:"" ~sep:"," ~last:"" print_symbol)
 	array
   | _ -> pp_print_string fmt "Bdd.Env.print_typdef: unknown type definition"
-      
+
 let print_tid (fmt:Format.formatter) (tid:int array) : unit =
   Print.array Format.pp_print_int fmt tid
 
@@ -98,78 +96,105 @@ let notfound format =
     end)
     fmt
     format
-    
-module O = struct
-  type ('a,'b,'c,'d) t = ('a,'b,'c,'d) t0
-  constraint 'a = [>typ]
-  constraint 'b = [>typdef]
 
-  let print print_typ print_typdef print_ext fmt (env:('a,'b,'c,'d) t) =
+module O = struct
+  type ('a,'b,'c,'d,'e) t = ('a,'b,'c,'d,'e) t0
+  constraint 'b = [>'a typ]
+  constraint 'c = [>'a typdef]
+
+  let print print_typ print_typdef print_ext fmt (env:('a,'b,'c,'d,'e) t) =
     fprintf fmt
       "{@[<v>typdef = %a;@ vartyp = %a;@ bddindex0 = %i;@ bddindex = %i; bddincr = %i;@ idcondvar = %a;@ vartid = %a;@ ext = %a@]}"
-      (PMappe.print pp_print_string print_typdef) env.typdef
-      (PMappe.print ~first:"[@[" pp_print_string print_typ) env.vartyp
+      (PMappe.print env.symbol.print print_typdef) env.typdef
+      (PMappe.print ~first:"[@[" env.symbol.print print_typ) env.vartyp
       env.bddindex0 env.bddindex env.bddincr
-      (PMappe.print pp_print_int pp_print_string) env.idcondvar
-      (PMappe.print pp_print_string print_tid) env.vartid
+      (PMappe.print pp_print_int env.symbol.print) env.idcondvar
+      (PMappe.print env.symbol.print print_tid) env.vartid
       print_ext env.ext
-      
+
+  let marshal_symbol s = Marshal.to_string s [Marshal.No_sharing]
+  let unmarshal_symbol str = Marshal.from_string str 0
+
+  let make_symbol
+      ?(compare_symbol=Pervasives.compare)
+      ?(marshal_symbol=marshal_symbol)
+      ?(unmarshal_symbol=unmarshal_symbol)
+      ~print_symbol
+      =
+    {
+      compare = compare_symbol;
+      marshal = marshal_symbol;
+      unmarshal = unmarshal_symbol;
+      print = print_symbol;
+    }
   let make
+      ?compare_symbol
+      ?marshal_symbol
+      ?unmarshal_symbol
+      ~print_symbol
+      ~(copy_ext:'e -> 'e)
       ?(bddindex0=0)
       ?(bddsize=100)
       ?(relational=false)
-      (cudd:'c Cudd.Man.t)
-      (ext:'d)
-      (copy_ext:'d -> 'd)
+      (cudd:'d Cudd.Man.t)
+      (ext:'e)
       :
-      ('a,'b,'c,'d) t
+      ('a,'b,'c,'d,'e) t
       =
+    let symbol =
+      make_symbol
+	?compare_symbol
+	?marshal_symbol
+	?unmarshal_symbol
+	~print_symbol
+    in
     {
       cudd = cudd;
-      typdef = PMappe.empty String.compare;
-      vartyp = PMappe.empty String.compare;
+      typdef = PMappe.empty symbol.compare;
+      vartyp = PMappe.empty symbol.compare;
       bddindex0 = bddindex0;
       bddsize = bddsize;
       bddindex = bddindex0;
       bddincr = if relational then 2 else 1;
       idcondvar = PMappe.empty (-);
-      vartid = PMappe.empty String.compare;
-      varset = PMappe.empty String.compare;
+      vartid = PMappe.empty symbol.compare;
+      varset = PMappe.empty symbol.compare;
       print_external_idcondb =
 	begin fun fmt (id,b) ->
 	  fprintf fmt "%s%i" (if b then "not " else "") id
 	end;
       ext = ext;
+      symbol = symbol;
       copy_ext = copy_ext;
     }
-      
+
 end
 
-type 'c t = (typ,typdef,'c,unit) O.t
+type ('a,'d) t = ('a,'a typ,'a typdef,'d,unit) O.t
 
 (*  ********************************************************************** *)
 (** {2 Printing} *)
 (*  ********************************************************************** *)
 
-let typ_of_var env (label:string) : 'a
+let typ_of_var env label : 'a
     =
   try
     PMappe.find label env.vartyp
   with Not_found ->
-    notfound "Bdd.Env.typ_of_var: unknwon label/variable %s" label
+    notfound "Bdd.Env.typ_of_var: unknwon label/variable %a" env.symbol.print label
 
 let print_idcondb env fmt ((id,b) as idb) =
   try
     let var = PMappe.find id env.idcondvar in
     let tid = PMappe.find var env.vartid in
     begin match typ_of_var env var with
-    | `Bool -> pp_print_string fmt var
+    | `Bool -> env.symbol.print fmt var
     | _ ->
 	begin
 	  try
 	    for i=0 to pred(Array.length tid) do
 	      if id = tid.(i) then begin
-		fprintf fmt "%s%i" var i;
+		fprintf fmt "%a%i" env.symbol.print var i;
 		raise Exit
 	      end
 	    done;
@@ -209,17 +234,32 @@ let print_order env (fmt:Format.formatter) : unit
 (*  ********************************************************************** *)
 
 
-let print fmt t = 
+let print fmt (env:('a,'b,'c,'d,'e) O.t) =
   O.print
-    print_typ print_typdef (fun fmt _ -> pp_print_string  fmt "_") 
-    fmt t
+    (print_typ env.symbol.print)
+    (print_typdef env.symbol.print)
+    (fun fmt _ -> pp_print_string  fmt "_")
+    fmt env
 
-let make ?bddindex0 ?bddsize ?relational cudd = 
-  O.make ?bddindex0 ?bddsize ?relational cudd () (fun x -> x)
+let make
+    ?compare_symbol
+    ?marshal_symbol
+    ?unmarshal_symbol
+    ~print_symbol
+    ?bddindex0 ?bddsize ?relational cudd
+    =
+  O.make
+    ?compare_symbol
+    ?marshal_symbol
+    ?unmarshal_symbol
+    ~print_symbol
+    ~copy_ext:(fun x -> ())
+    ?bddindex0 ?bddsize ?relational cudd ()
 
 let copy env =
   { env with
-    ext = env.copy_ext env.ext
+    symbol = { env.symbol with print = env.symbol.print };
+    ext = env.copy_ext env.ext;
   }
 
 (*  ********************************************************************** *)
@@ -270,10 +310,10 @@ let normalize_with env : int array =
   permute_with env perm;
   perm
 
-let add_typ_with (env:('a,'b,'c,'d) O.t) (typ:string) (typdef:'b) : unit
+let add_typ_with (env:('a,'b,'c,'d,'e) O.t) (typ:'a) (typdef:'c) : unit
     =
   if PMappe.mem typ env.typdef then
-    failwith (sprintf "Bdd.Env.add_typ: type %s already defined" typ)
+    failwith (Print.sprintf "Bdd.Env.add_typ: type %a already defined" env.symbol.print typ)
   ;
   env.typdef <- PMappe.add typ typdef env.typdef;
   begin match typdef with
@@ -285,7 +325,7 @@ let add_typ_with (env:('a,'b,'c,'d) O.t) (typ:string) (typdef:'b) : unit
   | _ -> ()
   end
 
-let check_normalized (env:('a,'b,'c,'d) O.t) : bool
+let check_normalized (env:('a,'b,'c,'d,'e) O.t) : bool
     =
   try
     let index = ref env.bddindex0 in
@@ -310,13 +350,6 @@ let check_normalized (env:('a,'b,'c,'d) O.t) : bool
     true
   with Exit ->
     false
-
-let permute_expr (expr:'d expr) (permutation:int array) : 'd expr
-  =
-  match expr with
-  | `Bool(x) -> `Bool(Cudd.Bdd.permute x permutation)
-  | `Bint(x) -> `Bint(Int.permute x permutation)
-  | `Benum(x) -> `Benum(Enum.permute x permutation)
 
 let compose_permutation (perm1:int array) (perm2:int array) : int array =
   let l1 = Array.length perm1 in
@@ -354,22 +387,22 @@ let permutation_of_offset (length:int) (offset:int) : int array =
 (** {2 Accessors} *)
 (*  ********************************************************************** *)
 
-let mem_typ env (typ:string) : bool =
+let mem_typ env typ =
   PMappe.mem typ env.typdef
-let mem_var env (label:string) : bool =
+let mem_var env label =
   PMappe.mem label env.vartyp
-let mem_label env (label:string) : bool =
+let mem_label env label =
   let typ = PMappe.find label env.vartyp in
   match typ with
   | `Benum _ when not (PMappe.mem label env.vartid) -> true
   | _ -> false
 
-let typdef_of_typ env (typ:string) : 'b
+let typdef_of_typ env typ
     =
   try
     PMappe.find typ env.typdef
   with Not_found ->
-    notfound "Bdd.Env.t#typdef_of_typ: unknown type %s" typ
+    notfound "Bdd.Env.t#typdef_of_typ: unknown type %a" env.symbol.print typ
 
 let vars env =
   PMappe.maptoset env.vartid
@@ -383,16 +416,29 @@ let labels env =
       | _ -> res
     end)
     env.typdef
-    (PSette.empty String.compare)
+    (PSette.empty env.symbol.compare)
 
 (*  ********************************************************************** *)
 (** {2 Adding types and variables} *)
 (*  ********************************************************************** *)
 
+let enum_size_of_typ env (typ:'a) : int
+    =
+  let labels =
+    let typdef = PMappe.find typ env.typdef in
+    begin match typdef with
+    | `Benum tlabel -> tlabel
+    | _ ->
+	failwith (Print.sprintf "Bddenum.labels_of_typ: type %a not defined as an enumerated type" env.symbol.print typ)
+    end
+  in
+  let nb = Array.length labels in
+  Reg.min_size (nb-1)
+
 let add_var_with env var typ : unit
     =
   if PMappe.mem var env.vartyp then
-    failwith (sprintf "Bdd.Env.add_var_with: label/var %s already defined" var)
+    failwith (Print.sprintf "Bdd.Env.add_var_with: label/var %a already defined" env.symbol.print var)
   ;
   env.vartyp <- PMappe.add var typ env.vartyp;
   begin match typ with
@@ -403,7 +449,7 @@ let add_var_with env var typ : unit
 	    Array.init n (fun i -> env.bddindex+(env.bddincr*i))
 	| `Benum s ->
 	    Array.init
-	      (Enum.size_of_typ env s)
+	      (enum_size_of_typ env s)
 	      (fun i -> env.bddindex+(env.bddincr*i))
       in
       if tid<>[||] then begin
@@ -440,7 +486,7 @@ let add_vars_with env lvartyp
   else
     Some(normalize_with env)
 
-let remove_vars_with env (lvar:string list) : int array option
+let remove_vars_with env lvar : int array option
     =
   let length = ref 0 in
   List.iter
@@ -463,9 +509,9 @@ let remove_vars_with env (lvar:string list) : int array option
 	    end;
 	  with Not_found ->
 	    failwith
-	      (Format.sprintf
-		"Bdd.Env.remove: trying to remove the label %s of an enumerated type"
-		var)
+	      (Print.sprintf
+		"Bdd.Env.remove: trying to remove the label %a of an enumerated type"
+		env.symbol.print var)
 	  end
       | _ -> ()
       end;
@@ -481,7 +527,7 @@ let remove_vars_with env (lvar:string list) : int array option
     Some perm
   end
 
-let rename_vars_with env (lvarvar:(string*string) list)
+let rename_vars_with env lvarvar
     :
     int array option
     =
@@ -518,9 +564,9 @@ let rename_vars_with env (lvarvar:(string*string) list)
     (begin fun (var,nvar,typ) ->
       if PMappe.mem nvar env.vartyp then
 	failwith
-	  (Format.sprintf
-	    "Bdd.Env.rename_vars: error, variable %s renamed in already existing %s"
-	    var nvar)
+	  (Print.sprintf
+	    "Bdd.Env.rename_vars: error, variable %a renamed in already existing %a"
+	    env.symbol.print var env.symbol.print nvar)
       ;
       env.vartyp <- PMappe.add nvar typ env.vartyp;
     end)
@@ -530,9 +576,9 @@ let rename_vars_with env (lvarvar:(string*string) list)
     (begin fun (var,nvar,typ,tid,oset) ->
       if PMappe.mem nvar env.vartyp then
 	failwith
-	  (Format.sprintf
-	    "Bdd.Env.rename_vars: error, variable %s renamed in already existing %s"
-	    var nvar)
+	  (Print.sprintf
+	    "Bdd.Env.rename_vars: error, variable %a renamed in already existing %a"
+	    env.symbol.print var env.symbol.print nvar)
       ;
       env.vartyp <- PMappe.add nvar typ env.vartyp;
       env.vartid <- PMappe.add nvar tid env.vartid;
@@ -573,16 +619,16 @@ let rename_vars env lvarvar =
 (** {2 Operations} *)
 (* ********************************************************************** *)
 
-let iter_ordered (env:('a,'b,'c,'d) O.t) (f:(string -> int array -> unit))
+let iter_ordered (env:('a,'b,'c,'d,'e) O.t) (f:'a -> int array -> unit)
   :
   unit
   =
-  let processed = ref (PSette.empty String.compare) in
+  let processed = ref (PSette.empty env.symbol.compare) in
   let size = Cudd.Man.get_bddvar_nb env.cudd in
   for level=0 to size-1 do
-    let (id:int) = Cudd.Man.var_of_level env.cudd level in
+    let id = Cudd.Man.var_of_level env.cudd level in
     try
-      let (var:string) = PMappe.find id env.idcondvar in
+      let var = PMappe.find id env.idcondvar in
       if not (PSette.mem var !processed) then begin
 	let tid = PMappe.find var env.vartid in
 	f var tid;
@@ -620,14 +666,14 @@ let is_eq env1 env2 : bool =
       (env1.typdef==env2.typdef || PMappe.equal (=) env1.typdef env2.typdef) &&
       (env1.vartyp==env2.vartyp || (PMappe.equal (=) env1.vartyp env2.vartyp))
 
-let shift env (offset:int) : ('a,'b,'c,'d) O.t =
+let shift env (offset:int) : ('a,'b,'c,'d,'e) O.t =
   let perm = permutation_of_offset env.bddindex offset in
   let nenv = copy env in
   nenv.bddindex0 <- env.bddindex0 + offset;
   permute_with nenv perm;
   nenv
 
-let lce env1 env2 : ('a,'b,'c,'d) O.t =
+let lce env1 env2 : ('a,'b,'c,'d,'e) O.t =
   if is_leq env2 env1 then
     let offset = env1.bddindex0 - env2.bddindex0 in
     if offset>=0 then
@@ -646,8 +692,8 @@ let lce env1 env2 : ('a,'b,'c,'d) O.t =
 	(begin fun typ typdef1 typdef2 ->
 	  if typdef1<>typdef2 then
 	    failwith
-	      (Format.sprintf
-		"Bdd.Env.lce: two different definitions for (enumerated) type %s" typ)
+	      (Print.sprintf
+		"Bdd.Env.lce: two different definitions for (enumerated) type %a" env1.symbol.print typ)
 	  ;
 	  typdef1
 	end)
@@ -658,8 +704,8 @@ let lce env1 env2 : ('a,'b,'c,'d) O.t =
 	(begin fun var typ1 typ2 ->
 	  if typ1<>typ2 then
 	    failwith
-	      (Format.sprintf
-		"Bdd.Env.lce: two different types for label/variable %s" var)
+	      (Print.sprintf
+		"Bdd.Env.lce: two different types for label/variable %a" env1.symbol.print var)
 	  ;
 	  typ1
 	end)
@@ -684,8 +730,8 @@ let lce env1 env2 : ('a,'b,'c,'d) O.t =
     env.bddsize <- Pervasives.max env1.bddsize env2.bddsize;
     env.bddindex <- env.bddindex0;
     env.idcondvar <- PMappe.empty (-);
-    env.vartid <- PMappe.empty String.compare;
-    env.varset <- PMappe.empty String.compare;
+    env.vartid <- PMappe.empty env1.symbol.compare;
+    env.varset <- PMappe.empty env1.symbol.compare;
     PMappe.iter
       (begin fun var typ ->
 	add_var_with env var typ
@@ -836,7 +882,7 @@ let extend_environment
   else
     failwith "Bdd.Env.extend_environment: the given environment is not a superenvironment "
 
-let check_var (env:('a,'b,'c,'d) O.t) (var:string) : unit =
+let check_var (env:('a,'b,'c,'d,'e) O.t) (var:'a) : unit =
   try
     let typ = typ_of_var env var in
     let ok =
@@ -846,9 +892,9 @@ let check_var (env:('a,'b,'c,'d) O.t) (var:string) : unit =
     in
     if not ok then raise Not_found
   with Not_found ->
-    failwith (Format.sprintf "The variable %s is unknown or has a wrong type in the environement of the value" var)
+    failwith (Print.sprintf "The variable %a is unknown or has a wrong type in the environement of the value" env.symbol.print var)
 
-let check_lvar env (lvar:string list) : unit =
+let check_lvar env lvar : unit =
   List.iter (check_var env) lvar
 
 let check_value env t =

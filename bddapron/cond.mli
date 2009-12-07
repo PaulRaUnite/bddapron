@@ -7,30 +7,30 @@
 (** {2 Types} *)
 (*  ********************************************************************** *)
 
-type cond = [`Apron of Apronexpr.Condition.t]
+type 'a cond = [`Apron of 'a Apronexpr.Condition.t]
   (** Conditions *)
 
-val print_cond : 'a -> Format.formatter -> [< cond ] -> unit
-val compare_cond :
-  [< `Apron of Apronexpr.Condition.t ] ->
-  [< `Apron of Apronexpr.Condition.t ] -> int
-val negate_cond : ('a,'b,'c) Env.O.t -> cond -> cond
-val support_cond : 'a -> [< `Apron of Apronexpr.Condition.t ] -> string PSette.t
+val print_cond : ('a,'b,'c,'d) Env.O.t -> Format.formatter -> [< 'a cond ] -> unit
+val compare_cond : 'a Bdd.Env.symbol -> [< 'a cond] -> [< 'a cond] -> int
+val negate_cond : ('a,'b,'c,'d) Env.O.t -> 'a cond -> 'a cond
+val support_cond : ('a,'b,'c,'d) Env.O.t -> [< 'a cond] -> 'a PSette.t
 module O : sig
-  type 'a t = (cond,'a,Cudd.Man.v) Bdd.Cond.t
-  constraint 'a = ('b,'c,'d) Env.O.t
+  type ('a,'b) t = ('a,'b, 'a cond, Cudd.Man.v) Bdd.Cond.t
+  constraint 'b = ('a,'c,'d,'e) Env.O.t
 
   val make :
+    symbol:'a Bdd.Env.symbol ->
     ?bddindex0:int ->
     ?bddsize:int ->
-    Cudd.Man.vt -> 'a t
+    Cudd.Man.vt -> ('a,'b) t
 end
 
-type t = Env.t O.t
+type 'a t = ('a, 'a Env.t) O.t
 
 val make :
+  symbol:'a Bdd.Env.symbol ->
   ?bddindex0:int ->
   ?bddsize:int ->
-  Cudd.Man.vt -> t
+  Cudd.Man.vt -> 'a t
 
-val print : Env.t -> Format.formatter -> t -> unit
+val print : 'a Env.t -> Format.formatter -> 'a t -> unit

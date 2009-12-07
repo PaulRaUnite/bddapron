@@ -7,83 +7,83 @@
 
 (** {2 From strings} *)
 
-val expr0_of_string : Env.t -> Cond.t -> string -> Expr0.t
+val expr0_of_string : string Env.t -> string Cond.t -> string -> string Expr0.t
 
-val expr1_of_string : Env.t -> Cond.t -> string -> Expr1.t
-val listexpr1_of_lstring : 
-  Env.t -> Cond.t -> string list -> Expr1.List.t
+val expr1_of_string : string Env.t -> string Cond.t -> string -> string Expr1.t
+val listexpr1_of_lstring :
+  string Env.t -> string Cond.t -> string list -> string Expr1.List.t
 
-val listexpr2_of_lstring : 
-  ?normalize:bool -> ?reduce:bool -> ?careset:bool -> 
-  Env.t -> Cond.t -> string list -> Expr2.List.t
-val boolexpr2_of_string : 
-  ?normalize:bool -> ?reduce:bool -> ?careset:bool -> 
-  Env.t -> Cond.t -> string -> Expr2.Bool.t
+val listexpr2_of_lstring :
+  ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
+  string Env.t -> string Cond.t -> string list -> string Expr2.List.t
+val boolexpr2_of_string :
+  ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
+  string Env.t -> string Cond.t -> string -> string Expr2.Bool.t
 
 (** {2 From abstract syntax tree} *)
 
-val expr0_of_expr : Env.t -> Cond.t -> Syntax.expr -> Expr0.t
-val expr1_of_expr : Env.t -> Cond.t -> Syntax.expr -> Expr1.t
-val listexpr1_of_lexpr : 
-  Env.t -> Cond.t -> Syntax.expr list -> Expr1.List.t
-val listexpr2_of_lexpr : 
-  ?normalize:bool -> ?reduce:bool -> ?careset:bool -> 
-  Env.t -> Cond.t -> Syntax.expr list -> Expr2.List.t
-val boolexpr2_of_expr : 
-  ?normalize:bool -> ?reduce:bool -> ?careset:bool -> 
-  Env.t -> Cond.t -> Syntax.expr -> Expr2.Bool.t
+val expr0_of_expr : string Env.t -> string Cond.t -> Syntax.expr -> string Expr0.t
+val expr1_of_expr : string Env.t -> string Cond.t -> Syntax.expr -> string Expr1.t
+val listexpr1_of_lexpr :
+  string Env.t -> string Cond.t -> Syntax.expr list -> string Expr1.List.t
+val listexpr2_of_lexpr :
+  ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
+  string Env.t -> string Cond.t -> Syntax.expr list -> string Expr2.List.t
+val boolexpr2_of_expr :
+  ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
+  string Env.t -> string Cond.t -> Syntax.expr -> string Expr2.Bool.t
 
 (** {2 Misc.} *)
 
-val expr0_of_lexbuf : Env.t -> Cond.t -> Lexing.lexbuf -> Expr0.t
+val expr0_of_lexbuf : string Env.t -> string Cond.t -> Lexing.lexbuf -> string Expr0.t
 
 (** {2 Grammar of expressions} *)
 
 (**
 {v
 <expr> ::= <bexpr>      Boolean expression
-        |  <iexpr>      bounded integer expression
+	|  <iexpr>      bounded integer expression
 	|  <eexpr>      enumerated type expression
 	|  <nexpr>      numerical expression
 
 Boolean expressions
 <bexpr> ::= true | false
-         | id                            variable
-         | <constraint>
-         | not <bexpr>
-         | <bexpr> (or | and) <bexpr>
-         | ( <bexpr> )
-         | if <bexpr> then <bexpr> else <bexpr>
+	 | id                            variable
+	 | <constraint>
+	 | not <bexpr>
+	 | <bexpr> (or | and) <bexpr>
+	 | ( <bexpr> )
+	 | if <bexpr> then <bexpr> else <bexpr>
 <constraint> ::= id == <expr>
-                 <iexpr> (== | >= | > | <= | <) <iexpr>
-                 <nexpr> (== | >= | > | <= | <) <nexpr>
+		 <iexpr> (== | >= | > | <= | <) <iexpr>
+		 <nexpr> (== | >= | > | <= | <) <nexpr>
 
 Bounded integer expressions
 <iexpr> ::= uint[<integer>][-]<integer>  constant (snd integer) of given type
-         |  sint[<integer>][-]<integer>  constant (snd integer) of given type
-         |  id                           variable
-         |  <iexpr> ( +|-|* ) <iexpr>
-         |  ( <iexpr> )
-         |  if <bexpr> then <iexpr> else <iexpr>
+	 |  sint[<integer>][-]<integer>  constant (snd integer) of given type
+	 |  id                           variable
+	 |  <iexpr> ( +|-|* ) <iexpr>
+	 |  ( <iexpr> )
+	 |  if <bexpr> then <iexpr> else <iexpr>
 
 Enumerated type expressions
 <eexpr> ::= id                           variable or constant (label)
-         |  ( <eexpr> )
-         |  if <bexpr> then <eexpr> else <eexpr>
+	 |  ( <eexpr> )
+	 |  if <bexpr> then <eexpr> else <eexpr>
 
 Numerical expressions
 <nexpr> ::= <coeff>
-         |  id                           variable
-         |  <unop> <nexpr>          
+	 |  id                           variable
+	 |  <unop> <nexpr>
 	 |  <nexpr> <binop> <nexpr>
-         |  ( <nexpr> )
-         |  if <bexpr> then <nexpr> else <nexpr>
+	 |  ( <nexpr> )
+	 |  if <bexpr> then <nexpr> else <nexpr>
 
 <binop>    ::= (+|-|*|/|%)[_(i|f|d|l|q)[,(n|0|+oo|-oo)]]
 <unop>     ::= -
-            |  (cast|sqrt)[_(i|f|d|l|q)[,(n|0|+oo|-oo)]]
-<coeff>    ::= <float>          
-            |  <rational>
+	    |  (cast|sqrt)[_(i|f|d|l|q)[,(n|0|+oo|-oo)]]
+<coeff>    ::= <float>
+	    |  <rational>
 <float>    ::= C/OCaml floating-point number syntax
 <rational> ::= <integer>  | <integer>/<integer>
 v}
@@ -115,4 +115,3 @@ let top = Domain1.top man env;;
 let abs = Domain0.meet_condition man cond top bexpr1;;
 ]}
 *)
-

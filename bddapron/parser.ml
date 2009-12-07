@@ -36,8 +36,8 @@ let apply_bbinop env cond (op:Syntax.bbinop) e1 e2
       | _ -> failwith ""
       end
   | EQ | NEQ ->
-      let typexpr1 = Expr0.typ_of_expr e1 in
-      let typexpr2 = Expr0.typ_of_expr e2 in
+      let typexpr1 = Expr0.typ_of_expr env e1 in
+      let typexpr2 = Expr0.typ_of_expr env e2 in
       if typexpr1<>typexpr2 then begin
 	(error
 	  "arithmetic test %a applied to expressions of different types %a and %a"
@@ -50,8 +50,8 @@ let apply_bbinop env cond (op:Syntax.bbinop) e1 e2
       then res
       else Expr0.Bool.dnot env cond res
   | GT | GEQ | LEQ | LT ->
-      let typexpr1 = Expr0.typ_of_expr e1 in
-      let typexpr2 = Expr0.typ_of_expr e2 in
+      let typexpr1 = Expr0.typ_of_expr env e1 in
+      let typexpr2 = Expr0.typ_of_expr env e2 in
       if typexpr1<>typexpr2 then begin
 	(error
 	  "arithmetic test %a applied to expressions of different types %a and %a"
@@ -102,8 +102,8 @@ let apply_binop env cond (binop:Syntax.binop) e1 e2
       let e = apply_bbinop env cond op e1 e2 in
       Expr0.Bool.to_expr e
   | `Apron(op,typ,round) ->
-      let typexpr1 = Expr0.typ_of_expr e1 in
-      let typexpr2 = Expr0.typ_of_expr e2 in
+      let typexpr1 = Expr0.typ_of_expr env e1 in
+      let typexpr2 = Expr0.typ_of_expr env e2 in
       if typexpr1<>typexpr2 then begin
 	(error
 	  "arithmetic operation %a applied to expressions of different types %a and %a"
@@ -151,7 +151,7 @@ let rec translate_expr
     env cond
     (expr:Syntax.expr)
     :
-    Expr0.t
+    string Expr0.t
     =
   try
     let res = match expr with
@@ -169,7 +169,7 @@ let rec translate_expr
 	      Expr0.Bool.to_expr
 		(Expr0.Bool.dnot env cond (Expr0.Bool.of_expr e))
 	  | `Apron (op,typ,round) ->
-	      let typexpr = Expr0.typ_of_expr e in
+	      let typexpr = Expr0.typ_of_expr env e in
 	      begin match typexpr with
 	      | `Bint(b,size) ->
 		  let e = Expr0.Bint.of_expr e in
@@ -246,7 +246,7 @@ let rec translate_expr
 (** {2 Parsing} *)
 (*  ********************************************************************** *)
 
-let expr0_of_expr env cond expr : Expr0.t =
+let expr0_of_expr env cond expr : string Expr0.t =
   translate_expr env cond expr
 
 let expr0_of_lexbuf env cond lexbuf =
@@ -270,7 +270,7 @@ let expr0_of_string env cond str =
 
 let expr1_of_string env cond str =
   Env.make_value env (expr0_of_string env cond str)
-let expr1_of_expr env cond expr : Expr1.t =
+let expr1_of_expr env cond expr : string Expr1.t =
   Env.make_value env (expr0_of_expr env cond expr)
 
 let listexpr1_of_lexpr env cond lexpr =

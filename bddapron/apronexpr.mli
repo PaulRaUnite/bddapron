@@ -5,12 +5,20 @@
 
 (** Types of numerical variables (distinction is exploited when
     negating constraints) *)
+
+type 'a symbol = 'a Bdd.Env.symbol = {
+  compare : 'a -> 'a -> int;
+  marshal : 'a -> string;
+  unmarshal : string -> 'a;
+  mutable print : Format.formatter -> 'a -> unit;
+}
+
 type typ = [
   | `Int 
   | `Real
 ]
 
-type 'a typ_of_var = string -> 'a constraint 'a = [>typ]
+type ('a,'b) typ_of_var = 'a -> 'b constraint 'b = [> typ]
 
 (*  ********************************************************************** *)
 (** {2 Expressions} *)
@@ -22,28 +30,28 @@ type 'a typ_of_var = string -> 'a constraint 'a = [>typ]
 
 module Lin :
   sig
-    type term = Mpqf.t * string
-    type t = {
+    type 'a term = Mpqf.t * 'a
+    type 'a t = {
       cst : Mpqf.t;
-      lterm : term list;
+      lterm : 'a term list;
     }
-    val normalize : t -> t
-    val compare_lterm : term list -> term list -> int
-    val compare : t -> t -> int
-    val var : string -> t
-    val zero : t
-    val one : t
-    val cst : Mpqf.t -> t
-    val add : t -> t -> t
-    val sub : t -> t -> t
-    val scale : Mpqf.t -> t -> t
-    val negate : t -> t
-    val support : t -> string PSette.t
-    val substitute_by_var : t -> (string,string) PMappe.t -> t
-    val normalize_as_constraint : t -> t
-    val print : Format.formatter -> t -> unit
+    val normalize : 'a symbol -> 'a t -> 'a t
+    val compare_lterm : 'a symbol -> 'a term list -> 'a term list -> int
+    val compare : 'a symbol -> 'a t -> 'a t -> int
+    val var : 'a -> 'a t
+    val zero : 'a t
+    val one : 'a t
+    val cst : Mpqf.t -> 'a t
+    val add : 'a symbol -> 'a t -> 'a t -> 'a t
+    val sub : 'a symbol -> 'a t -> 'a t -> 'a t
+    val scale : Mpqf.t -> 'a t -> 'a t
+    val negate : 'a t -> 'a t
+    val support : 'a symbol -> 'a t -> 'a PSette.t
+    val substitute_by_var : 'a symbol -> 'a t -> ('a,'a) PMappe.t -> 'a t
+    val normalize_as_constraint : 'a t -> 'a t
+    val print : 'a symbol -> Format.formatter -> 'a t -> unit
 
-    val to_linexpr1 : Apron.Environment.t -> t -> Apron.Linexpr1.t
+    val to_linexpr1 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Linexpr1.t
   end
 
 (*  ==================================================================== *)
@@ -52,28 +60,28 @@ module Lin :
 
 module Poly :
   sig
-    type varexp = string * int
-    type monomial = varexp list
-    type term = Mpqf.t * monomial
-    type t = term list
-    val compare_varexp : varexp -> varexp -> int
-    val compare_monomial : monomial -> monomial -> int
-    val normalize_monomial : monomial -> monomial
-    val normalize : t -> t
-    val normalize_full : t -> t
-    val compare : t -> t -> int
-    val cst : Mpqf.t -> t
-    val var : string -> t
-    val add : t -> t -> t
-    val sub : t -> t -> t
-    val scale : Mpqf.t * monomial -> t -> t
-    val mul : t -> t -> t
-    val div : t -> t -> t
-    val negate : t -> t
-    val support : t -> string PSette.t
-    val substitute_by_var : t -> (string,string) PMappe.t -> t
-    val normalize_as_constraint : t -> t
-    val print : Format.formatter -> t -> unit
+    type 'a varexp = 'a * int
+    type 'a monomial = 'a varexp list
+    type 'a term = Mpqf.t * 'a monomial
+    type 'a t = 'a term list
+    val compare_varexp : 'a symbol -> 'a varexp -> 'a varexp -> int
+    val compare_monomial : 'a symbol -> 'a monomial -> 'a monomial -> int
+    val normalize_monomial : 'a symbol -> 'a monomial -> 'a monomial
+    val normalize : 'a symbol -> 'a t -> 'a t
+    val normalize_full : 'a symbol -> 'a t -> 'a t
+    val compare : 'a symbol -> 'a t -> 'a t -> int
+    val cst : Mpqf.t -> 'a t
+    val var : 'a -> 'a t
+    val add : 'a symbol -> 'a t -> 'a t -> 'a t
+    val sub : 'a symbol -> 'a t -> 'a t -> 'a t
+    val scale : 'a symbol -> Mpqf.t * 'a monomial -> 'a t -> 'a t
+    val mul : 'a symbol -> 'a t -> 'a t -> 'a t
+    val div : 'a symbol -> 'a t -> 'a t -> 'a t
+    val negate : 'a t -> 'a t
+    val support : 'a symbol -> 'a t -> 'a PSette.t
+    val substitute_by_var : 'a symbol -> 'a t -> ('a,'a) PMappe.t -> 'a t
+    val normalize_as_constraint : 'a t -> 'a t
+    val print : 'a symbol -> Format.formatter -> 'a t -> unit
   end
 
 (*  ==================================================================== *)
@@ -82,7 +90,6 @@ module Poly :
 
 module Tree :
   sig
-
     type unop = Apron.Texpr1.unop = Neg | Cast | Sqrt
     type binop = Apron.Texpr1.binop = Add | Sub | Mul | Div | Mod
     type typ =
@@ -94,66 +101,65 @@ module Tree :
       | Extended
       | Quad
     type round = Apron.Texpr1.round = Near | Zero | Up | Down | Rnd
-    type t =
-      Apron.Texpr1.expr =
+    type 'a t =
       | Cst of Apron.Coeff.t
-      | Var of Apron.Var.t
-      | Unop of unop * t * typ * round
-      | Binop of binop * t * t * typ * round
-    val support : t -> string PSette.t
-    val substitute_by_var : t -> (string,string) PMappe.t -> t
-    val print : Format.formatter -> t -> unit
-    val compare : t -> t -> int
+      | Var of 'a
+      | Unop of unop * 'a t * typ * round
+      | Binop of binop * 'a t * 'a t * typ * round
+    val support : 'a symbol -> 'a t -> 'a PSette.t
+    val substitute_by_var : 'a t -> ('a,'a) PMappe.t -> 'a t
+    val print : 'a symbol -> Format.formatter -> 'a t -> unit
+    val compare : 'a symbol -> 'a t -> 'a t -> int
   end
 
 (*  ==================================================================== *)
 (** {3 Conversions} *)
 (*  ==================================================================== *)
 
-val lin_of_poly : Poly.t -> Lin.t
-val lin_of_tree : Tree.t -> Lin.t
-val poly_of_tree : Tree.t -> Poly.t
-val tree_of_lin : Lin.t -> Tree.t
-val tree_of_poly : Poly.t -> Tree.t
+val lin_of_poly : 'a symbol -> 'a Poly.t ->'a  Lin.t
+val lin_of_tree : 'a symbol -> 'a Tree.t -> 'a Lin.t
+val poly_of_tree : 'a symbol -> 'a Tree.t -> 'a Poly.t
+val tree_of_lin : 'a Lin.t -> 'a Tree.t
+val tree_of_poly : 'a Poly.t -> 'a Tree.t
 
 (*  ********************************************************************** *)
 (** {2 General expressions and operations} *)
 (*  ********************************************************************** *)
 
-type t =
-  | Lin of Lin.t
-  | Poly of Poly.t
-  | Tree of Tree.t
-type expr = t
+type 'a t =
+  | Lin of 'a Lin.t
+  | Poly of 'a Poly.t
+  | Tree of 'a Tree.t
+type 'a expr = 'a t
 
-val var : 'a typ_of_var -> string -> t
-val zero : t
-val one : t
-val cst : Apron.Coeff.t -> t
-val add : ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> t -> t -> t
-val sub : ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> t -> t -> t
-val mul : ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> t -> t -> t
-val div : ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> t -> t -> t
-val gmod : ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> t -> t -> t
-val negate : t -> t
-val cast : ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> t -> t
-val sqrt : ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> t -> t
-val support : t -> string PSette.t
-val substitute_by_var : t -> (string,string) PMappe.t -> t
-val normalize : t -> t
-val equal : t -> t -> bool
-val hash : t -> int
-val compare : t -> t -> int
-val normalize_as_constraint : t -> t
-val is_dependent_on_integer_only : 'a typ_of_var -> t -> bool
-val typ_of_expr : 'a typ_of_var -> t -> [`Int | `Real]
-val print : Format.formatter -> t -> unit
-val print_typ : Format.formatter -> [>typ] -> unit
+val var : 'a symbol -> ('a,'b) typ_of_var -> 'a -> 'a t
+val zero : 'a t
+val one : 'a t
+val cst : Apron.Coeff.t -> 'a t
+val add : 'a symbol -> ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> 'a t -> 'a t -> 'a t
+val sub : 'a symbol -> ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> 'a t -> 'a t -> 'a t
+val mul : 'a symbol -> ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> 'a t -> 'a t -> 'a t
+val div : 'a symbol -> ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> 'a t -> 'a t -> 'a t
+val gmod : 'a symbol -> ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> 'a t -> 'a t -> 'a t
+val negate : 'a t -> 'a t
+val cast : ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> 'a t -> 'a t
+val sqrt : ?typ:Apron.Texpr1.typ -> ?round:Apron.Texpr1.round -> 'a t -> 'a t
+val support : 'a symbol -> 'a t -> 'a PSette.t
+val substitute_by_var : 'a symbol -> 'a t -> ('a,'a) PMappe.t -> 'a t
+val normalize : 'a symbol -> 'a t -> 'a t
+val equal : 'a symbol -> 'a t -> 'a t -> bool
+val hash : 'a symbol -> 'a t -> int
+val compare : 'a symbol -> 'a t -> 'a t -> int
+val normalize_as_constraint : 'a t -> 'a t
+val is_dependent_on_integer_only : ('a,'b) typ_of_var -> 'a t -> bool
+val typ_of_expr : ('a,'b) typ_of_var -> 'a t -> [`Int | `Real]
+val print : 'a symbol -> Format.formatter -> 'a t -> unit
+val print_typ : Format.formatter -> [> typ] -> unit
 
-val to_texpr0 : Apron.Environment.t -> t -> Apron.Texpr0.t
-val to_texpr1 : Apron.Environment.t -> t -> Apron.Texpr1.t
+val to_texpr0 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Texpr0.t
+val to_texpr1 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Texpr1.t
 val to_apron : 
-  Apron.Environment.t -> t -> 
+  'a symbol -> Apron.Environment.t -> 'a t -> 
       [ 
 	| `Linexpr1 of Apron.Linexpr1.t
 	| `Texpr1 of Apron.Texpr1.t
@@ -167,16 +173,16 @@ module Condition :
   sig
     type typ = Apron.Tcons1.typ = 
       EQ | SUPEQ | SUP | DISEQ | EQMOD of Apron.Scalar.t
-    type t = typ * expr
-    val make : 'a typ_of_var -> typ -> expr -> [ `Cond of t | `Bool of bool ]
-    val negate : 'a typ_of_var -> t -> t
-    val support : t -> string PSette.t
-    val print : Format.formatter -> t -> unit
-    val compare : t -> t -> int
-    val to_tcons0 : Apron.Environment.t -> t -> Apron.Tcons0.t
-    val to_tcons1 : Apron.Environment.t -> t -> Apron.Tcons1.t
+    type 'a t = typ * 'a expr
+    val make : ('a,'b) typ_of_var -> typ -> 'a expr -> [ `Cond of 'a t | `Bool of bool ]
+    val negate : ('a,'b) typ_of_var -> 'a t -> 'a t
+    val support : 'a symbol -> 'a t -> 'a PSette.t
+    val print : 'a symbol -> Format.formatter -> 'a t -> unit
+    val compare : 'a symbol -> 'a t -> 'a t -> int
+    val to_tcons0 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Tcons0.t
+    val to_tcons1 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Tcons1.t
     val to_apron : 
-      Apron.Environment.t -> t -> 
+      'a symbol -> Apron.Environment.t -> 'a t -> 
 	[ 
 	  | `Lincons1 of Apron.Lincons1.t
 	  | `Tcons1 of Apron.Tcons1.t

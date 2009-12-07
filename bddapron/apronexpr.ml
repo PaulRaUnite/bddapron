@@ -5,12 +5,19 @@
 
 open Format
 
+type 'a symbol = 'a Bdd.Env.symbol = {
+  compare : 'a -> 'a -> int;
+  marshal : 'a -> string;
+  unmarshal : string -> 'a;
+  mutable print : Format.formatter -> 'a -> unit;
+}
+
 type typ = [
-  | `Int
+  | `Int 
   | `Real
 ]
 
-type 'a typ_of_var = string -> 'a constraint 'a = [>typ]
+type ('a,'b) typ_of_var = 'a -> 'b constraint 'b = [> typ]
 
 exception Constant of int
 
@@ -76,32 +83,31 @@ let reduce_list (list:(Mpqf.t * 'a) list) : (Mpqf.t * (Mpqf.t * 'a) list)
 (*  ==================================================================== *)
 
 module Lin = struct
-  type term = Mpqf.t * string
-
-  type t = {
-    cst: Mpqf.t;
-    lterm: term list;
+  type 'a term = Mpqf.t * 'a
+  type 'a t = {
+    cst : Mpqf.t;
+    lterm : 'a term list;
   }
 
-  let is_dependent_on_integer_only typ_of_var (e:t) =
+  let is_dependent_on_integer_only typ_of_var (e:'a t) =
     List.for_all
       (begin fun (coeff,var) ->
 	(typ_of_var var) = `Int
       end)
       e.lterm
 
-  let normalize e = {
+  let normalize man e = {
     cst = e.cst;
-    lterm = List.stable_sort (fun (c1,v1) (c2,v2) -> String.compare v1 v2) e.lterm
+    lterm = List.stable_sort (fun (c1,v1) (c2,v2) -> man.compare v1 v2) e.lterm
   }
 
-  let support (e:t) : string PSette.t =
+  let support man (e:'a t) : 'a PSette.t =
     List.fold_left
       (begin fun res (_,var) -> PSette.add var res end)
-      (PSette.empty String.compare)
+      (PSette.empty man.compare)
       e.lterm
 
-  let substitute_by_var e (substitution:(string,string) PMappe.t)
+  let substitute_by_var man e (substitution:('a,'a) PMappe.t)
     =
     let ne = {
       cst = e.cst;
@@ -117,9 +123,9 @@ module Lin = struct
       end
     }
     in
-    normalize ne
+    normalize man ne
 
-   let print fmt expr =
+   let print man fmt expr =
     let first = ref true in
     fprintf fmt "@[";
     if expr.lterm<>[] then begin
@@ -136,7 +142,7 @@ module Lin = struct
 	    else if Mpqf.cmp_int coeff 1 <> 0 then
 	      Mpqf.print fmt coeff
 	    ;
-	    pp_print_string fmt var;
+	    man.print fmt var;
 	    first := false;
 	  end
 	end)
@@ -150,16 +156,17 @@ module Lin = struct
     ;
     fprintf fmt "@]"
 
-  let rec compare_lterm l1 l2 =
+  let rec compare_lterm man l1 l2 =
     match (l1,l2) with
     | ((c1,v1)::r1,(c2,v2)::r2) ->
-	if (v1<v2) then
+	let cmp = man.compare v1 v2 in
+	if cmp < 0 then
 	  Mpqf.sgn c1
-	else if (v1>v2) then
+	else if cmp>0 then
 	  -(Mpqf.sgn c2)
 	else
 	  let s = Mpqf.cmp c1 c2 in
-	  if s=0 then compare_lterm r1 r2 else s
+	  if s=0 then compare_lterm man r1 r2 else s
     | ((c1,v1)::r1,[]) ->
 	let s = Mpqf.sgn c1 in
 	if s=0 then failwith "";
@@ -170,15 +177,15 @@ module Lin = struct
 	-s
     | ([],[]) -> 0
 
-  let compare e1 e2 =
-    let res = compare_lterm e1.lterm e2.lterm in
+  let compare man e1 e2 =
+    let res = compare_lterm man e1.lterm e2.lterm in
     if res=0 then
       let res = Mpqf.cmp e1.cst e2.cst in
       if res>0 then 1 else if res < 0 then -1 else 0
     else
       if res>0 then 2 else if res < 0 then -2 else 0
 
-  let var (x:string) = {
+  let var (x:'a) = {
     cst = Mpqf.of_int 0;
     lterm = [ (Mpqf.of_int 1, x) ]
   }
@@ -191,20 +198,21 @@ module Lin = struct
   let zero = cst (Mpqf.of_int 0)
   let one = cst (Mpqf.of_int 1)
 
-  let rec add_lterm l1 l2 = match (l1,l2) with
+  let rec add_lterm man l1 l2 = match (l1,l2) with
     | (l,[])
     | ([],l)
       -> l
     | ((c1,v1)::r1,(c2,v2)::r2) ->
-	if (v1<v2) then
-	  (c1,v1)::(add_lterm r1 l2)
-	else if (v1>v2) then
-	  (c2,v2)::(add_lterm l1 r2)
+	let cmp = man.compare v1 v2 in
+	if cmp<0 then
+	  (c1,v1)::(add_lterm man r1 l2)
+	else if cmp>0 then
+	  (c2,v2)::(add_lterm man l1 r2)
 	else
 	  let c = Mpqf.add c1 c2 in
 	  if (Mpqf.sgn c)<> 0
-	  then (c,v1)::(add_lterm r1 r2)
-	  else add_lterm r1 r2
+	  then (c,v1)::(add_lterm man r1 r2)
+	  else add_lterm man r1 r2
 
   let scale f e =
     if (Mpqf.sgn f) = 0 then {
@@ -224,28 +232,29 @@ module Lin = struct
     lterm = negate_lterm e.lterm;
   }
 
-  let add e1 e2 = {
+  let add man e1 e2 = {
     cst = Mpqf.add e1.cst e2.cst;
-    lterm = add_lterm e1.lterm e2.lterm
+    lterm = add_lterm man e1.lterm e2.lterm
   }
 
-  let rec sub_lterm l1 l2 = match (l1,l2) with
+  let rec sub_lterm man l1 l2 = match (l1,l2) with
     | (l,[]) -> l
     | ([],l) -> negate_lterm l
     | ((c1,v1)::r1,(c2,v2)::r2) ->
-	if (v1<v2) then
-	  (c1,v1)::(sub_lterm r1 l2)
-	else if (v1>v2) then
-	  (Mpqf.neg c2,v2)::(sub_lterm l1 r2)
+	let cmp = man.compare v1 v2 in
+	if cmp<0 then
+	  (c1,v1)::(sub_lterm man r1 l2)
+	else if cmp>0 then
+	  (Mpqf.neg c2,v2)::(sub_lterm man l1 r2)
 	else
 	  let c = Mpqf.sub c1 c2 in
 	  if (Mpqf.sgn c)<> 0
-	  then (c,v1)::(sub_lterm r1 r2)
-	  else sub_lterm r1 r2
+	  then (c,v1)::(sub_lterm man r1 r2)
+	  else sub_lterm man r1 r2
 
-  let sub e1 e2 = {
+  let sub man e1 e2 = {
     cst = Mpqf.sub e1.cst e2.cst;
-    lterm = sub_lterm e1.lterm e2.lterm
+    lterm = sub_lterm man e1.lterm e2.lterm
   }
 
   let normalize_as_constraint e =
@@ -258,11 +267,13 @@ module Lin = struct
 	  lterm = lterm;
 	}
 
-  let to_linexpr1 (env:Apron.Environment.t) e : Apron.Linexpr1.t =
+  let to_linexpr1 man (env:Apron.Environment.t) e : Apron.Linexpr1.t =
     let res = Apron.Linexpr1.make ~sparse:true env in
     let list = List.map
       (fun (mpqf,name) -> 
-	(Apron.Coeff.s_of_mpqf mpqf,Apron.Var.of_string name))
+	(Apron.Coeff.s_of_mpqf mpqf,
+	 Apron.Var.of_string (man.marshal name))
+      )
       e.lterm
     in
     Apron.Linexpr1.set_list res list
@@ -280,14 +291,12 @@ end
 
 module Poly = struct
 
-  type varexp = string * int
-  type monomial = varexp list
-
-  type term = Mpqf.t * monomial
-
-  type t = term list
-
-  let is_dependent_on_integer_only typ_of_var (e:t) =
+  type 'a varexp = 'a * int
+  type 'a monomial = 'a varexp list
+  type 'a term = Mpqf.t * 'a monomial
+  type 'a t = 'a term list
+    
+  let is_dependent_on_integer_only typ_of_var (e:'a t) =
     List.for_all
       (begin fun (c,mon) ->
 	List.for_all
@@ -298,19 +307,19 @@ module Poly = struct
       end)
       e
 
-  let print_varexp fmt (var,exp) =
-    pp_print_string fmt var;
+  let print_varexp man fmt (var,exp) =
+    man.print fmt var;
     if exp<>1 then
       fprintf fmt "^%i" exp;
     ()
 
-  let print_monomial fmt lvarexp =
+  let print_monomial man fmt lvarexp =
     Print.list ~first:"" ~sep:"." ~last:""
-      print_varexp
+      (print_varexp man)
       fmt
       lvarexp
 
-  let print fmt expr =
+  let print man fmt expr =
     let first = ref true in
     fprintf fmt "@[";
     if expr<>[] then begin
@@ -327,7 +336,7 @@ module Poly = struct
 	    else if Mpqf.cmp_int coeff 1  <> 0 then
 	      Mpqf.print fmt coeff
 	    ;
-	    print_monomial fmt mon;
+	    print_monomial man fmt mon;
 	    first := false;
 	  end
 	end)
@@ -339,23 +348,23 @@ module Poly = struct
     fprintf fmt "@]";
     ()
 
-  let compare_varexp (v1,n1) (v2,n2) =
-    let res = String.compare v1 v2 in
+  let compare_varexp man (v1,n1) (v2,n2) =
+    let res = man.compare v1 v2 in
     if res<>0
     then res
     else n1-n2
 
-  let rec compare_monomial m1 m2 = match (m1,m2) with
+  let rec compare_monomial man m1 m2 = match (m1,m2) with
     | (v1::r1,v2::r2) ->
-	let res = compare_varexp v1 v2 in
+	let res = compare_varexp man v1 v2 in
 	if res<>0
 	then res
-	else compare_monomial r1 r2
+	else compare_monomial man r1 r2
     | (v1::r1,[]) -> 1
     | ([],v1::r1) -> -1
     | ([],[]) -> 0
 
-  let normalize_monomial m =
+  let normalize_monomial man m =
     let nm = List.filter
       (begin fun (v,n) ->
 	if n<0
@@ -364,49 +373,49 @@ module Poly = struct
       end)
       m
     in
-    List.stable_sort compare_varexp nm
+    List.stable_sort (compare_varexp man) nm
 
-  let normalize e =
+  let normalize man e =
     let ne = List.filter (fun (c,m) -> Mpqf.sgn c <> 0) e in
-    List.stable_sort (fun (c1,m1) (c2,m2) -> compare_monomial m1 m2) ne
+    List.stable_sort (fun (c1,m1) (c2,m2) -> compare_monomial man m1 m2) ne
 
-  let normalize_full e =
+  let normalize_full man e =
     let ne = List.filter (fun (c,m) -> Mpqf.sgn c <> 0) e in
-    let ne2 = List.map (fun (c,m)  -> (c,normalize_monomial m)) ne in
-    List.stable_sort (fun (c1,m1) (c2,m2) -> compare_monomial m1 m2) ne2
+    let ne2 = List.map (fun (c,m)  -> (c,normalize_monomial man m)) ne in
+    List.stable_sort (fun (c1,m1) (c2,m2) -> compare_monomial man m1 m2) ne2
 
-  let substitute_by_var (e:t) (substitution:(string,string) PMappe.t) : t
+  let substitute_by_var man (e:'a t) (substitution:('a,'a) PMappe.t) : 'b t
     =
-    let rename_varexp ((var,exp) as varexp) : varexp =
+    let rename_varexp ((var,exp) as varexp) : 'a varexp =
       try (PMappe.find var substitution, exp)
       with Not_found -> varexp
     in
-    let rename_monomial (monomial:monomial) : monomial =
+    let rename_monomial (monomial:'a monomial) : 'a monomial =
       let res = List.map rename_varexp monomial in
-      normalize_monomial res
+      normalize_monomial man res
     in
-    let rename_term (c,mon) : term = (c,rename_monomial mon)
+    let rename_term (c,mon) : 'a term = (c,rename_monomial mon)
     in
     let res = List.map rename_term e in
-    List.stable_sort (fun (c1,m1) (c2,m2) -> compare_monomial m1 m2) res
+    List.stable_sort (fun (c1,m1) (c2,m2) -> compare_monomial man m1 m2) res
 
-  let support (e:t) : string PSette.t =
+  let support man (e:'a t) : 'a PSette.t =
     List.fold_left
       (begin fun res (_,monomial) ->
 	List.fold_left
-	(begin fun res (var,_) ->
-	  PSette.add var res
-	end)
-	res
-	monomial
+	  (begin fun res (var,_) ->
+	    PSette.add var res
+	  end)
+	  res
+	  monomial
       end)
-      (PSette.empty String.compare)
+      (PSette.empty man.compare)
       e
 
-  let compare l1 l2 =
+  let compare man l1 l2 =
     let rec compare l1 l2 = match (l1,l2) with
       | ((c1,m1)::r1,(c2,m2)::r2) ->
-	  let s = compare_monomial m1 m2 in
+	  let s = compare_monomial man m1 m2 in
 	  if s<0 then
 	    Mpqf.sgn c1
 	  else if s>0 then
@@ -439,76 +448,77 @@ module Poly = struct
     else
       if res>0 then 2 else if res < 0 then -2 else 0
 
-  let cst x = [(x,[])]
-  let var x = [(Mpqf.of_int 1),[(x,1)]]
+  let cst x : 'a t = [(x,[])]
+  let var x : 'a t = [(Mpqf.of_int 1),[(x,1)]]
 
   let negate e =
     List.map (fun (c,m) -> (Mpqf.neg c, m)) e
 
-  let rec add l1 l2 = match (l1,l2) with
+  let rec add man l1 l2 = match (l1,l2) with
     | (l,[])
     | ([],l)
       -> l
     | ((c1,m1)::r1,(c2,m2)::r2) ->
-	let cmp = compare_monomial m1 m2 in
+	let cmp = compare_monomial man m1 m2 in
 	if cmp<0 then
-	  (c1,m1)::(add r1 l2)
+	  (c1,m1)::(add man r1 l2)
 	else if cmp>0 then
-	  (c2,m2)::(add l1 r2)
+	  (c2,m2)::(add man l1 r2)
 	else
 	  let c = Mpqf.add c1 c2 in
 	  if (Mpqf.sgn c)<> 0
-	  then (c,m1)::(add r1 r2)
-	  else add r1 r2
+	  then (c,m1)::(add man r1 r2)
+	  else add man r1 r2
 
-  let rec sub l1 l2 = match (l1,l2) with
+  let rec sub man l1 l2 = match (l1,l2) with
     | (l,[]) -> l
     | ([],l) -> negate l
     | ((c1,m1)::r1,(c2,m2)::r2) ->
-	let cmp = compare_monomial m1 m2 in
+	let cmp = compare_monomial man m1 m2 in
 	if cmp<0 then
-	  (c1,m1)::(sub r1 l2)
+	  (c1,m1)::(sub man r1 l2)
 	else if cmp>0 then
-	  (c2,m2)::(sub l1 r2)
+	  (c2,m2)::(sub man l1 r2)
 	else
 	  let c = Mpqf.sub c1 c2 in
 	  if (Mpqf.sgn c)<> 0
-	  then (c,m1)::(sub r1 r2)
-	  else sub r1 r2
+	  then (c,m1)::(sub man r1 r2)
+	  else sub man r1 r2
 
-  let rec mul_monomial m1 m2 = match (m1,m2) with
+  let rec mul_monomial man m1 m2 = match (m1,m2) with
     | ([],l)
     | (l,[]) ->
 	l
     | ((v1,n1)::r1,(v2,n2)::r2) ->
-	if v1<v2 then (v1,n1)::(mul_monomial r1 m2)
-	else if v1>v2 then (v2,n2)::(mul_monomial m1 r2)
-	else (v1,n1+n2)::(mul_monomial r1 r2)
+	let cmp = man.compare v1 v2 in
+	if cmp<0 then (v1,n1)::(mul_monomial man r1 m2)
+	else if cmp>0 then (v2,n2)::(mul_monomial man m1 r2)
+	else (v1,n1+n2)::(mul_monomial man r1 r2)
 
-  let scale ((coeff,mon):Mpqf.t*monomial) (l:t) =
+  let scale man ((coeff,mon):Mpqf.t*'a monomial) (l:'a t) =
     if (Mpqf.sgn coeff) = 0 then []
     else begin
       let res =
 	List.map
-	  (fun (c,m) -> (Mpqf.mul coeff c, mul_monomial mon m))
+	  (fun (c,m) -> (Mpqf.mul coeff c, mul_monomial man mon m))
 	  l
       in
-      normalize res
+      normalize man res
     end
 
-  let mul (l1:t) (l2:t) =
+  let mul man (l1:'a t) (l2:'a t) =
     List.fold_left
       (begin fun res cm ->
-	add res (scale cm l2)
+	add man res (scale man cm l2)
       end)
       [] l1
 
-  let div (l1:t) (l2:t) =
+  let div man (l1:'a t) (l2:'a t) =
     match l2 with
     | [] -> failwith "Num.Poly.div: division by zero"
     | [(c,m)] ->
-	let res = scale (c,List.map (fun (v,n) -> (v,-n)) m) l1 in
-	normalize_full res
+	let res = scale man (c,List.map (fun (v,n) -> (v,-n)) m) l1 in
+	normalize_full man res
     | _ -> raise Exit
 
   let normalize_as_constraint l =
@@ -562,11 +572,11 @@ module Tree = struct
 	       | Down
 	       | Rnd
 
-  type t = Apron.Texpr1.expr =
+  type 'a t =
     | Cst of Apron.Coeff.t
-    | Var of Apron.Var.t
-    | Unop of unop * t * typ * round
-    | Binop of binop * t * t * typ * round
+    | Var of 'a 
+    | Unop of unop * 'a t * typ * round
+    | Binop of binop * 'a t * 'a t * typ * round
 
   let is_zero = function
     | Cst(coeff) when Apron.Coeff.is_zero coeff -> true
@@ -614,21 +624,18 @@ module Tree = struct
     else if equal_int e2 (-1) then negate e1
     else Binop(Div,e1,e2,typ,round)
 
-  let rec support = function
-    | Cst _ -> (PSette.empty String.compare)
-    | Var(var) -> PSette.singleton String.compare (Apron.Var.to_string var)
-    | Unop(op,e,_,_) -> support e
-    | Binop(op,e1,e2,_,_) -> PSette.union (support e1) (support e2)
+  let rec support man = function
+    | Cst _ -> (PSette.empty man.compare)
+    | Var(var) -> PSette.singleton man.compare var
+    | Unop(op,e,_,_) -> support man e
+    | Binop(op,e1,e2,_,_) -> PSette.union (support man e1) (support man e2)
 
-  let substitute_by_var e (substitution:(string,string) PMappe.t) =
+  let substitute_by_var e (substitution:('a,'a) PMappe.t) =
     let rec parcours = function
     | Cst _ as x -> x
     | Var(var) as x ->
 	begin
-	  try
-	    let name = Apron.Var.to_string var in
-	    let name2 = PMappe.find name substitution in
-	    Var(Apron.Var.of_string name2)
+	  try Var(PMappe.find var substitution)
 	  with Not_found -> x
 	end
     | Unop(op,e,t,r) -> Unop(op,parcours e, t,r)
@@ -636,16 +643,88 @@ module Tree = struct
     in
     parcours e
 
-  let print = Apron.Texpr1.print_expr
+  let rec to_expr man = function
+    | Cst x -> Apron.Texpr1.Cst x
+    | Var(var) -> 
+	Apron.Texpr1.Var(Apron.Var.of_string (man.marshal var))
+    | Unop(op,e,t,r) -> 
+	Apron.Texpr1.Unop(op,(to_expr man e), t,r)
+    | Binop(op,e1,e2,t,r) ->
+	Apron.Texpr1.Binop(op,(to_expr man e1),(to_expr man e2), t,r)
 
-  let compare x y = 2 * (Pervasives.compare x y)
+  let rec print man fmt expr =
+    let precedence_of_expr = function
+      | Cst _
+      | Var _ -> 5
+      | Unop(op,_,_,_) -> Apron.Texpr0.print_precedence_of_unop op
+      | Binop(op,_,_,_,_) -> Apron.Texpr0.print_precedence_of_binop op
+    in
+    match expr with
+    | Cst x -> Apron.Coeff.print fmt x
+    | Var x -> man.print fmt x
+  | Unop(op,e,typ,round) ->
+      let prec = Apron.Texpr0.print_precedence_of_unop op in
+      let prec1 = precedence_of_expr e in
+      let par = prec1<=prec in
+      Format.fprintf fmt "%s%s%a%s"
+	(Apron.Texpr0.print_sprint_unop op typ round)
+	(if par then "(" else "")
+	(print man) e
+	(if par then ")" else "")
+  | Binop(op,e1,e2,typ,round) ->
+      let prec = Apron.Texpr0.print_precedence_of_binop op in
+      let prec1 = precedence_of_expr e1 in
+      let prec2 = precedence_of_expr e2 in
+      let par1 = prec1<prec in
+      let par2 = prec2<=prec in
+      Format.fprintf fmt "%s%a%s %s %s%a%s"
+	(if par1 then "(" else "")
+	(print man) e1
+	(if par1 then ")" else "")
+	(Apron.Texpr0.print_sprint_binop op typ round)
+	(if par2 then "(" else "")
+	(print man) e2
+	(if par2 then ")" else "")
+
+  let rec compare man x y = 
+    let rec compare x y =
+      match (x,y) with
+      | (Cst x), (Cst y) -> Apron.Coeff.cmp x y
+      | (Cst _), _ -> -1
+      | (Var _), (Cst _) -> 1
+      | (Var x), (Var y) ->
+	let cmp = man.compare x y in
+	if cmp<0 then -2 else if cmp>0 then 2 else 0
+      | (Var _), _ -> -1
+      | (Unop _), (Cst _) 
+      | (Unop _), (Var _) -> 1
+      | (Unop(op1,e1,t1,r1),Unop(op2,e2,t2,r2)) ->
+	  let res = Pervasives.compare (op1,t1,r1) (op2,t2,r2) in
+	  if res<>0 then 
+	    res
+	  else 
+	    compare e1 e2 
+      | (Unop _), (Binop _) -> -1
+      | (Binop(op1,ea1,eb1,t1,r1),Binop(op2,ea2,eb2,t2,r2)) ->
+	  let res = Pervasives.compare (op1,t1,r1) (op2,t2,r2) in
+	  if res<>0 then res
+	  else 
+	    let res = compare ea1 ea2 in
+	    if res<>0 then res
+	    else
+	      compare eb1 eb2
+      | (Binop _), _ -> 1
+    in
+    let res = compare x y in
+    if res>0 then 2 else if res<0 then -2 else 0
+
 end
 
 (*  ==================================================================== *)
 (** {3 Conversions} *)
 (*  ==================================================================== *)
 
-let rec lin_of_poly (p:Poly.t) : Lin.t = match p with
+let rec lin_of_poly man (p:'a Poly.t) : 'a Lin.t = match p with
   | (c,m)::r ->
       let lexpr = begin match m with
 	| [] -> Lin.cst c
@@ -653,10 +732,10 @@ let rec lin_of_poly (p:Poly.t) : Lin.t = match p with
 	| _ -> raise Exit
       end
       in
-      Lin.add lexpr (lin_of_poly r)
+      Lin.add man lexpr (lin_of_poly man r)
   | [] -> Lin.cst (Mpqf.of_int 0)
 
-let rec lin_of_tree (x:Tree.t) : Lin.t =
+let rec lin_of_tree man (x:'a Tree.t) : 'a Lin.t =
   if not (Tree.is_exact x) then raise Exit;
   match x with
   | Tree.Cst x -> 
@@ -665,13 +744,13 @@ let rec lin_of_tree (x:Tree.t) : Lin.t =
 	  Lin.cst x
       | _ -> raise Exit
       end
-  | Tree.Var x -> Lin.var (Apron.Var.to_string x)
+  | Tree.Var x -> Lin.var x
   | Tree.Binop(op,e1,e2,t,r) ->
-      let l1 = lin_of_tree e1 in
-      let l2 = lin_of_tree e2 in
+      let l1 = lin_of_tree man e1 in
+      let l2 = lin_of_tree man e2 in
       begin match op with
-      | Tree.Add -> Lin.add l1 l2
-      | Tree.Sub -> Lin.sub l1 l2
+      | Tree.Add -> Lin.add man l1 l2
+      | Tree.Sub -> Lin.sub man l1 l2
       | Tree.Mul ->
 	  if l1.Lin.lterm=[] then
 	    Lin.scale l1.Lin.cst l2
@@ -698,7 +777,7 @@ let rec lin_of_tree (x:Tree.t) : Lin.t =
       end
   | _ -> raise Exit
 
-let rec poly_of_tree (x:Tree.t) : Poly.t =
+let rec poly_of_tree man (x:'a Tree.t) : 'a Poly.t =
   if not (Tree.is_exact x) then raise Exit;
   match x with
   | Tree.Cst x -> 
@@ -707,36 +786,36 @@ let rec poly_of_tree (x:Tree.t) : Poly.t =
 	  Poly.cst x
       | _ -> raise Exit
       end
-  | Tree.Var x -> Poly.var (Apron.Var.to_string x)
+  | Tree.Var x -> Poly.var x
   | Tree.Binop(op,e1,e2,t,r) ->
-      let l1 = poly_of_tree e1 in
-      let l2 = poly_of_tree e2 in
+      let l1 = poly_of_tree man e1 in
+      let l2 = poly_of_tree man e2 in
       begin match op with
-      | Tree.Add -> Poly.add l1 l2
-      | Tree.Sub -> Poly.sub l1 l2
-      | Tree.Mul -> Poly.mul l1 l2
-      | Tree.Div -> Poly.div l1 l2
+      | Tree.Add -> Poly.add man l1 l2
+      | Tree.Sub -> Poly.sub man l1 l2
+      | Tree.Mul -> Poly.mul man l1 l2
+      | Tree.Div -> Poly.div man l1 l2
       | _ -> raise Exit
       end
   | _ -> raise Exit
 
-let tree_of_lin (lin:Lin.t) : Tree.t =
+let tree_of_lin (lin:'a Lin.t) : 'a Tree.t =
   List.fold_left
     (begin fun res (c,v) ->
       Tree.add 
 	res
 	(Tree.mul 
 	  (Tree.Cst (Apron.Coeff.s_of_mpqf c))
-	  (Tree.Var(Apron.Var.of_string v)))
+	  (Tree.Var v))
     end)
     (Tree.Cst (Apron.Coeff.s_of_mpqf lin.Lin.cst))
     lin.Lin.lterm
 
-let tree_of_poly (poly:Poly.t) : Tree.t =
-  let tree_of_monomial (mon:Poly.monomial) : Tree.t =
+let tree_of_poly (poly:'a Poly.t) : 'a Tree.t =
+  let tree_of_monomial (mon:'a Poly.monomial) : 'a Tree.t =
     List.fold_left
       (begin fun res (var,exp) ->
-	let t = Tree.Var (Apron.Var.of_string var) in
+	let t = Tree.Var var in
 	let res1 = ref res in
 	for i=1 to exp do
 	  res1 := Tree.mul t !res1;
@@ -760,23 +839,23 @@ let tree_of_poly (poly:Poly.t) : Tree.t =
 (** {2 General expressions and operations} *)
 (*  ********************************************************************** *)
 
-type t =
-  | Lin of Lin.t
-  | Poly of Poly.t
-  | Tree of Tree.t
-type expr = t
+type 'a t =
+  | Lin of 'a Lin.t
+  | Poly of 'a Poly.t
+  | Tree of 'a Tree.t
+type 'a expr = 'a t
 
 let is_dependent_on_integer_only typ_of_var expr = match expr with
   | Lin e -> Lin.is_dependent_on_integer_only typ_of_var e
   | Poly e -> Poly.is_dependent_on_integer_only typ_of_var e
   | _ -> false
 
-let print fmt expr = match expr with
-  | Lin x -> Lin.print fmt x
-  | Poly x -> Poly.print fmt x
-  | Tree x -> Tree.print fmt x
+let print man fmt expr = match expr with
+  | Lin x -> Lin.print man fmt x
+  | Poly x -> Poly.print man fmt x
+  | Tree x -> Tree.print man fmt x
 
-let print_typ fmt (typ:[>typ]) =
+let print_typ fmt (typ:[> typ]) =
   pp_print_string fmt
     begin match typ with
     | `Int -> "int"
@@ -784,20 +863,20 @@ let print_typ fmt (typ:[>typ]) =
     | _ -> "unknown type"
     end
 
-let normalize expr =
+let normalize man expr =
   match expr with
   | Lin _ -> expr
   | Poly p ->
       begin try
-	Lin(lin_of_poly p)
+	Lin(lin_of_poly man p)
       with Exit ->
 	expr
       end
   | Tree t ->
       begin try
-	let p = poly_of_tree t in
+	let p = poly_of_tree man t in
 	begin try
-	  let l = lin_of_poly p in
+	  let l = lin_of_poly man p in
 	  Lin l
 	with Exit ->
 	  Poly p
@@ -806,13 +885,13 @@ let normalize expr =
 	expr
       end
 
-let var typ_of_var x =
+let var man typ_of_var x =
   match typ_of_var x with
   | #typ -> Lin(Lin.var x)
   | _ ->
       failwith
-      (Print.sprintf "Arith.var: reference %s undeclared or of wrong type in environment"
-	x)
+      (Print.sprintf "Arith.var: reference %a undeclared or of wrong type in environment"
+	man.print x)
 
 let zero = Lin(Lin.zero)
 let one = Lin(Lin.one)
@@ -830,31 +909,31 @@ let to_tree = function
   | Poly p -> tree_of_poly p
   | Tree t -> t
 
-let add ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
+let add man ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
   try
     begin
       if typ<>Apron.Texpr1.Real then raise Exit;
       match (e1,e2) with
-      | (Lin e1, Lin e2) -> Lin(Lin.add e1 e2)
-      | (Poly e1, Poly e2) -> Poly(Poly.add e1 e2)
+      | (Lin e1, Lin e2) -> Lin(Lin.add man e1 e2)
+      | (Poly e1, Poly e2) -> Poly(Poly.add man e1 e2)
       | _ -> raise Exit
     end
   with Exit ->
-    normalize (Tree(Tree.Binop(Tree.Add, to_tree e1, to_tree e2,typ,round)))
+    normalize man (Tree(Tree.Binop(Tree.Add, to_tree e1, to_tree e2,typ,round)))
 
-let sub ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
+let sub man ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
   try
     begin
       if typ<>Apron.Texpr1.Real then raise Exit;
       match (e1,e2) with
-      | (Lin e1, Lin e2) -> Lin(Lin.sub e1 e2)
-      | (Poly e1, Poly e2) -> Poly(Poly.sub e1 e2)
+      | (Lin e1, Lin e2) -> Lin(Lin.sub man e1 e2)
+      | (Poly e1, Poly e2) -> Poly(Poly.sub man e1 e2)
       | _ -> raise Exit
     end
   with Exit ->
-    normalize (Tree(Tree.Binop(Tree.Sub, to_tree e1, to_tree e2,typ,round)))
+    normalize man (Tree(Tree.Binop(Tree.Sub, to_tree e1, to_tree e2,typ,round)))
 
-let mul ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
+let mul man ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
   try
     begin
       if typ<>Apron.Texpr1.Real then raise Exit;
@@ -865,25 +944,25 @@ let mul ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
       match (e1,e2) with
       | (Lin e1, Lin e2) when e1.Lin.lterm=[] -> Lin(Lin.scale e1.Lin.cst e2)
       | (Lin e1, Lin e2) when e2.Lin.lterm=[] -> Lin(Lin.scale e2.Lin.cst e1)
-      | (Poly e1, Poly e2) -> Poly(Poly.mul e1 e2)
+      | (Poly e1, Poly e2) -> Poly(Poly.mul man e1 e2)
       | _ -> raise Exit
     end
   with Exit ->
-    normalize (Tree(Tree.Binop(Tree.Mul, to_tree e1, to_tree e2,typ,round)))
+    normalize man (Tree(Tree.Binop(Tree.Mul, to_tree e1, to_tree e2,typ,round)))
 
-let div ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
+let div man ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
   try begin
     if typ<>Apron.Texpr1.Real then raise Exit;
     match (e1,e2) with
     | (Lin e1, Lin e2) when e2.Lin.lterm=[] -> Lin(Lin.scale (Mpqf.inv e2.Lin.cst) e1)
-    | (Poly e1, Poly e2) -> Poly(Poly.div e1 e2)
+    | (Poly e1, Poly e2) -> Poly(Poly.div man e1 e2)
     | _ -> raise Exit
   end
   with Exit ->
-    normalize (Tree(Tree.Binop(Tree.Div, to_tree e1, to_tree e2,typ,round)))
+    normalize man (Tree(Tree.Binop(Tree.Div, to_tree e1, to_tree e2,typ,round)))
 
-let gmod ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
-  normalize (Tree(Tree.Binop(Tree.Mod, to_tree e1, to_tree e2,typ,round)))
+let gmod man ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
+  normalize man (Tree(Tree.Binop(Tree.Mod, to_tree e1, to_tree e2,typ,round)))
 
 let negate e = match e with
   | Lin l -> Lin(Lin.negate l)
@@ -899,34 +978,32 @@ let cast ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e =
 let sqrt ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e =
   Tree(Tree.Unop(Tree.Sqrt, to_tree e,typ,round))
 
-let substitute_by_var e (substitution:(string,string) PMappe.t) =
+let substitute_by_var man e (substitution:('a,'a) PMappe.t) =
   match e with
-  | Lin l -> Lin(Lin.substitute_by_var l substitution)
-  | Poly p -> Poly(Poly.substitute_by_var p substitution)
+  | Lin l -> Lin(Lin.substitute_by_var man l substitution)
+  | Poly p -> Poly(Poly.substitute_by_var man p substitution)
   | Tree t -> Tree(Tree.substitute_by_var t substitution)
 
-let support = function
-  | Lin l -> Lin.support l
-  | Poly p -> Poly.support p
-  | Tree t -> Tree.support t
+let support man = function
+  | Lin l -> Lin.support man l
+  | Poly p -> Poly.support man p
+  | Tree t -> Tree.support man t
 
 (* Assume normalized expressions *)
-let equal e1 e2 = (e1=e2)
-
-(* Better with normalized expressions *)
-let hash = Hashtbl.hash
-
-(* Assume normalized expressions *)
-let compare e1 e2 =  match (e1,e2) with
-  | (Lin e1, Lin e2) -> Lin.compare e1 e2
+let compare man e1 e2 =  match (e1,e2) with
+  | (Lin e1, Lin e2) -> Lin.compare man e1 e2
   | (Lin _,_) -> -2
   | (Poly _, Lin _) -> 2
-  | (Poly e1, Poly e2) -> Poly.compare e1 e2
+  | (Poly e1, Poly e2) -> Poly.compare man e1 e2
   | (Poly _, Tree _) -> -2
-  | (Tree e1, Tree e2) ->
-      let s = Tree.compare e1 e2 in
-      if s<0 then -2 else if s>0 then 2 else 0
+  | (Tree e1, Tree e2) -> Tree.compare man e1 e2 
   | (Tree _, _) -> 2
+
+(* Assume normalized expressions *)
+let equal man e1 e2 = (compare man e1 e2)=0
+
+(* Better with normalized expressions *)
+let hash man = Hashtbl.hash
 
 (* Assume normalized expressions *)
 let normalize_as_constraint expr = match expr with
@@ -937,16 +1014,16 @@ let normalize_as_constraint expr = match expr with
 let typ_of_expr typ_of_var expr =
   if is_dependent_on_integer_only typ_of_var expr then `Int else `Real
 
-let to_texpr1 (env:Apron.Environment.t) expr =
-  Apron.Texpr1.of_expr env (to_tree expr)
+let to_texpr1 man (env:Apron.Environment.t) expr =
+  Apron.Texpr1.of_expr env (Tree.to_expr man (to_tree expr))
 
-let to_texpr0 (env:Apron.Environment.t) expr =
-  let texpr1 = to_texpr1 env expr in
+let to_texpr0 man (env:Apron.Environment.t) expr =
+  let texpr1 = to_texpr1 man env expr in
   texpr1.Apron.Texpr1.texpr0
 
-let to_apron (env:Apron.Environment.t) expr = match expr with
-   | Lin e -> `Linexpr1 (Lin.to_linexpr1 env e)
-   | _ -> `Texpr1 (to_texpr1 env expr)
+let to_apron man (env:Apron.Environment.t) expr = match expr with
+   | Lin e -> `Linexpr1 (Lin.to_linexpr1 man env e)
+   | _ -> `Texpr1 (to_texpr1 man env expr)
 
 let extract_cst expr =
   match expr with
@@ -1021,17 +1098,17 @@ module Condition = struct
   type typ = Apron.Tcons1.typ = 
     EQ | SUPEQ | SUP | DISEQ | EQMOD of Apron.Scalar.t
 
-  type t = typ * expr
+  type 'a t = typ * 'a expr
 
   let print_typ fmt typ = 
     pp_print_string fmt (Apron.Lincons0.string_of_typ typ)
 
-  let print fmt (cons:t) =
+  let print man fmt (cons:'a t) =
     let (typ,expr) = cons in
-    fprintf fmt "%a%a0" print expr print_typ typ
+    fprintf fmt "%a%a0" (print man) expr print_typ typ
 
   (** Assume a normalized-as-constraint expression *)
-  let normalize typ_of_var (cons:t) : [ `Cond of t | `Bool of bool ]
+  let normalize typ_of_var (cons:'a t) : [ `Cond of 'a t | `Bool of bool ]
     =
     let (typ,expr) = cons in
     let cons = match typ with
@@ -1084,7 +1161,7 @@ module Condition = struct
       end
     end
 
-  let negate typ_of_var (cons:t)
+  let negate typ_of_var (cons:'a t)
     =
     let ncons =
       match cons with
@@ -1101,11 +1178,11 @@ module Condition = struct
     | `Bool _ -> failwith ""
     | `Cond x -> x
 
-  let support (t,e) = support e
+  let support man (t,e) = support man e
 
-  let compare (t1,e1) (t2,e2) : int
+  let compare man (t1,e1) (t2,e2) : int
     =
-    let sgn = compare e1 e2 in
+    let sgn = compare man e1 e2 in
     let asgn = abs sgn in
     match (t1,t2) with
     | (EQMOD m1, EQMOD m2) -> 
@@ -1157,15 +1234,15 @@ module Condition = struct
 	    end
 	end
 	  
-  let to_tcons1 env (typ,expr) =
-    Apron.Tcons1.make (to_texpr1 env expr) typ
+  let to_tcons1 man env (typ,expr) =
+    Apron.Tcons1.make (to_texpr1 man env expr) typ
 
-  let to_tcons0 env (typ,expr) =
-    Apron.Tcons0.make (to_texpr0 env expr) typ
+  let to_tcons0 man env (typ,expr) =
+    Apron.Tcons0.make (to_texpr0 man env expr) typ
 
-  let to_apron env (typ,expr) =
+  let to_apron man env (typ,expr) =
     match expr with
-    | Lin e -> `Lincons1 (Apron.Lincons1.make (Lin.to_linexpr1 env e) typ)
-    | _ -> `Tcons1 (to_tcons1 env (typ,expr))
+    | Lin e -> `Lincons1 (Apron.Lincons1.make (Lin.to_linexpr1 man env e) typ)
+    | _ -> `Tcons1 (to_tcons1 man env (typ,expr))
 
 end

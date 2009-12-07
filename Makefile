@@ -28,9 +28,9 @@ OCAMLINC = -I $(MLCUDDIDL_PREFIX)/lib -I $(CAMLLIB_PREFIX)/lib -I $(MLGMPIDL_PRE
 BDDMOD = \
 	bdd/output \
 	bdd/reg \
+	bdd/env \
 	bdd/int \
 	bdd/enum \
-	bdd/env \
 	bdd/cond \
 	bdd/expr0 bdd/expr1 \
 	bdd/domain0 bdd/domain1

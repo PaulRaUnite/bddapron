@@ -4,6 +4,7 @@
    Please read the COPYING file packaged in the distribution  *)
 
 open Format
+
 type 'a leaf = 'a Apron.Abstract0.t
 type 'a t = 'a leaf Cudd.Mtbddc.t
 type 'a table = 'a leaf Cudd.Mtbddc.table
@@ -258,11 +259,11 @@ let apply_dimchange2 man (x:'a t) change2 project =
 
 type asssub = Assign | Substitute
 
-let fun_of_asssub asssub man env org tdim texpr odest =
+let fun_of_asssub asssub symbol man env org tdim texpr odest =
   let org = myget org in
   let texpr =
     Array.map
-      (fun expr -> Apronexpr.to_texpr0 env (Cudd.Mtbdd.get expr))
+      (fun expr -> Apronexpr.to_texpr0 symbol env (Cudd.Mtbdd.get expr))
       texpr
   in
   let res = match asssub with
@@ -283,24 +284,40 @@ let fun_of_asssub asssub man env org tdim texpr odest =
 
 let asssub_texpr
     (asssub:asssub)
-    man env
-    (org:'a t) (dim:Apron.Dim.t) (expr:ApronexprDD.t)
+    symbol man env
+    (org:'a t) (dim:Apron.Dim.t) (expr:'b ApronexprDD.t)
     (odest:'a t option)
     : 'a t
     =
-  let var = Apron.Environment.var_of_dim env dim in
-  let varexpr = Apronexpr.Lin(Apronexpr.Lin.var (Apron.Var.to_string var)) in
+  let var =
+    symbol.Bdd.Env.unmarshal
+      (Apron.Var.to_string
+	(Apron.Environment.var_of_dim env dim))
+  in
   match odest with
   | None ->
       (* implies assign mode *)
       Cudd.User.map_op2
 	~special:(fun ddorg ddexpr ->
-	  if Cudd.Mtbddc.is_cst ddorg && Apron.Abstract0.is_bottom man.apron (mydval ddorg) then Some ddorg
-	  else if Apronexpr.equal varexpr (Cudd.Mtbdd.dval ddexpr) then Some ddorg
+	  if Cudd.Mtbddc.is_cst ddorg && Apron.Abstract0.is_bottom man.apron (mydval ddorg)
+	  then Some ddorg
+	  else if
+	    Cudd.Mtbdd.is_cst ddexpr &&
+	      match Cudd.Mtbdd.dval ddexpr with
+	      | Apronexpr.Lin({
+		  Apronexpr.Lin.cst=cst;
+		  Apronexpr.Lin.lterm=[(coeff,varexpr)]
+		}) when
+		  (Mpqf.sgn cst)=0 &&
+		  (Mpqf.cmp_int coeff 1)=0 &&
+		  (symbol.Bdd.Env.compare var varexpr)=0
+		  -> true
+	      | _ -> false
+	  then Some ddorg
 	  else None
 	)
 	(fun org expr ->
-	  fun_of_asssub asssub man env org [|dim|] [|expr|] None
+	  fun_of_asssub asssub symbol man env org [|dim|] [|expr|] None
 	)
 	org expr
   | Some dest ->
@@ -311,16 +328,17 @@ let asssub_texpr
 	  else None
 	)
 	(fun org dest expr ->
-	  fun_of_asssub asssub man env org [|dim|] [|expr|] (Some dest)
+	  fun_of_asssub asssub symbol man env org [|dim|] [|expr|] (Some dest)
 	)
 	org dest expr
 
 
 let asssub_texpr_array
-    ?(asssub_bdd : (Cudd.Man.v Cudd.Bdd.t -> Cudd.Man.v Cudd.Bdd.t) option)
+    ?(asssub_bdd : (Cudd.Bdd.vt -> Cudd.Bdd.vt) option)
     (asssub : asssub)
+    symbol
     (man:'a man) env
-    (org:'a t) (tdim:Apron.Dim.t array) (texpr:ApronexprDD.t array)
+    (org:'a t) (tdim:Apron.Dim.t array) (texpr:'b ApronexprDD.t array)
     (odest:'a t option)
     : 'a t
     =
@@ -334,7 +352,7 @@ let asssub_texpr_array
   let absorbant x = neutral_join (myget x) in
   let tabsorbant = Array.create (Array.length texpr) None in
   if (Array.length tdim) = 1 && asssub_bdd = None then
-    asssub_texpr asssub man env org tdim.(0) texpr.(0) odest
+    asssub_texpr asssub symbol man env org tdim.(0) texpr.(0) odest
   else if texpr=[||] then begin
     begin match (asssub_bdd,odest) with
     | None,None -> org
@@ -369,7 +387,7 @@ let asssub_texpr_array
 	  ~default ~combine
 	  ~absorbant:absorbant ~tabsorbant
 	  (fun guard org texpr ->
-	    let res = fun_of_asssub asssub man env org tdim texpr None in
+	    let res = fun_of_asssub asssub symbol man env org tdim texpr None in
 	    (guard,Cudd.Mtbddc.cst_u cudd res)
 	  )
 	  org texpr
@@ -378,7 +396,7 @@ let asssub_texpr_array
 	  ~default ~combine
 	  ~absorbant1:absorbant ~absorbant2:absorbant ~tabsorbant
 	  (fun guard org dest texpr ->
-	    let res = fun_of_asssub asssub man env org tdim texpr (Some dest) in
+	    let res = fun_of_asssub asssub symbol man env org tdim texpr (Some dest) in
 	    (guard,Cudd.Mtbddc.cst_u cudd res)
 	  )
 	  org dest texpr
@@ -390,7 +408,7 @@ let asssub_texpr_array
 	      | Assign -> f guard
 	      | Substitute -> failwith ""
 	    in
-	    let res = fun_of_asssub asssub man env org tdim texpr None in
+	    let res = fun_of_asssub asssub symbol man env org tdim texpr None in
 	    (nguard,Cudd.Mtbddc.cst_u cudd res)
 	  end)
 	  org texpr
@@ -406,7 +424,7 @@ let asssub_texpr_array
 		  Cudd.Mapleaf.combineleaf1
 		    ~default ~combine
 		    (fun guard dest ->
-		      let res = fun_of_asssub asssub man env org tdim texpr (Some dest) in
+		      let res = fun_of_asssub asssub symbol man env org tdim texpr (Some dest) in
 		      (guard,Cudd.Mtbddc.cst_u cudd res)
 		    )
 		    dest
@@ -418,7 +436,7 @@ let asssub_texpr_array
 		    ~default ~combine
 		    (fun guarddest dest ->
 		      let nguard = Cudd.Bdd.dand guardorg (f guarddest) in
-		      let res = fun_of_asssub asssub man env org tdim texpr (Some dest) in
+		      let res = fun_of_asssub asssub symbol man env org tdim texpr (Some dest) in
 		      (nguard,Cudd.Mtbddc.cst_u cudd res)
 		    )
 		    dest

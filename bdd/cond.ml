@@ -9,13 +9,14 @@ open Format
 (** {2 Datatypes } *)
 (*  ********************************************************************** *)
 
-type ('a,'b,'c) t = {
-  compare_cond : 'a -> 'a -> int;
-  negate_cond : 'b -> 'a -> 'a;
-  support_cond : 'b -> 'a -> string PSette.t;
-  mutable print_cond : 'b -> Format.formatter -> 'a -> unit;
+type ('a,'b,'c,'d) t = {
+  symbol : 'a Env.symbol;
+  compare_cond : 'c -> 'c -> int;
+  negate_cond : 'b -> 'c -> 'c;
+  support_cond : 'b -> 'c -> 'a PSette.t;
+  mutable print_cond : 'b -> Format.formatter -> 'c -> unit;
 
-  mutable cudd : 'c Cudd.Man.t;
+  mutable cudd : 'd Cudd.Man.t;
     (** CUDD manager *)
   mutable bddindex0 : int;
     (** First index for conditions *)
@@ -24,12 +25,12 @@ type ('a,'b,'c) t = {
   mutable bddindex : int;
     (** Next free index in BDDs used by {!idb_of_cond}. *)
   mutable bddincr : int;
-  mutable condidb : ('a,int*bool) PDMappe.t;
+  mutable condidb : ('c,int*bool) PDMappe.t;
     (** Two-way association between a condition and a pair of a
 	BDD index and a polarity *)
-  mutable supp : 'c Cudd.Bdd.t;
+  mutable supp : 'd Cudd.Bdd.t;
     (** Support of conditions *)
-  mutable careset : 'c Cudd.Bdd.t;
+  mutable careset : 'd Cudd.Bdd.t;
     (** Boolean formula indicating which logical combination known
 	as true could be exploited for simplification.  For
 	instance, [x>=1 => x>=0]. *)
@@ -39,7 +40,7 @@ type ('a,'b,'c) t = {
 (** {2 Printing} *)
 (*  ********************************************************************** *)
 
-let print (env:'b) fmt (cond:('a,'b,'c) t) =
+let print (env:'b) fmt (cond:('a,'b,'c,'d) t) =
   fprintf fmt
     "{@[<v>bddindex0 = %i; bddindex = %i; cond = %a;@ supp = %a@ careset = %a@]}"
     cond.bddindex0 cond.bddindex
@@ -57,17 +58,19 @@ let print (env:'b) fmt (cond:('a,'b,'c) t) =
 let compare_idb = Env.compare_idb
 
 let make
+    ~symbol
+    ~(compare_cond: 'c -> 'c -> int)
+    ~(negate_cond:'b -> 'c -> 'c)
+    ~(support_cond:('b -> 'c -> 'a PSette.t))
+    ~(print_cond: 'b -> Format.formatter -> 'c -> unit)
     ?(bddindex0=100)
     ?(bddsize=300)
-    (cudd:'c Cudd.Man.t)
-    ~(compare_cond: 'a -> 'a -> int)
-    ~(negate_cond:'b -> 'a -> 'a)
-    ~(support_cond:('b -> 'a -> string PSette.t))
-    ~(print_cond: 'b -> Format.formatter -> 'a -> unit)
+    (cudd:'d Cudd.Man.t)
     :
-    ('a,'b,'c) t
+    ('a,'b,'c,'d) t
     =
   {
+    symbol = symbol;
     compare_cond = compare_cond;
     negate_cond = negate_cond;
     support_cond = support_cond;
@@ -153,7 +156,7 @@ let clear t =
   t.careset <- dtrue;
   t.bddindex <- t.bddindex0
 
-let check_normalized (env:'b) (cond:('a,'b,'c) t) : bool
+let check_normalized (env:'b) (cond:('a,'b,'c,'d) t) : bool
     =
   try
     let index = ref cond.bddindex0 in
@@ -198,7 +201,7 @@ let idb_of_cond (env:'b) t cond : int*bool =
     (id,b)
 
 let compute_careset
-    (t:('a,'b,'c) t)
+    (t:('a,'b,'c,'d) t)
     ~(normalized:bool)
     :
     unit
@@ -233,9 +236,9 @@ let compute_careset
 	if cmp=(-3) then
 	  let currentblock = List.rev (x1::currentblock) in
 	  parcours (currentblock::lblock) [] rest
-	else 
+	else
 	  parcours lblock (x1::currentblock) rest
-    | [x1] -> 
+    | [x1] ->
 	let currentblock = List.rev (x1::currentblock) in
 	currentblock::lblock
     | [] -> []
@@ -245,7 +248,7 @@ let compute_careset
     printf "block=%a@."
       (Print.list (Print.list (fun fmt (_,(id,b)) -> fprintf fmt "(%i,%b)" id b))) lblock
   end;
-  
+
   let implies (id1,b1) (id2,b2) =
     let bdd2 = Cudd.Bdd.ithvar t.cudd id2 in
     let bdd2 = if b2 then bdd2 else Cudd.Bdd.dnot bdd2 in
@@ -273,7 +276,7 @@ let compute_careset
   List.iter parcours lblock;
   ()
 
-let is_leq (cond1:('a,'b1,'c) t) (cond2:('a,'b2,'c) t) : bool =
+let is_leq (cond1:('a,'b1,'c,'d) t) (cond2:('a,'b2,'c,'d) t) : bool =
   cond1==cond2 ||
     cond1.cudd = cond2.cudd &&
       (cond1.bddindex - cond1.bddindex0 <= cond2.bddindex - cond2.bddindex0) &&
@@ -281,20 +284,20 @@ let is_leq (cond1:('a,'b1,'c) t) (cond2:('a,'b2,'c) t) : bool =
 	(PDMappe.mapx cond1.condidb)
 	(PDMappe.mapx cond2.condidb))
 
-let is_eq (cond1:('a,'b,'c) t) (cond2:('a,'b,'c) t) : bool =
+let is_eq (cond1:('a,'b,'c,'d) t) (cond2:('a,'b,'c,'d) t) : bool =
   cond1==cond2 ||
     cond1.cudd = cond2.cudd &&
       (cond1.bddindex - cond1.bddindex0 = cond2.bddindex - cond2.bddindex0) &&
       (cond1.condidb==cond2.condidb || (PDMappe.equaly cond1.condidb cond2.condidb))
 
-let shift (cond:('a,'b,'c) t) (offset:int) : ('a,'b,'c) t =
+let shift (cond:('a,'b,'c,'d) t) (offset:int) : ('a,'b,'c,'d) t =
   let perm = Env.permutation_of_offset cond.bddindex offset in
   let ncond = copy cond in
   ncond.bddindex0 <- ncond.bddindex0 + offset;
   permute_with ncond perm;
   ncond
 
-let lce (cond1:('a,'b,'c) t) (cond2:('a,'b,'c) t) : ('a,'b,'c) t =
+let lce (cond1:('a,'b,'c,'d) t) (cond2:('a,'b,'c,'d) t) : ('a,'b,'c,'d) t =
   if is_leq cond2 cond1 then
     let offset = cond1.bddindex0 - cond2.bddindex0 in
     if offset>=0 then
@@ -340,7 +343,7 @@ let lce (cond1:('a,'b,'c) t) (cond2:('a,'b,'c) t) : ('a,'b,'c) t =
     cond
   end
 
-let permutation12 (cond1:('a,'b,'c) t) (cond2:('a,'b,'c) t) : int array
+let permutation12 (cond1:('a,'b,'c,'d) t) (cond2:('a,'b,'c,'d) t) : int array
   =
   assert(is_leq cond1 cond2);
   let perm = Array.init cond1.bddindex (fun i -> i) in
@@ -360,7 +363,7 @@ let permutation12 (cond1:('a,'b,'c) t) (cond2:('a,'b,'c) t) : int array
   ;
   perm
 
-let permutation21 (cond2:('a,'b,'c) t) (cond1:('a,'b,'c) t) : int array
+let permutation21 (cond2:('a,'b,'c,'d) t) (cond1:('a,'b,'c,'d) t) : int array
     =
   assert(is_leq cond1 cond2);
   let perm = Array.init cond2.bddindex (fun i -> i) in

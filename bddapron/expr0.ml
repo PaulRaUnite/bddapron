@@ -9,11 +9,11 @@ open Cond
 open Bdd.Env
 open Env
 
-type t = [
+type 'a t = [
   | Cudd.Man.v Bdd.Expr0.t
-  | `Apron of ApronexprDD.t
+  | `Apron of 'a ApronexprDD.t
 ]
-type expr = t
+type 'a expr = 'a t
 
 (*  ********************************************************************** *)
 (** {2 Opened signature and Internal functions} *)
@@ -30,72 +30,72 @@ module O = struct
       end
       env fmt bdd
 
-  let typ_of_expr expr =
-    let typ =
-      match expr with
-      | `Bool _ -> `Bool
-      | `Bint(x) -> `Bint(x.Bdd.Int.signed, Array.length x.Bdd.Int.reg)
-      | `Benum(x) -> `Benum(x.Bdd.Enum.typ)
-      | `Apron _ -> `Real
+  let typ_of_expr (env:('a,'b,'c,'d) Env.O.t) (expr:[< 'a t]) =
+    let typ = match expr with
+    | `Bool _ -> `Bool
+    | `Bint(x) -> `Bint(x.Bdd.Int.signed, Array.length x.Bdd.Int.reg)
+    | `Benum(x) -> `Benum(env.symbol.unmarshal x.Bdd.Enum.typ)
+    | `Apron _ -> `Real
     in
-    (typ :> Env.typ)
+    (typ :> 'a Env.typ)
 
   (*  ==================================================================== *)
   (** {3 General expressions} *)
   (*  ==================================================================== *)
 
-  let check_typ2 e2 e3 =
-    let t2 = typ_of_expr e2 in
-    let t3 = typ_of_expr e3 in
+  let check_typ2 env e2 e3 =
+    let t2 = typ_of_expr env e2 in
+    let t3 = typ_of_expr env e3 in
     if t2 <> t3 then
       failwith
 	(Print.sprintf "Expr.ite: 2 branches have different types %a and %a"
-	  Env.print_typ t2 Env.print_typ t3)
+	  (Env.print_typ env.symbol.print) t2
+	  (Env.print_typ env.symbol.print) t3)
     else
       t2
 
-  let cofactor (e:t) (bdd:Cudd.Man.v Cudd.Bdd.t) : t
+  let cofactor (e:'a t) (bdd:Cudd.Bdd.vt) : 'a t
       =
-    let (res:t) =
+    let (res:'a t) =
       match e with
-      | #Bdd.Expr0.t as x -> ((Bdd.Expr0.cofactor x bdd):>expr)
+      | #Bdd.Expr0.t as x -> ((Bdd.Expr0.cofactor x bdd):>'a t)
       | `Apron x -> `Apron (Cudd.Mtbdd.cofactor x bdd)
     in
     res
 
-  let restrict (e:t) (bdd:Cudd.Man.v Cudd.Bdd.t) : t
+  let restrict (e:'a t) (bdd:Cudd.Man.v Cudd.Bdd.t) : 'a t
       =
     match e with
-    | #Bdd.Expr0.t as x -> ((Bdd.Expr0.restrict x bdd):>expr)
+    | #Bdd.Expr0.t as x -> ((Bdd.Expr0.restrict x bdd):>'a t)
     | `Apron x -> `Apron (Cudd.Mtbdd.restrict x bdd)
 
-  let tdrestrict (e:t) (bdd:Cudd.Man.v Cudd.Bdd.t) : t
+  let tdrestrict (e:'a t) (bdd:Cudd.Man.v Cudd.Bdd.t) : 'a t
       =
     match e with
-    | #Bdd.Expr0.t as x -> ((Bdd.Expr0.tdrestrict x bdd):>expr)
+    | #Bdd.Expr0.t as x -> ((Bdd.Expr0.tdrestrict x bdd):>'a t)
     | `Apron x -> `Apron (Cudd.Mtbdd.tdrestrict x bdd)
 
-  let permute (e:t) (tab:int array) : t
+  let permute (e:'a t) (tab:int array) : 'a t
       =
     match e with
-    | #Bdd.Expr0.t as x -> ((Bdd.Expr0.O.permute x tab):>expr)
+    | #Bdd.Expr0.t as x -> ((Bdd.Expr0.O.permute x tab):>'a t)
     | `Apron x -> `Apron (Cudd.Mtbdd.permute x tab)
 
   let permute_list le tab
       =
     List.map (fun e -> permute e tab) le
 
-  let varmap (e:t) : t
+  let varmap (e:'a t) : 'a t
       =
     match e with
-    | #Bdd.Expr0.t as x -> ((Bdd.Expr0.O.varmap x):>expr)
+    | #Bdd.Expr0.t as x -> ((Bdd.Expr0.O.varmap x):>'a t)
     | `Apron x -> `Apron (Cudd.Mtbdd.varmap x)
 
   let compose_of_lvarexpr
       env cond
-      (substitution:(string*expr) list)
+      (substitution:('a * 'a t) list)
       :
-      Cudd.Bdd.vt array option * (string, expr) PMappe.t
+      Cudd.Bdd.vt array option * ('a, 'a t) PMappe.t
       =
     let change = ref false in
     (* we first look at Boolean variables/conditions *)
@@ -109,7 +109,7 @@ module O = struct
 	      (bsub, PMappe.add var expr osub)
 	  end
 	end)
-	([],(PMappe.empty String.compare))
+	([],(PMappe.empty env.symbol.compare))
 	substitution
     in
     if bsub<>[] then change := true;
@@ -139,7 +139,7 @@ module O = struct
 
   let substitute
       env cond
-      (e:t) (substitution:(string*expr) list) : t
+      (e:'a t) (substitution:('a * 'a t) list) : 'a t
       =
     if substitution = [] then
       e
@@ -152,7 +152,7 @@ module O = struct
 	in
 	begin match e with
 	| #Bdd.Expr0.t as x ->
-	    ((Bdd.Expr0.O.compose x tab):>expr)
+	    ((Bdd.Expr0.O.compose x tab):>'a t)
 	| `Apron mtbdd ->
 	    `Apron (Cudd.Mtbdd.vectorcompose tab mtbdd)
 	end
@@ -162,7 +162,7 @@ module O = struct
 	| #Bdd.Expr0.t as x ->
 	    begin match tab with
 	    | None -> e
-	    | Some(tab) -> ((Bdd.Expr0.O.compose x tab):>expr)
+	    | Some(tab) -> ((Bdd.Expr0.O.compose x tab):>'a t)
 	    end
 	| `Apron expr ->
 	    let cudd = env.cudd in
@@ -177,7 +177,7 @@ module O = struct
 		  | None -> guard
 		  | Some(tab) -> Cudd.Bdd.vectorcompose tab guard
 		in
-		let nexpr = ApronexprDD.substitute cudd apronexpr sub in
+		let nexpr = ApronexprDD.substitute env apronexpr sub in
 		res := Cudd.Mtbdd.ite nguard nexpr !res
 	      end)
 	      leaves_u;
@@ -188,19 +188,19 @@ module O = struct
 
   let var
       env cond
-      (var:string) : t
+      (var:'a) : 'a t
       =
     let typ = Env.typ_of_var env var in
     match typ with
     | #Bdd.Env.typ ->
-	((Bdd.Expr0.O.var env var):>expr)
+	((Bdd.Expr0.O.var env var):>'a t)
     | `Int | `Real ->
 	`Apron (ApronexprDD.var env var)
     | _ -> raise Not_found
 
   let substitute_by_var
       env cond
-      e (substitution:(string*string) list)
+      e (substitution:('a * 'a) list)
       =
     substitute env cond e
       (List.map (fun (v1,v2) -> (v1,var env cond v2)) substitution)
@@ -213,7 +213,7 @@ module O = struct
   (*  ==================================================================== *)
 
   module Bool = struct
-    type t = Cudd.Man.v Bdd.Expr0.O.Bool.t
+    type 'a t = Cudd.Man.v Bdd.Expr0.O.Bool.t
     let of_expr = Bdd.Expr0.O.Bool.of_expr
     let to_expr = Bdd.Expr0.O.Bool.to_expr
 
@@ -252,8 +252,8 @@ module O = struct
     let permute = Bdd.Expr0.O.Bool.permute
     let varmap = Bdd.Expr0.O.Bool.varmap
 
-    let substitute_by_var env cond (e:t) sub = of_expr (ddsubstitute_by_var env cond (to_expr e) sub)
-    let substitute env cond (e:t) sub = of_expr (ddsubstitute env cond (to_expr e) sub)
+    let substitute_by_var env cond (e:'a t) sub = of_expr (ddsubstitute_by_var env cond (to_expr e) sub)
+    let substitute env cond (e:'a t) sub = of_expr (ddsubstitute env cond (to_expr e) sub)
 
     let print = print_bdd
   end
@@ -263,7 +263,7 @@ module O = struct
   (*  ==================================================================== *)
 
   module Bint = struct
-    type t = Cudd.Man.v Bdd.Expr0.O.Bint.t
+    type 'a t = Cudd.Man.v Bdd.Expr0.O.Bint.t
     let of_expr = Bdd.Expr0.O.Bint.of_expr
     let to_expr = Bdd.Expr0.O.Bint.to_expr
 
@@ -294,8 +294,8 @@ module O = struct
     let permute = Bdd.Expr0.O.Bint.permute
     let varmap = Bdd.Expr0.O.Bint.varmap
 
-    let substitute_by_var env cond (e:t) sub = of_expr (ddsubstitute_by_var env cond (to_expr e) sub)
-    let substitute env cond (e:t) sub = of_expr (ddsubstitute env cond (to_expr e) sub)
+    let substitute_by_var env cond (e:'a t) sub = of_expr (ddsubstitute_by_var env cond (to_expr e) sub)
+    let substitute env cond (e:'a t) sub = of_expr (ddsubstitute env cond (to_expr e) sub)
     let guard_of_int env cond = Bdd.Expr0.O.Bint.guard_of_int env
     let guardints env cond = Bdd.Expr0.O.Bint.guardints env
 
@@ -307,7 +307,7 @@ module O = struct
   (*  ==================================================================== *)
 
   module Benum = struct
-    type t = Cudd.Man.v Bdd.Expr0.O.Benum.t
+    type 'a t = Cudd.Man.v Bdd.Expr0.O.Benum.t
     let of_expr = Bdd.Expr0.O.Benum.of_expr
     let to_expr = Bdd.Expr0.O.Benum.to_expr
     let var env cond = Bdd.Expr0.O.Benum.var env
@@ -319,8 +319,8 @@ module O = struct
     let tdrestrict = Bdd.Expr0.O.Benum.tdrestrict
     let permute = Bdd.Expr0.O.Benum.permute
     let varmap = Bdd.Expr0.O.Benum.varmap
-    let substitute_by_var env cond (e:t) sub = of_expr (ddsubstitute_by_var env cond (to_expr e) sub)
-    let substitute env cond (e:t) sub = of_expr (ddsubstitute env cond (to_expr e) sub)
+    let substitute_by_var env cond (e:'a t) sub = of_expr (ddsubstitute_by_var env cond (to_expr e) sub)
+    let substitute env cond (e:'a t) sub = of_expr (ddsubstitute env cond (to_expr e) sub)
     let guard_of_label env cond = Bdd.Expr0.O.Benum.guard_of_label env
     let guardlabels env cond = Bdd.Expr0.O.Benum.guardlabels env
     let print env cond fmt x = Bdd.Enum.print_minterm (print_bdd env cond) env fmt x
@@ -331,29 +331,30 @@ module O = struct
   (*  ==================================================================== *)
 
   module Apron = struct
-    type t = ApronexprDD.t
+    type 'a t = 'a ApronexprDD.t
 
     let of_expr = ApronexprDD.of_expr
     let to_expr = ApronexprDD.to_expr
 
-    let print env cond fmt x = ApronexprDD.print (print_bdd env cond) fmt x
+    let print env cond fmt x =
+      ApronexprDD.print (print_bdd env cond) env.symbol fmt x
 
-    let cst env cond c = ApronexprDD.cst env.cudd c
+    let cst env cond c = ApronexprDD.cst env c
     let var env cond name = ApronexprDD.var env name
-    let add env cond = ApronexprDD.add
-    let sub env cond = ApronexprDD.sub
-    let mul env cond = ApronexprDD.mul
-    let div env cond = ApronexprDD.div
-    let gmod env cond = ApronexprDD.gmod
-    let negate env cond = ApronexprDD.negate
-    let cast env cond = ApronexprDD.cast
-    let sqrt env cond = ApronexprDD.sqrt
+    let add env cond = ApronexprDD.add env
+    let sub env cond = ApronexprDD.sub env
+    let mul env cond = ApronexprDD.mul env
+    let div env cond = ApronexprDD.div env
+    let gmod env cond = ApronexprDD.gmod env
+    let negate env cond = ApronexprDD.negate env
+    let cast env cond = ApronexprDD.cast env
+    let sqrt env cond = ApronexprDD.sqrt env
 
     let supeq env cond = ApronexprDD.Condition.supeq env cond
     let sup env cond = ApronexprDD.Condition.sup env cond
     let eq env cond = ApronexprDD.Condition.eq env cond
 
-    let ite env cond b (t1:t) (t2:t) : t =
+    let ite env cond b (t1:'a t) (t2:'a t) : 'a t =
       Cudd.Mtbdd.ite b t1 t2
 
     let cofactor = Cudd.Mtbdd.cofactor
@@ -364,17 +365,17 @@ module O = struct
     let support = Cudd.Mtbdd.support
     let support_leaf = ApronexprDD.support_leaf
 
-    let substitute_by_var env cond (e:t) sub = of_expr (ddsubstitute_by_var env cond (to_expr e) sub)
-    let substitute env cond (e:t) sub = of_expr (ddsubstitute env cond (to_expr e) sub)
+    let substitute_by_var env cond (e:'a t) sub = of_expr (ddsubstitute_by_var env cond (to_expr e) sub)
+    let substitute env cond (e:'a t) sub = of_expr (ddsubstitute env cond (to_expr e) sub)
   end
 
   (*  ==================================================================== *)
   (** {3 General expressions} *)
   (*  ==================================================================== *)
 
-  let eq env cond (e1:t) (e2:t) : Bool.t
+  let eq env cond (e1:'a t) (e2:'a t) : 'a Bool.t
       =
-    let t = check_typ2 e1 e2 in
+    let t = check_typ2 env e1 e2 in
     match t with
     | `Bool ->
 	Bool.eq env cond (Bool.of_expr e1) (Bool.of_expr e2)
@@ -390,9 +391,9 @@ module O = struct
 	Apron.eq env cond diff
     | _ -> failwith ""
 
-  let ite env cond (condition:Bool.t) (e1:t) (e2:t) : t
+  let ite env cond (condition:'a Bool.t) (e1:'a t) (e2:'a t) : 'a t
       =
-    let t = check_typ2 e1 e2 in
+    let t = check_typ2 env e1 e2 in
     match t with
     | `Bool ->
 	`Bool (Bool.ite env cond condition (Bool.of_expr e1) (Bool.of_expr e2))
@@ -406,7 +407,7 @@ module O = struct
 
   let support_cond
       cudd
-      (expr:t) : Cudd.Bdd.vt
+      (expr:'a t) : Cudd.Bdd.vt
       =
     match expr with
     | #Bdd.Expr0.t as x ->
@@ -416,11 +417,11 @@ module O = struct
 
   let support
       env cond
-      (expr:t) : string PSette.t
+      (expr:'a t) : 'a PSette.t
       =
     let supp = support_cond env.cudd expr in
     let list = Cudd.Bdd.list_of_support supp in
-    let set = ref (PSette.empty String.compare) in
+    let set = ref (PSette.empty env.symbol.compare) in
     List.iter
       (begin fun id ->
 	try
@@ -436,21 +437,21 @@ module O = struct
     begin match expr with
     | #Bdd.Expr0.t -> ()
     | `Apron expr ->
-	set := PSette.union (Apron.support_leaf expr) !set
+	set := PSette.union (Apron.support_leaf env expr) !set
     end;
     !set
 
-  let normalize 
-      ?(reduce=false) ?(careset=false) 
-      ((cond:'a Cond.O.t),lexpr)
+  let normalize
+      ?(reduce=false) ?(careset=false)
+      ((cond:('a,'b) Cond.O.t),lexpr)
       =
     let ncond = Bdd.Cond.copy cond in
     let support lexpr =
       List.fold_left
 	(begin fun supp expr ->
-	  Cudd.Bdd.support_union supp 
-	    (Cudd.Bdd.support_inter 
-	      ncond.supp 
+	  Cudd.Bdd.support_union supp
+	    (Cudd.Bdd.support_inter
+	      ncond.supp
 	      (support_cond ncond.Bdd.Cond.cudd expr))
 	end)
 	(Cudd.Bdd.dtrue cond.Bdd.Cond.cudd)
@@ -462,7 +463,7 @@ module O = struct
     end;
     let perm = Bdd.Cond.normalize_with ncond in
     let lexpr = List.map (fun e -> permute e perm) lexpr in
-    let lexpr = 
+    let lexpr =
       if careset then begin
 	Bdd.Cond.compute_careset ncond ~normalized:true;
 	let careset = ncond.careset in
@@ -485,7 +486,7 @@ module O = struct
 
   let print
       env cond
-      (fmt:Format.formatter) (expr:[<expr])
+      (fmt:Format.formatter) (expr:[<'a t])
       =
     match expr with
     | `Bool x -> Bool.print env cond fmt x
@@ -508,7 +509,7 @@ let tdrestrict = O.tdrestrict
 let permute = O.permute
 let varmap = O.varmap
 let substitute_by_var = O.substitute_by_var
-let substitute = O.substitute  
+let substitute = O.substitute
 let support = O.support
 let eq = O.eq
 let support_cond = O.support_cond
@@ -524,8 +525,11 @@ end
 module Benum = struct
   include O.Benum
 end
+type apron_coeff = Apron.Coeff.t
+type apron_typ = Apron.Texpr1.typ
+type apron_round = Apron.Texpr1.round
 module Apron = struct
-  type t = ApronexprDD.t
+  type 'a t = 'a ApronexprDD.t
   let of_expr = O.Apron.of_expr
   let to_expr = O.Apron.to_expr
   let cst = O.Apron.cst

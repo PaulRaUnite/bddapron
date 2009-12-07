@@ -22,9 +22,14 @@ type 'a t = [
       (** Enumerated *)
 ]
 type 'a expr = 'a t
+  (** Type of general expressions *)
 
 type dt = Cudd.Man.d t
 type vt = Cudd.Man.v t
+  (** *)
+
+(** General expressions are described below, after Boolean, bounded
+    integer and enumerated types expressions *)
 
 (*  ====================================================================== *)
 (** {3 Boolean expressions} *)
@@ -37,40 +42,40 @@ module Bool : sig
   val of_expr : 'a expr -> 'a t
   val to_expr : 'a t -> 'a expr
 
-  val dtrue : 'a Env.t -> 'a t
-  val dfalse : 'a Env.t -> 'a t
-  val of_bool : 'a Env.t -> bool -> 'a t
-  val var : 'a Env.t -> string -> 'a t
+  val dtrue : ('a,'b) Env.t -> 'b t
+  val dfalse : ('a,'b) Env.t -> 'b t
+  val of_bool : ('a,'b) Env.t -> bool -> 'b t
+  val var : ('a,'b) Env.t -> 'a -> 'b t
 
-  val dnot : 'a Env.t -> 'a t -> 'a t
-  val dand : 'a Env.t -> 'a t -> 'a t -> 'a t
-  val dor : 'a Env.t -> 'a t -> 'a t -> 'a t
+  val dnot : ('a,'b) Env.t -> 'b t -> 'b t
+  val dand : ('a,'b) Env.t -> 'b t -> 'b t -> 'b t
+  val dor : ('a,'b) Env.t -> 'b t -> 'b t -> 'b t
     (** [not], [and] and [or] (use of 'd' prefix because of conflict with OCaml
 	keywords) *)
 
-  val xor : 'a Env.t -> 'a t -> 'a t -> 'a t
-  val nand : 'a Env.t -> 'a t -> 'a t -> 'a t
-  val nor : 'a Env.t -> 'a t -> 'a t -> 'a t
-  val nxor : 'a Env.t -> 'a t -> 'a t -> 'a t
+  val xor : ('a,'b) Env.t -> 'b t -> 'b t -> 'b t
+  val nand : ('a,'b) Env.t -> 'b t -> 'b t -> 'b t
+  val nor : ('a,'b) Env.t -> 'b t -> 'b t -> 'b t
+  val nxor : ('a,'b) Env.t -> 'b t -> 'b t -> 'b t
     (** Exclusive or, not and, nor or and not xor *)
 
-  val leq : 'a Env.t -> 'a t -> 'a t -> 'a t
+  val leq : ('a,'b) Env.t -> 'b t -> 'b t -> 'b t
     (** Implication *)
-  val eq : 'a Env.t -> 'a t -> 'a t -> 'a t
+  val eq : ('a,'b) Env.t -> 'b t -> 'b t -> 'b t
     (** Same as [nxor] *)
 
-  val ite : 'a Env.t -> 'a t -> 'a t -> 'a t -> 'a t
+  val ite : ('a,'b) Env.t -> 'b t -> 'b t -> 'b t -> 'b t
     (** If-then-else *)
 
-  val is_true : 'a Env.t -> 'a t -> bool
-  val is_false : 'a Env.t -> 'a t -> bool
-  val is_cst : 'a Env.t -> 'a t -> bool
-  val is_eq : 'a Env.t -> 'a t -> 'a t -> bool
-  val is_leq : 'a Env.t -> 'a t -> 'a t -> bool
-  val is_and_false : 'a Env.t -> 'a t -> 'a t -> bool
+  val is_true : ('a,'b) Env.t -> 'b t -> bool
+  val is_false : ('a,'b) Env.t -> 'b t -> bool
+  val is_cst : ('a,'b) Env.t -> 'b t -> bool
+  val is_eq : ('a,'b) Env.t -> 'b t -> 'b t -> bool
+  val is_leq : ('a,'b) Env.t -> 'b t -> 'b t -> bool
+  val is_and_false : ('a,'b) Env.t -> 'b t -> 'b t -> bool
 
-  val exist : 'a Env.t -> string list -> 'a t -> 'a t
-  val forall : 'a Env.t -> string list -> 'a t -> 'a t
+  val exist : ('a,'b) Env.t -> 'a list -> 'b t -> 'b t
+  val forall : ('a,'b) Env.t -> 'a list -> 'b t -> 'b t
 
   val cofactor : 'a t -> 'a t -> 'a t
   val restrict : 'a t -> 'a t -> 'a t
@@ -78,12 +83,12 @@ module Bool : sig
   val permute : 'a t -> int array -> 'a t
   val varmap : 'a t -> 'a t
 
-  val substitute_by_var : 'a Env.t -> 'a t -> (string * string) list -> 'a t
-  val substitute : 'a Env.t -> 'a t -> (string * 'a expr) list -> 'a t
+  val substitute_by_var : ('a,'b) Env.t -> 'b t -> ('a * 'a) list -> 'b t
+  val substitute : ('a,'b) Env.t -> 'b t -> ('a * 'b expr) list -> 'b t
 
   val print :
     ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-    'a Env.t -> Format.formatter -> 'a t -> unit
+    ('a,'b) Env.t -> Format.formatter -> 'b t -> unit
 end
 
 (*  ====================================================================== *)
@@ -97,26 +102,26 @@ module Bint : sig
   val of_expr : 'a expr -> 'a t
   val to_expr : 'a t -> 'a expr
 
-  val of_int : 'a Env.t -> [`Bint of bool * int] -> int -> 'a t
-  val var : 'a Env.t -> string -> 'a t
-  val ite : 'a Env.t -> 'a Bool.t -> 'a t -> 'a t -> 'a t
+  val of_int : ('a,'b) Env.t -> [`Bint of bool * int] -> int -> 'b t
+  val var : ('a,'b) Env.t -> 'a -> 'b t
+  val ite : ('a,'b) Env.t -> 'b Bool.t -> 'b t -> 'b t -> 'b t
 
-  val neg : 'a Env.t -> 'a t -> 'a t
-  val succ : 'a Env.t -> 'a t -> 'a t
-  val pred : 'a Env.t -> 'a t -> 'a t
-  val add : 'a Env.t -> 'a t -> 'a t -> 'a t
-  val sub : 'a Env.t -> 'a t -> 'a t -> 'a t
-  val mul : 'a Env.t -> 'a t -> 'a t -> 'a t
-  val shift_left : 'a Env.t -> int -> 'a t -> 'a t
-  val shift_right : 'a Env.t -> int -> 'a t -> 'a t
-  val scale : 'a Env.t -> int -> 'a t -> 'a t
-  val zero : 'a Env.t -> 'a t -> 'a Bool.t
-  val eq : 'a Env.t -> 'a t -> 'a t -> 'a Bool.t
-  val eq_int : 'a Env.t -> 'a t -> int -> 'a Bool.t
-  val supeq : 'a Env.t -> 'a t -> 'a t -> 'a Bool.t
-  val supeq_int : 'a Env.t -> 'a t -> int -> 'a Bool.t
-  val sup : 'a Env.t -> 'a t -> 'a t -> 'a Bool.t
-  val sup_int : 'a Env.t -> 'a t -> int -> 'a Bool.t
+  val neg : ('a,'b) Env.t -> 'b t -> 'b t
+  val succ : ('a,'b) Env.t -> 'b t -> 'b t
+  val pred : ('a,'b) Env.t -> 'b t -> 'b t
+  val add : ('a,'b) Env.t -> 'b t -> 'b t -> 'b t
+  val sub : ('a,'b) Env.t -> 'b t -> 'b t -> 'b t
+  val mul : ('a,'b) Env.t -> 'b t -> 'b t -> 'b t
+  val shift_left : ('a,'b) Env.t -> int -> 'b t -> 'b t
+  val shift_right : ('a,'b) Env.t -> int -> 'b t -> 'b t
+  val scale : ('a,'b) Env.t -> int -> 'b t -> 'b t
+  val zero : ('a,'b) Env.t -> 'b t -> 'b Bool.t
+  val eq : ('a,'b) Env.t -> 'b t -> 'b t -> 'b Bool.t
+  val eq_int : ('a,'b) Env.t -> 'b t -> int -> 'b Bool.t
+  val supeq : ('a,'b) Env.t -> 'b t -> 'b t -> 'b Bool.t
+  val supeq_int : ('a,'b) Env.t -> 'b t -> int -> 'b Bool.t
+  val sup : ('a,'b) Env.t -> 'b t -> 'b t -> 'b Bool.t
+  val sup_int : ('a,'b) Env.t -> 'b t -> int -> 'b Bool.t
 
   val cofactor : 'a t -> 'a Bool.t -> 'a t
   val restrict : 'a t -> 'a Bool.t -> 'a t
@@ -124,17 +129,17 @@ module Bint : sig
   val permute : 'a t -> int array -> 'a t
   val varmap : 'a t -> 'a t
 
-  val substitute_by_var : 'a Env.t -> 'a t -> (string * string) list -> 'a t
-  val substitute : 'a Env.t -> 'a t -> (string * 'a expr) list -> 'a t
+  val substitute_by_var : ('a,'b) Env.t -> 'b t -> ('a * 'a) list -> 'b t
+  val substitute : ('a,'b) Env.t -> 'b t -> ('a * 'b expr) list -> 'b t
 
-  val guard_of_int: 'a Env.t -> 'a t -> int -> 'a Bool.t
+  val guard_of_int: ('a,'b) Env.t -> 'b t -> int -> 'b Bool.t
     (** Return the guard of the integer value. *)
-  val guardints: 'a Env.t -> 'a t -> ('a Bool.t * int) list
+  val guardints: ('a,'b) Env.t -> 'b t -> ('b Bool.t * int) list
     (** Return the list [g -> n] of guarded values. *)
 
   val print :
     ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-    'a Env.t -> Format.formatter -> 'a t -> unit
+    ('a,'b) Env.t -> Format.formatter -> 'b t -> unit
 end
 
 (*  ====================================================================== *)
@@ -147,50 +152,51 @@ module Benum : sig
   type vt = Cudd.Man.v t
   val of_expr : 'a expr -> 'a t
   val to_expr : 'a t -> 'a expr
-  val var : 'a Env.t -> string -> 'a t
-  val ite : 'a Env.t -> 'a Bool.t -> 'a t -> 'a t -> 'a t
-  val eq : 'a Env.t -> 'a t -> 'a t -> 'a Bool.t
-  val eq_label : 'a Env.t -> 'a t -> string -> 'a Bool.t
+  val var : ('a,'b) Env.t -> 'a -> 'b t
+  val ite : ('a,'b) Env.t -> 'b Bool.t -> 'b t -> 'b t -> 'b t
+  val eq : ('a,'b) Env.t -> 'b t -> 'b t -> 'b Bool.t
+  val eq_label : ('a,'b) Env.t -> 'b t -> 'a -> 'b Bool.t
   val cofactor : 'a t -> 'a Bool.t -> 'a t
   val restrict : 'a t -> 'a Bool.t -> 'a t
   val tdrestrict : 'a t -> 'a Bool.t -> 'a t
   val permute : 'a t -> int array -> 'a t
   val varmap : 'a t -> 'a t
-  val substitute_by_var : 'a Env.t -> 'a t -> (string * string) list -> 'a t
-  val substitute : 'a Env.t -> 'a t -> (string * 'a expr) list -> 'a t
-  val guard_of_label : 'a Env.t -> 'a t -> string -> 'a Bool.t
+  val substitute_by_var : ('a,'b) Env.t -> 'b t -> ('a * 'a) list -> 'b t
+  val substitute : ('a,'b) Env.t -> 'b t -> ('a * 'b expr) list -> 'b t
+  val guard_of_label : ('a,'b) Env.t -> 'b t -> 'a -> 'b Bool.t
     (** Return the guard of the label. *)
-  val guardlabels : 'a Env.t -> 'a t -> ('a Bool.t * string) list
+  val guardlabels : ('a,'b) Env.t -> 'b t -> ('b Bool.t * 'a) list
     (** Return the list [g -> label] of guarded values. *)
   val print :
     ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-    'a Env.t -> Format.formatter -> 'a t -> unit
+    ('a,'b) Env.t -> Format.formatter -> 'b t -> unit
 end
 
 (*  ====================================================================== *)
 (** {3 General (typed) expressions} *)
 (*  ====================================================================== *)
 
-(** The following operations raise a [Failure] exception in case of a typing
-  error. *)
+(** The following operations raise a [Failure] exception in case
+    of a typing error. *)
 
-val typ_of_expr : 'a t -> Env.typ
-  (** Type of an expression *)
+val typ_of_expr : ('a,'b) Env.t -> 'b t -> 'a Env.typ
+    (** Type of an expression *)
 
-val var : 'a Env.t -> string -> 'a t
-  (** Expression representing the litteral var *)
+val var : ('a,'b) Env.t -> 'a -> 'b t
+    (** Expression representing the litteral var *)
 
 val ite : 'a Bool.t -> 'a t -> 'a t -> 'a t
-  (** If-then-else operation *)
+    (** If-then-else operation *)
 
-val eq : 'a Env.t -> 'a t -> 'a t -> 'a Bool.t
-  (** Equality operation *)
+val eq : ('a,'b) Env.t -> 'b t -> 'b t -> 'b Bool.t
+    (** Equality operation *)
 
-val substitute_by_var : 'a Env.t -> 'a t -> (string * string) list -> 'a t
+val substitute_by_var : ('a,'b) Env.t -> 'b t -> ('a * 'a) list -> 'b t
     (** Variable renaming.
-      The new variables should already have been declared *)
 
-val substitute : 'a Env.t -> 'a t -> (string * 'a t) list -> 'a t
+	The new variables should already have been declared *)
+
+val substitute : ('a,'b) Env.t -> 'b t -> ('a * 'b t) list -> 'b t
     (** Parallel substitution of variables by expressions *)
 
 val cofactor : 'a t -> 'a Cudd.Bdd.t -> 'a t
@@ -201,18 +207,18 @@ val tdrestrict : 'a t -> 'a Cudd.Bdd.t -> 'a t
     (** Simplify the expression knowing that the BDD is true.  Generalizes
       [cofactor]. *)
 
-val support : 'a Env.t -> 'a t -> string PSette.t
+val support : ('a,'b) Env.t -> 'b t -> 'a PSette.t
     (** Support of the expression *)
 
 val support_cond : 'a Cudd.Man.t -> 'a t -> 'a Cudd.Bdd.t
     (** Return the support of an expression as a conjunction of the BDD
 	identifiers involved in the expression *)
 
-(*  ====================================================================== *)
-(** {3 Miscellaneous} *)
-(*  ====================================================================== *)
+(*  ---------------------------------------------------------------------- *)
+(** {4 Miscellaneous} *)
+(*  ---------------------------------------------------------------------- *)
 
-val cube_of_bdd : 'a Env.t -> 'a Cudd.Bdd.t -> 'a Cudd.Bdd.t
+val cube_of_bdd : ('a,'b) Env.t -> 'b Cudd.Bdd.t -> 'b Cudd.Bdd.t
       (** Same as [Cudd.Bdd.cube_of_bdd], but keep only the
 	the values of variables having a determinated value.
 
@@ -220,30 +226,30 @@ val cube_of_bdd : 'a Env.t -> 'a Cudd.Bdd.t -> 'a Cudd.Bdd.t
 	[b and (x=1 or x=3)], whereas [cube_of_bdd] will return only [b] in
 	such a case. *)
 
-(*  ********************************************************************** *)
-(** {2 Printing} *)
-(*  ********************************************************************** *)
+(*  ---------------------------------------------------------------------- *)
+(** {4 Printing} *)
+(*  ---------------------------------------------------------------------- *)
 
 val print :
     ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-    'a Env.t -> Format.formatter -> 'a t -> unit
+    ('a,'b) Env.t -> Format.formatter -> 'b t -> unit
   (** Print an expression *)
 
 val print_minterm :
     ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-    'a Env.t -> Format.formatter -> Cudd.Man.tbool array -> unit
+    ('a,'b) Env.t -> Format.formatter -> Cudd.Man.tbool array -> unit
   (** Print a minterm *)
 val print_bdd :
     ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-    'a Env.t -> Format.formatter -> 'a Cudd.Bdd.t -> unit
+    ('a,'b) Env.t -> Format.formatter -> 'b Cudd.Bdd.t -> unit
   (** Print a BDD *)
 val print_idcondb :
     ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-    'a Env.t -> Format.formatter -> int*bool -> unit
+    ('a,'b) Env.t -> Format.formatter -> int*bool -> unit
   (** Print the condition represented by the signed BDD index. *)
 val print_idcond :
     ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-    'a Env.t -> Format.formatter -> int -> unit
+    ('a,'b) Env.t -> Format.formatter -> int -> unit
   (** Print the condition *)
 
 (*  ********************************************************************** *)
@@ -257,8 +263,8 @@ val print_idcond :
 
 module O : sig
 
-  val tid_of_var : ('a,'b,'c,'d) Env.O.t -> string -> int array
-  val reg_of_expr : 'c expr -> 'c Cudd.Bdd.t array
+  val tid_of_var : ('a,'b,'c,'d,'e) Env.O.t -> 'a -> int array
+  val reg_of_expr : 'd expr -> 'd Cudd.Bdd.t array
 
   (*  ==================================================================== *)
   (** {3 Expressions} *)
@@ -269,59 +275,59 @@ module O : sig
   (*  -------------------------------------------------------------------- *)
 
   module Bool : sig
-    type 'c t = 'c Cudd.Bdd.t
+    type 'd t = 'd Cudd.Bdd.t
     type dt = Cudd.Man.d t
     type vt = Cudd.Man.v t
-    val of_expr : [>`Bool of 'c t] -> 'c t
-    val to_expr : 'c t -> [>`Bool of 'c t]
+    val of_expr : [>`Bool of 'd t] -> 'd t
+    val to_expr : 'd t -> [>`Bool of 'd t]
 
-    val dtrue : ('a,'b,'c,'d) Env.O.t -> 'c t
-    val dfalse : ('a,'b,'c,'d) Env.O.t -> 'c t
-    val of_bool : ('a,'b,'c,'d) Env.O.t -> bool -> 'c t
-    val var : ('a,'b,'c,'d) Env.O.t -> string -> 'c t
+    val dtrue : ('a,'b,'c,'d,'e) Env.O.t -> 'd t
+    val dfalse : ('a,'b,'c,'d,'e) Env.O.t -> 'd t
+    val of_bool : ('a,'b,'c,'d,'e) Env.O.t -> bool -> 'd t
+    val var : ('a,'b,'c,'d,'e) Env.O.t -> 'a -> 'd t
 
-    val dnot : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t
-    val dand : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> 'c t
-    val dor : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> 'c t
+    val dnot : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t
+    val dand : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> 'd t
+    val dor : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> 'd t
     (** [not], [and] and [or] (use of 'd' prefix because of conflict with OCaml
 	keywords) *)
 
-    val xor : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> 'c t
-    val nand : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> 'c t
-    val nor : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> 'c t
-    val nxor : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> 'c t
+    val xor : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> 'd t
+    val nand : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> 'd t
+    val nor : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> 'd t
+    val nxor : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> 'd t
     (** Exclusive or, not and, nor or and not xor *)
 
-    val leq : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> 'c t
+    val leq : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> 'd t
     (** Implication *)
-    val eq : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> 'c t
+    val eq : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> 'd t
     (** Same as [nxor] *)
 
-    val ite : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> 'c t -> 'c t
+    val ite : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> 'd t -> 'd t
     (** If-then-else *)
 
-    val is_true : ('a,'b,'c,'d) Env.O.t -> 'c t -> bool
-    val is_false : ('a,'b,'c,'d) Env.O.t -> 'c t -> bool
-    val is_cst : ('a,'b,'c,'d) Env.O.t -> 'c t -> bool
-    val is_eq : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> bool
-    val is_leq : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> bool
-    val is_and_false : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> bool
+    val is_true : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> bool
+    val is_false : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> bool
+    val is_cst : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> bool
+    val is_eq : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> bool
+    val is_leq : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> bool
+    val is_and_false : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> bool
 
-    val exist : ('a,'b,'c,'d) Env.O.t -> string list -> 'c t -> 'c t
-    val forall : ('a,'b,'c,'d) Env.O.t -> string list -> 'c t -> 'c t
+    val exist : ('a,'b,'c,'d,'e) Env.O.t -> 'a list -> 'd t -> 'd t
+    val forall : ('a,'b,'c,'d,'e) Env.O.t -> 'a list -> 'd t -> 'd t
 
-    val cofactor : 'c t -> 'c t -> 'c t
-    val restrict : 'c t -> 'c t -> 'c t
-    val tdrestrict : 'c t -> 'c t -> 'c t
-    val permute : 'c t -> int array -> 'c t
+    val cofactor : 'd t -> 'd t -> 'd t
+    val restrict : 'd t -> 'd t -> 'd t
+    val tdrestrict : 'd t -> 'd t -> 'd t
+    val permute : 'd t -> int array -> 'd t
     val varmap : 'a t -> 'a t
 
-    val substitute_by_var : ('a,'b,'c,'d) Env.O.t -> 'c t -> (string * string) list -> 'c t
-    val substitute : ('a,'b,'c,'d) Env.O.t -> 'c t -> (string * 'c expr) list -> 'c t
+    val substitute_by_var : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'a) list -> 'd t
+    val substitute : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'd expr) list -> 'd t
 
     val print :
     ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-    ('a,'b,'c,'d) Env.O.t -> Format.formatter -> 'c t -> unit
+    ('a,'b,'c,'d,'e) Env.O.t -> Format.formatter -> 'd t -> unit
   end
 
   (*  -------------------------------------------------------------------- *)
@@ -329,50 +335,50 @@ module O : sig
   (*  -------------------------------------------------------------------- *)
 
   module Bint : sig
-    type 'c t = 'c Int.t
+    type 'd t = 'd Int.t
     type dt = Cudd.Man.d t
     type vt = Cudd.Man.v t
-    val of_expr : [> `Bint of 'c t] -> 'c t
-    val to_expr : 'c t -> [> `Bint of 'c t]
+    val of_expr : [> `Bint of 'd t] -> 'd t
+    val to_expr : 'd t -> [> `Bint of 'd t]
 
-    val of_int : ('a,'b,'c,'d) Env.O.t -> [> `Bint of bool * int ] -> int -> 'c t
-    val var : ('a,'b,'c,'d) Env.O.t -> string -> 'c t
-    val ite : ('a,'b,'c,'d) Env.O.t -> 'c Bool.t -> 'c t -> 'c t -> 'c t
+    val of_int : ('a,'b,'c,'d,'e) Env.O.t -> [> `Bint of bool * int ] -> int -> 'd t
+    val var : ('a,'b,'c,'d,'e) Env.O.t -> 'a -> 'd t
+    val ite : ('a,'b,'c,'d,'e) Env.O.t -> 'd Bool.t -> 'd t -> 'd t -> 'd t
 
-    val neg : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t
-    val succ : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t
-    val pred : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t
-    val add : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> 'c t
-    val sub : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> 'c t
-    val mul : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> 'c t
-    val shift_left : ('a,'b,'c,'d) Env.O.t -> int -> 'c t -> 'c t
-    val shift_right : ('a,'b,'c,'d) Env.O.t -> int -> 'c t -> 'c t
-    val scale : ('a,'b,'c,'d) Env.O.t -> int -> 'c t -> 'c t
-    val zero : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c Bool.t
-    val eq : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> 'c Bool.t
-    val eq_int : ('a,'b,'c,'d) Env.O.t -> 'c t -> int -> 'c Bool.t
-    val supeq : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> 'c Bool.t
-    val supeq_int : ('a,'b,'c,'d) Env.O.t -> 'c t -> int -> 'c Bool.t
-    val sup : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> 'c Bool.t
-    val sup_int : ('a,'b,'c,'d) Env.O.t -> 'c t -> int -> 'c Bool.t
+    val neg : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t
+    val succ : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t
+    val pred : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t
+    val add : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> 'd t
+    val sub : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> 'd t
+    val mul : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> 'd t
+    val shift_left : ('a,'b,'c,'d,'e) Env.O.t -> int -> 'd t -> 'd t
+    val shift_right : ('a,'b,'c,'d,'e) Env.O.t -> int -> 'd t -> 'd t
+    val scale : ('a,'b,'c,'d,'e) Env.O.t -> int -> 'd t -> 'd t
+    val zero : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd Bool.t
+    val eq : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> 'd Bool.t
+    val eq_int : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> int -> 'd Bool.t
+    val supeq : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> 'd Bool.t
+    val supeq_int : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> int -> 'd Bool.t
+    val sup : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> 'd Bool.t
+    val sup_int : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> int -> 'd Bool.t
 
-    val cofactor : 'c t -> 'c Bool.t -> 'c t
-    val restrict : 'c t -> 'c Bool.t -> 'c t
-    val tdrestrict : 'c t -> 'c Bool.t -> 'c t
-    val permute : 'c t -> int array -> 'c t
+    val cofactor : 'd t -> 'd Bool.t -> 'd t
+    val restrict : 'd t -> 'd Bool.t -> 'd t
+    val tdrestrict : 'd t -> 'd Bool.t -> 'd t
+    val permute : 'd t -> int array -> 'd t
     val varmap : 'a t -> 'a t
 
-    val substitute_by_var : ('a,'b,'c,'d) Env.O.t -> 'c t -> (string * string) list -> 'c t
-    val substitute : ('a,'b,'c,'d) Env.O.t -> 'c t -> (string * 'c expr) list -> 'c t
+    val substitute_by_var : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'a) list -> 'd t
+    val substitute : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'd expr) list -> 'd t
 
-    val guard_of_int: ('a,'b,'c,'d) Env.O.t -> 'c t -> int -> 'c Bool.t
+    val guard_of_int: ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> int -> 'd Bool.t
     (** Return the guard of the integer value. *)
-    val guardints: ('a,'b,'c,'d) Env.O.t -> 'c t -> ('c Bool.t * int) list
+    val guardints: ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('d Bool.t * int) list
     (** Return the list [g -> n] of guarded values. *)
 
     val print :
     ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-    ('a,'b,'c,'d) Env.O.t -> Format.formatter -> 'c t -> unit
+    ('a,'b,'c,'d,'e) Env.O.t -> Format.formatter -> 'd t -> unit
   end
 
   (*  -------------------------------------------------------------------- *)
@@ -380,29 +386,29 @@ module O : sig
   (*  -------------------------------------------------------------------- *)
 
   module Benum : sig
-    type 'c t = 'c Enum.t
+    type 'd t = 'd Enum.t
     type dt = Cudd.Man.d t
     type vt = Cudd.Man.v t
-    val of_expr : [> `Benum of 'c t] -> 'c t
-    val to_expr : 'c t -> [> `Benum of 'c t]
-    val var : ('a,'b,'c,'d) Env.O.t -> string -> 'c t
-    val ite : ('a,'b,'c,'d) Env.O.t -> 'c Bool.t -> 'c t -> 'c t -> 'c t
-    val eq : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> 'c Bool.t
-    val eq_label : ('a,'b,'c,'d) Env.O.t -> 'c t -> string -> 'c Bool.t
-    val cofactor : 'c t -> 'c Bool.t -> 'c t
-    val restrict : 'c t -> 'c Bool.t -> 'c t
-    val tdrestrict : 'c t -> 'c Bool.t -> 'c t
-    val permute : 'c t -> int array -> 'c t
+    val of_expr : [> `Benum of 'd t] -> 'd t
+    val to_expr : 'd t -> [> `Benum of 'd t]
+    val var : ('a,'b,'c,'d,'e) Env.O.t -> 'a -> 'd t
+    val ite : ('a,'b,'c,'d,'e) Env.O.t -> 'd Bool.t -> 'd t -> 'd t -> 'd t
+    val eq : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> 'd Bool.t
+    val eq_label : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'a -> 'd Bool.t
+    val cofactor : 'd t -> 'd Bool.t -> 'd t
+    val restrict : 'd t -> 'd Bool.t -> 'd t
+    val tdrestrict : 'd t -> 'd Bool.t -> 'd t
+    val permute : 'd t -> int array -> 'd t
     val varmap : 'a t -> 'a t
-    val substitute_by_var : ('a,'b,'c,'d) Env.O.t -> 'c t -> (string * string) list -> 'c t
-    val substitute : ('a,'b,'c,'d) Env.O.t -> 'c t -> (string * 'c expr) list -> 'c t
-    val guard_of_label : ('a,'b,'c,'d) Env.O.t -> 'c t -> string -> 'c Bool.t
+    val substitute_by_var : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'a) list -> 'd t
+    val substitute : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'd expr) list -> 'd t
+    val guard_of_label : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'a -> 'd Bool.t
     (** Return the guard of the label. *)
-    val guardlabels : ('a,'b,'c,'d) Env.O.t -> 'c t -> ('c Bool.t * string) list
+    val guardlabels : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('d Bool.t * 'a) list
     (** Return the list [g -> label] of guarded values. *)
     val print :
     ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-    ('a,'b,'c,'d) Env.O.t -> Format.formatter -> 'c t -> unit
+    ('a,'b,'c,'d,'e) Env.O.t -> Format.formatter -> 'd t -> unit
   end
 
   (*  -------------------------------------------------------------------- *)
@@ -412,29 +418,29 @@ module O : sig
 (** The following operations raise a [Failure] exception in case of a typing
   error. *)
 
-  val typ_of_expr : 'c t -> [>Env.typ]
+  val typ_of_expr : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> [>'a Env.typ]
   (** Type of an expression *)
 
-  val var : ('a,'b,'c,'d) Env.O.t -> string -> 'c t
+  val var : ('a,'b,'c,'d,'e) Env.O.t -> 'a -> 'd t
   (** Expression representing the litteral var *)
 
-  val ite : 'c Bool.t -> 'c t -> 'c t -> 'c t
+  val ite : 'd Bool.t -> 'd t -> 'd t -> 'd t
   (** If-then-else operation *)
 
-  val eq : ('a,'b,'c,'d) Env.O.t -> 'c t -> 'c t -> 'c Bool.t
+  val eq : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> 'd Bool.t
   (** Equality operation *)
 
-  val substitute_by_var : ('a,'b,'c,'d) Env.O.t -> 'c t -> (string * string) list -> 'c t
+  val substitute_by_var : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'a) list -> 'd t
     (** Variable renaming.
 	The new variables should already have been declared *)
 
-  val substitute : ('a,'b,'c,'d) Env.O.t -> 'c t -> (string * 'c t) list -> 'c t
+  val substitute : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'd t) list -> 'd t
     (** Parallel substitution of variables by expressions *)
 
-  val support : ('a,'b,'c,'d) Env.O.t -> 'c t -> string PSette.t
+  val support : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'a PSette.t
     (** Support of the expression *)
 
-  val support_cond : 'c Cudd.Man.t -> 'c t -> 'c Cudd.Bdd.t
+  val support_cond : 'd Cudd.Man.t -> 'd t -> 'd Cudd.Bdd.t
     (** Return the support of an expression as a conjunction of the BDD
 	identifiers involved in the expression *)
 
@@ -442,7 +448,7 @@ module O : sig
   (** {4 Miscellaneous} *)
   (*  -------------------------------------------------------------------- *)
 
-  val cube_of_bdd : ('a,'b,'c,'d) Env.O.t -> 'c Cudd.Bdd.t -> 'c Cudd.Bdd.t
+  val cube_of_bdd : ('a,'b,'c,'d,'e) Env.O.t -> 'd Cudd.Bdd.t -> 'd Cudd.Bdd.t
       (** Same as [Cudd.Bdd.cube_of_bdd], but keep only the
 	  the values of variables having a determinated value.
 
@@ -450,9 +456,9 @@ module O : sig
 	  [b and (x=1 or x=3)], whereas [cube_of_bdd] will return only [b] in
 	  such a case. *)
 
-  val tbdd_of_texpr : 'c t array -> 'c Cudd.Bdd.t array
+  val tbdd_of_texpr : 'd t array -> 'd Cudd.Bdd.t array
   (** Concatenates in an array the BDDs involved in the expressions *)
-  val texpr_of_tbdd : 'c t array -> 'c Cudd.Bdd.t array -> 'c t array
+  val texpr_of_tbdd : 'd t array -> 'd Cudd.Bdd.t array -> 'd t array
   (** Inverse operation: rebuild an array of expressions from the old array of
       expressions (for the types) and the array of BDDs. *)
 
@@ -463,25 +469,25 @@ module O : sig
 
   val print :
     ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-    ('a,'b,'c,'d) Env.O.t -> Format.formatter -> [<'c t] -> unit
+    ('a,'b,'c,'d,'e) Env.O.t -> Format.formatter -> [<'d t] -> unit
   (** Print an expression *)
 
   val print_minterm :
     ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-    ('a,'b,'c,'d) Env.O.t -> Format.formatter -> Cudd.Man.tbool array -> unit
+    ('a,'b,'c,'d,'e) Env.O.t -> Format.formatter -> Cudd.Man.tbool array -> unit
   (** Print a minterm *)
   val print_bdd :
     ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-    ('a,'b,'c,'d) Env.O.t -> Format.formatter -> 'c Cudd.Bdd.t -> unit
+    ('a,'b,'c,'d,'e) Env.O.t -> Format.formatter -> 'd Cudd.Bdd.t -> unit
   (** Print a BDD *)
 
   val print_idcondb :
     ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-    ('a,'b,'c,'d) Env.O.t -> Format.formatter -> int*bool -> unit
+    ('a,'b,'c,'d,'e) Env.O.t -> Format.formatter -> int*bool -> unit
   (** Print the condition represented by the signed BDD index. *)
   val print_idcond :
     ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-    ('a,'b,'c,'d) Env.O.t -> Format.formatter -> int -> unit
+    ('a,'b,'c,'d,'e) Env.O.t -> Format.formatter -> int -> unit
   (** Print the condition *)
 
   (*  ==================================================================== *)
@@ -493,17 +499,17 @@ module O : sig
   (*  -------------------------------------------------------------------- *)
 
   val permutation_of_rename :
-    ('a,'b,'c,'d) Env.O.t -> (string * string) list -> int array
+    ('a,'b,'c,'d,'e) Env.O.t -> ('a * 'a) list -> int array
   val composition_of_lvarexpr :
-    ('a,'b,'c,'d) Env.O.t -> (string * 'c t) list -> 'c Cudd.Bdd.t array
+    ('a,'b,'c,'d,'e) Env.O.t -> ('a * 'd t) list -> 'd Cudd.Bdd.t array
   val composition_of_lvarlexpr :
-    ('a,'b,'c,'d) Env.O.t -> string list -> 'c t list -> 'c Cudd.Bdd.t array
-  val bddsupport : ('a,'b,'c,'d) Env.O.t -> string list -> 'c Cudd.Bdd.t
+    ('a,'b,'c,'d,'e) Env.O.t -> 'a list -> 'd t list -> 'd Cudd.Bdd.t array
+  val bddsupport : ('a,'b,'c,'d,'e) Env.O.t -> 'a list -> 'd Cudd.Bdd.t
 
-  val permute : 'c t -> int array -> 'c t
-  val permute_list : 'c t list -> int array -> 'c t list
+  val permute : 'd t -> int array -> 'd t
+  val permute_list : 'd t list -> int array -> 'd t list
   val varmap : 'a t -> 'a t
-  val compose : 'c t -> 'c Cudd.Bdd.t array -> 'c t
+  val compose : 'd t -> 'd Cudd.Bdd.t array -> 'd t
 
   (*  ==================================================================== *)
   (** {3 Conversion to expressions} *)
@@ -513,17 +519,17 @@ module O : sig
     (** Syntax tree for printing *)
 
     (** Atom *)
-    type atom =
-      | Tbool of string * bool
+    type 'a atom =
+      | Tbool of 'a * bool
 	(** variable name and sign *)
-      | Tint of string * int list
+      | Tint of 'a * int list
 	(** variable name and list of possible values *)
-      | Tenum of string * string list
+      | Tenum of 'a * 'a list
 	(** variable name, possibly primed, and list of possible labels *)
 
     (** Basic term *)
-    type term =
-      | Tatom of atom
+    type 'a term =
+      | Tatom of 'a atom
 	(** *)
       | Texternal of (int * bool)
 	(** Unregistered BDD identifier and a Boolean for possible negation *)
@@ -531,44 +537,44 @@ module O : sig
 	(** Boolean constant *)
 
     (** Conjunction *)
-    type conjunction =
-      | Conjunction of term list
+    type 'a conjunction =
+      | Conjunction of 'a term list
        (** Conjunction of terms. Empty list means true. *)
       | Cfalse
 
     (** Disjunction *)
-    type disjunction =
-      | Disjunction of conjunction list
+    type 'a disjunction =
+      | Disjunction of 'a conjunction list
       (** Disjunction of conjunctions. Empty list means false *)
       | Dtrue
 
-    val map_atom : (string -> string) -> atom -> atom
-    val map_term : (string -> string) -> term -> term
-    val map_conjunction : (string -> string) -> conjunction -> conjunction
-    val map_disjunction : (string -> string) -> disjunction -> disjunction
+    val map_atom : ('a -> 'b) -> 'a atom -> 'b atom
+    val map_term : ('a -> 'b) -> 'a term -> 'b term
+    val map_conjunction : ('a -> 'b) -> 'a conjunction -> 'b conjunction
+    val map_disjunction : ('a -> 'b) -> 'a disjunction -> 'b disjunction
 
-    val term_of_vint : string -> 'c Int.t -> Reg.Minterm.t -> term
+    val term_of_vint : 'a -> 'd Int.t -> Reg.Minterm.t -> 'a term
 
     val term_of_venum :
-      ('a,'b,'c,'d) Env.O.t ->
-      string -> 'c Enum.t -> Reg.Minterm.t -> term
+      ('a,'b,'c,'d,'e) Env.O.t ->
+      'a -> 'd Enum.t -> Reg.Minterm.t -> 'a term
     val term_of_idcondb :
-      ('a,'b,'c,'d) Env.O.t -> int * bool -> term
+      ('a,'b,'c,'d,'e) Env.O.t -> int * bool -> 'a term
     val bool_of_tbool : Cudd.Man.tbool -> bool
-    val mand : term list ref -> term -> unit
+    val mand : 'a term list ref -> 'a term -> unit
     val conjunction_of_minterm :
-      ('a,'b,'c,'d) Env.O.t -> Cudd.Man.tbool array -> conjunction
+      ('a,'b,'c,'d,'e) Env.O.t -> Cudd.Man.tbool array -> 'a conjunction
     val disjunction_of_bdd :
-      ('a,'b,'c,'d) Env.O.t -> 'c Cudd.Bdd.t -> disjunction
+      ('a,'b,'c,'d,'e) Env.O.t -> 'd Cudd.Bdd.t -> 'a disjunction
     val print_term :
       ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-      ('a,'b,'c,'d) Env.O.t -> Format.formatter -> term -> unit
+      ('a,'b,'c,'d,'e) Env.O.t -> Format.formatter -> 'a term -> unit
     val print_conjunction :
       ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-      ('a,'b,'c,'d) Env.O.t -> Format.formatter -> conjunction -> unit
+      ('a,'b,'c,'d,'e) Env.O.t -> Format.formatter -> 'a conjunction -> unit
     val print_disjunction :
       ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-      ('a,'b,'c,'d) Env.O.t -> Format.formatter -> disjunction -> unit
+      ('a,'b,'c,'d,'e) Env.O.t -> Format.formatter -> 'a disjunction -> unit
 
   end
 end

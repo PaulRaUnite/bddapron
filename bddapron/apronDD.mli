@@ -60,17 +60,20 @@ type asssub = Assign | Substitute
 val asssub_texpr_array :
   ?asssub_bdd:(Cudd.Bdd.vt -> Cudd.Man.v Cudd.Bdd.t) ->
   asssub ->
+  'b Bdd.Env.symbol ->
   'a man ->
   Apron.Environment.t ->
   'a t ->
-  Apron.Dim.t array -> ApronexprDD.t array -> 'a t option -> 'a t
+  Apron.Dim.t array -> 'b ApronexprDD.t array -> 'a t option -> 'a t
   
 val assign_texpr_array :
+  'b Bdd.Env.symbol ->
   'a man -> Apron.Environment.t ->
-  'a t -> Apron.Dim.t array -> ApronexprDD.t array -> 'a t option -> 'a t
+  'a t -> Apron.Dim.t array -> 'b ApronexprDD.t array -> 'a t option -> 'a t
 val substitute_texpr_array :
+  'b Bdd.Env.symbol ->
   'a man -> Apron.Environment.t ->
-  'a t -> Apron.Dim.t array -> ApronexprDD.t array -> 'a t option -> 'a t
+  'a t -> Apron.Dim.t array -> 'b ApronexprDD.t array -> 'a t option -> 'a t
 
 val make_fun :
   'a man -> ('a leaf_u, Cudd.User.global) Cudd.User.mexist

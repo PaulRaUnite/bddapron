@@ -3,29 +3,24 @@
 (* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
-type 'a man =
-  'a ApronDD.man = {
-  apron : 'a Apron.Manager.t;
-  table : 'a ApronDD.table;
-  oglobal : 'a ApronDD.global option;
-}
-  (** BDDAPRON Manager. The type parameter ['a] indicates the
-      underlying APRON abstract domain, as in type {!'a
+type ('a,'b) man = 'b ApronDD.man
+  (** BDDAPRON Manager. The type parameter ['b] indicates the
+      underlying APRON abstract domain, as in type {!'b
       Apron.Abstract1.t} *)
 
-type 'a t = 'a ApronDD.t
+type 'b t = 'b ApronDD.t
   (** BDDAPRON Abstract value. *)
 
-val make_man : ?global:bool -> 'a Apron.Manager.t -> 'a man
+val make_man : ?global:bool -> 'b Apron.Manager.t -> ('a,'b) man
   (** Makes a BDDAPRON manager from an APRON manager.
       If [global=true] (default: [false]), uses a global (persistent)
       BDD cache for the operations [is_leq], [join], [meet]
       and [exist] (internal).
   *)
 
-val size : 'a man -> 'a t -> int
+val size : ('a,'b) man -> 'b t -> int
   (** Size of an abstract value in terms of number of nodes of the MTBDD. *)
-val print : Env.t -> Format.formatter -> 'c t -> unit
+val print : 'a Env.t -> Format.formatter -> 'b t -> unit
   (** Printing function *)
 
 (*  ********************************************************************** *)
@@ -36,27 +31,27 @@ val print : Env.t -> Format.formatter -> 'c t -> unit
 (** {3 Basic constructor} *)
 (*  ====================================================================== *)
 
-val bottom : 'a man -> Env.t -> 'a t
-val top : 'a man -> Env.t -> 'a t
-val of_apron : 'a man -> Env.t -> 'a Apron.Abstract0.t -> 'a t
+val bottom : ('a,'b) man -> 'a Env.t -> 'b t
+val top : ('a,'b) man -> 'a Env.t -> 'b t
+val of_apron : ('a,'b) man -> 'a Env.t -> 'b Apron.Abstract0.t -> 'b t
 
 (*  ====================================================================== *)
 (** {3 Tests} *)
 (*  ====================================================================== *)
 
-val is_bottom : 'a man -> 'a t -> bool
-val is_top : 'a man -> 'a t -> bool
+val is_bottom : ('a,'b) man -> 'b t -> bool
+val is_top : ('a,'b) man -> 'b t -> bool
   (** Emtpiness and Universality tests *)
 
-val is_leq : 'a man -> 'a t -> 'a t -> bool
-val is_eq : 'a man -> 'a t -> 'a t -> bool
+val is_leq : ('a,'b) man -> 'b t -> 'b t -> bool
+val is_eq : ('a,'b) man -> 'b t -> 'b t -> bool
   (** Inclusion and equality tests *)
 
 (*  ====================================================================== *)
 (** {3 Extraction of properties} *)
 (*  ====================================================================== *)
 
-val to_bddapron : 'a man -> 'a t -> (Expr0.Bool.t * 'a Apron.Abstract0.t) list
+val to_bddapron : ('a,'b) man -> 'b t -> ('a Expr0.Bool.t * 'b Apron.Abstract0.t) list
   (** Conversion to a disjunction of a conjunction of pair of a
       purely Boolean formula (without numerical constraints) and an
       APRON abstract value *)
@@ -65,35 +60,35 @@ val to_bddapron : 'a man -> 'a t -> (Expr0.Bool.t * 'a Apron.Abstract0.t) list
 (** {2 Operations} *)
 (*  ********************************************************************** *)
 
-val meet : 'a man -> 'a t -> 'a t -> 'a t
-val join : 'a man -> 'a t -> 'a t -> 'a t
+val meet : ('a,'b) man -> 'b t -> 'b t -> 'b t
+val join : ('a,'b) man -> 'b t -> 'b t -> 'b t
   (** Meet and join *)
 
-val meet_condition : 'a man -> Env.t -> Cond.t -> 'a t -> Expr0.Bool.t -> 'a t
+val meet_condition : ('a,'b) man -> 'a Env.t -> 'a Cond.t -> 'b t -> 'a Expr0.Bool.t -> 'b t
   (** Intersection with a Boolean expression (that may involve
       numerical constraints) *)
 
 val assign_lexpr :
   ?relational:bool -> ?nodependency:bool ->
-  'a man -> Env.t -> Cond.t ->
-  'a t -> string list -> Expr0.t list -> 'a t option -> 'a t
+  ('a,'b) man -> 'a Env.t -> 'a Cond.t ->
+  'b t -> 'a list -> 'a Expr0.t list -> 'b t option -> 'b t
 val substitute_lexpr :
-  'a man -> Env.t -> Cond.t ->
-  'a t -> string list -> Expr0.t list -> 'a t option -> 'a t
+  ('a,'b) man -> 'a Env.t -> 'a Cond.t ->
+  'b t -> 'a list -> 'a Expr0.t list -> 'b t option -> 'b t
   (** Parallel assignement/substitution of a list of variables by
       a list of expressions *)
 
 val forget_list :
-  'a man -> Env.t -> 'a t -> string list -> 'a t
+  ('a,'b) man -> 'a Env.t -> 'b t -> 'a list -> 'b t
   (** Forget (existential quantification) a list of variables *)
 
-val widening : 'a man -> 'a t -> 'a t -> 'a t
+val widening : ('a,'b) man -> 'b t -> 'b t -> 'b t
   (** Widening *)
 
 val apply_change :
-  bottom:'a t -> 'a man -> 'a t -> Env.change -> 'a t
+  bottom:'b t -> ('a,'b) man -> 'b t -> Env.change -> 'b t
 val apply_permutation :
-  'a man -> 'a t -> int array option * Apron.Dim.perm option -> 'a t
+  ('a,'b) man -> 'b t -> int array option * Apron.Dim.perm option -> 'b t
 
 (*  ********************************************************************** *)
 (** {2 Opened signature and Internal functions} *)
@@ -106,34 +101,34 @@ val apply_permutation :
 
 module O : sig
   val meet_idcondb :
-    'a man -> 'b -> 'b Cond.O.t -> 'a t -> int * bool -> 'a t
+    ('a,'b) man -> 'c -> ('a,'c) Cond.O.t -> 'b t -> int * bool -> 'b t
 
-  val size : 'a man -> 'a t -> int
-  val print : ('b,'c,'d) Env.O.t -> Format.formatter -> 'a t -> unit
-  val bottom : 'a man -> ('b,'c,'d) Env.O.t -> 'a t
-  val top : 'a man -> ('b,'c,'d) Env.O.t -> 'a t
-  val of_apron : 'a man -> ('b,'c,'d) Env.O.t -> 'a Apron.Abstract0.t -> 'a t
-  val is_bottom : 'a man -> 'a t -> bool
-  val is_top : 'a man -> 'a t -> bool
-  val is_leq : 'a man -> 'a t -> 'a t -> bool
-  val is_eq : 'a man -> 'a t -> 'a t -> bool
-  val to_bddapron : 'a man -> 'a t -> (Expr0.Bool.t * 'a Apron.Abstract0.t) list
-  val meet : 'a man -> 'a t -> 'a t -> 'a t
-  val join : 'a man -> 'a t -> 'a t -> 'a t
-  val meet_condition : 'a man -> 'b -> 'b Cond.O.t -> 'a t -> Expr0.Bool.t -> 'a t
+  val size : ('a,'b) man -> 'b t -> int
+  val print : ('a,'c,'d,'e) Env.O.t -> Format.formatter -> 'b t -> unit
+  val bottom : ('a,'b) man -> ('a,'c,'d,'e) Env.O.t -> 'b t
+  val top : ('a,'b) man -> ('a,'c,'d,'e) Env.O.t -> 'b t
+  val of_apron : ('a,'b) man -> ('a,'c,'d,'e) Env.O.t -> 'b Apron.Abstract0.t -> 'b t
+  val is_bottom : ('a,'b) man -> 'b t -> bool
+  val is_top : ('a,'b) man -> 'b t -> bool
+  val is_leq : ('a,'b) man -> 'b t -> 'b t -> bool
+  val is_eq : ('a,'b) man -> 'b t -> 'b t -> bool
+  val to_bddapron : ('a,'b) man -> 'b t -> ('a Expr0.Bool.t * 'b Apron.Abstract0.t) list
+  val meet : ('a,'b) man -> 'b t -> 'b t -> 'b t
+  val join : ('a,'b) man -> 'b t -> 'b t -> 'b t
+  val meet_condition : ('a,'b) man -> 'c -> ('a,'c) Cond.O.t -> 'b t -> 'a Expr0.Bool.t -> 'b t
   val assign_lexpr :
     ?relational:bool -> ?nodependency:bool ->
-    'a man -> 'b -> 'b Cond.O.t ->
-    'a t -> string list -> Expr0.t list -> 'a t option -> 'a t
+    ('a,'b) man -> 'c -> ('a,'c) Cond.O.t ->
+    'b t -> 'a list -> 'a Expr0.t list -> 'b t option -> 'b t
   val substitute_lexpr :
-    'a man -> 'b -> 'b Cond.O.t ->
-    'a t -> string list -> Expr0.t list -> 'a t option -> 'a t
+    ('a,'b) man -> 'c -> ('a,'c) Cond.O.t ->
+    'b t -> 'a list -> 'a Expr0.t list -> 'b t option -> 'b t
   val forget_list :
-    'a man -> ('b,'c,'d) Env.O.t -> 'a t -> string list -> 'a t
-  val widening : 'a man -> 'a t -> 'a t -> 'a t
+    ('a,'b) man -> ('a,'c,'d,'e) Env.O.t -> 'b t -> 'a list -> 'b t
+  val widening : ('a,'b) man -> 'b t -> 'b t -> 'b t
   val apply_change :
-    bottom:'a t -> 'a man -> 'a t -> Env.change -> 'a t
+    bottom:'b t -> ('a,'b) man -> 'b t -> Env.change -> 'b t
   val apply_permutation :
-    'a man -> 'a t -> int array option * Apron.Dim.perm option -> 'a t
+    ('a,'b) man -> 'b t -> int array option * Apron.Dim.perm option -> 'b t
 
 end

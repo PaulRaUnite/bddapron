@@ -17,71 +17,71 @@ module O : sig
   (*  ==================================================================== *)
 
   module Bool : sig
-    type 'a t = ('a Cond.O.t, 'a Expr1.O.Bool.t) Bdd.Cond.value
+    type ('a,'b)  t = (('a,'b)  Cond.O.t, ('a,'b)  Expr1.O.Bool.t) Bdd.Cond.value
 
     val of_expr :
-      ('a Cond.O.t, ('a, [> `Bool of Expr0.Bool.t ]) Env.value) Bdd.Cond.value ->
-      'a t
+      (('a,'b) Cond.O.t, ('b, [> `Bool of 'a Expr0.Bool.t ]) Env.value) Bdd.Cond.value ->
+      ('a,'b)  t
     val to_expr :
-      'a t ->
-      ('a Cond.O.t, ('a, [> `Bool of Expr0.Bool.t ]) Env.value) Bdd.Cond.value 
+      ('a,'b)  t ->
+      (('a,'b) Cond.O.t, ('b, [> `Bool of 'a Expr0.Bool.t ]) Env.value) Bdd.Cond.value
    val of_expr0 :
      ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
-     'a -> 'a Cond.O.t -> Expr0.Bool.t -> 'a t
+     'b -> ('a,'b) Cond.O.t -> 'a Expr0.Bool.t -> ('a,'b) t
    val of_expr1 :
      ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
-     'a Cond.O.t -> 'a Expr1.O.Bool.t -> 'a t
+     ('a,'b) Cond.O.t -> ('a,'b) Expr1.O.Bool.t -> ('a,'b) t
 
-   val extend_environment : 'a t -> 'a -> 'a t
-    
-   val is_false : 'a t -> bool
-   val is_true : 'a t -> bool
+   val extend_environment : ('a,'b) t -> 'b -> ('a,'b) t
 
-   val print : Format.formatter -> 'a t -> unit
+   val is_false : ('a,'b) t -> bool
+   val is_true : ('a,'b) t -> bool
+
+   val print : Format.formatter -> ('a,'b) t -> unit
   end
 
   (*  ==================================================================== *)
   (** {3 General expressions} *)
   (*  ==================================================================== *)
 
-  type 'a t = ('a Cond.O.t, 'a Expr1.O.t) Bdd.Cond.value
+  type ('a,'b) t = (('a,'b) Cond.O.t, ('a,'b) Expr1.O.t) Bdd.Cond.value
 
-  type 'a expr = 'a t
+  type ('a,'b) expr = ('a,'b) t
 
   val of_expr0 :
     ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
-    'a -> 'a Cond.O.t -> Expr0.t -> 'a t
+    'b -> ('a,'b) Cond.O.t -> 'a Expr0.t -> ('a,'b) t
   val of_expr1 :
     ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
-    'a Cond.O.t -> 'a Expr1.O.t -> 'a t
-  val extend_environment : 'a t -> 'a -> 'a t  
-  val print : Format.formatter -> 'a t -> unit
+    ('a,'b) Cond.O.t -> ('a,'b) Expr1.O.t -> ('a,'b) t
+  val extend_environment : ('a,'b) t -> 'b -> ('a,'b) t
+  val print : Format.formatter -> ('a,'b) t -> unit
 
   (*  ==================================================================== *)
   (** {3 List of expressions} *)
   (*  ==================================================================== *)
 
   module List : sig
-    type 'a t = ('a Cond.O.t, 'a Expr1.O.List.t) Bdd.Cond.value
+    type ('a,'b) t = (('a,'b) Cond.O.t, ('a,'b) Expr1.O.List.t) Bdd.Cond.value
 
    val of_lexpr0 :
      ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
-     'a -> 'a Cond.O.t -> Expr0.t list -> 'a t
+     'b -> ('a,'b) Cond.O.t -> 'a Expr0.t list -> ('a,'b) t
    val of_lexpr1 :
      ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
-     'a -> 'a Cond.O.t -> 'a Expr1.O.t list -> 'a t
+     'b -> ('a,'b) Cond.O.t -> ('a,'b) Expr1.O.t list -> ('a,'b) t
 
    val of_listexpr1 :
      ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
-     'a Cond.O.t -> 'a Expr1.O.List.t -> 'a t
+     ('a,'b) Cond.O.t -> ('a,'b) Expr1.O.List.t -> ('a,'b) t
 
-   val extend_environment : 'a t -> 'a -> 'a t
-    
-   val print : 
+   val extend_environment : ('a,'b) t -> 'b -> ('a,'b) t
+
+   val print :
      ?first:(unit,Format.formatter,unit) format ->
      ?sep:(unit,Format.formatter,unit) format ->
      ?last:(unit,Format.formatter,unit) format ->
-     Format.formatter -> 'a t -> unit
+     Format.formatter -> ('a,'b) t -> unit
   end
 end
 
@@ -89,54 +89,54 @@ end
 (** {2 Closed signature} *)
 (*  ********************************************************************** *)
 
-type t = (Cond.t, Expr1.t) Bdd.Cond.value
-type expr = t
+type 'a t = ('a Cond.t, 'a Expr1.t) Bdd.Cond.value
+type 'a expr = 'a t
 
 val of_expr0 :
   ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
-  Env.t -> Cond.t -> Expr0.t -> t
+  'a Env.t -> 'a Cond.t -> 'a Expr0.t -> 'a t
 val of_expr1 :
   ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
-  Cond.t -> Expr1.t -> t
-val extend_environment : t -> Env.t -> t
-    
-val print : Format.formatter -> t -> unit
+  'a Cond.t -> 'a Expr1.t -> 'a t
+val extend_environment : 'a t -> 'a Env.t -> 'a t
+
+val print : Format.formatter -> 'a t -> unit
 
 module Bool : sig
-  type t = (Cond.t, Expr1.Bool.t) Bdd.Cond.value
+  type 'a t = ('a Cond.t, 'a Expr1.Bool.t) Bdd.Cond.value
 
-  val of_expr : expr -> t
-  val to_expr : t -> expr
+  val of_expr : 'a expr -> 'a t
+  val to_expr : 'a t -> 'a expr
   val of_expr0 :
     ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
-    Env.t -> Cond.t -> Expr0.Bool.t -> t
+    'a Env.t -> 'a Cond.t -> 'a Expr0.Bool.t -> 'a t
   val of_expr1 :
     ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
-    Cond.t -> Expr1.Bool.t -> t
-  val extend_environment : t -> Env.t -> t
+    'a Cond.t -> 'a Expr1.Bool.t -> 'a t
+  val extend_environment : 'a t -> 'a Env.t -> 'a t
 
-  val is_false : t -> bool
-  val is_true : t -> bool
+  val is_false : 'a t -> bool
+  val is_true : 'a t -> bool
 
-  val print : Format.formatter -> t -> unit
+  val print : Format.formatter -> 'a t -> unit
 end
 
 module List : sig
-  type t = (Cond.t, Expr1.List.t) Bdd.Cond.value
+  type 'a t = ('a Cond.t, 'a Expr1.List.t) Bdd.Cond.value
 
   val of_lexpr0 :
     ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
-    Env.t -> Cond.t -> Expr0.t list -> t
-  val of_lexpr1 : 
+    'a Env.t -> 'a Cond.t -> 'a Expr0.t list -> 'a t
+  val of_lexpr1 :
     ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
-    Env.t -> Cond.t -> Expr1.t list -> t
+    'a Env.t -> 'a Cond.t -> 'a Expr1.t list -> 'a t
   val of_listexpr1 :
     ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
-    Cond.t -> Expr1.List.t -> t
-  val extend_environment : t -> Env.t -> t
-  val print :    
+    'a Cond.t -> 'a Expr1.List.t -> 'a t
+  val extend_environment : 'a t -> 'a Env.t -> 'a t
+  val print :
     ?first:(unit,Format.formatter,unit) format ->
     ?sep:(unit,Format.formatter,unit) format ->
     ?last:(unit,Format.formatter,unit) format ->
-     Format.formatter -> t -> unit
+     Format.formatter -> 'a t -> unit
 end

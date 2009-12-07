@@ -10,10 +10,19 @@ open Bdd.Env
 open Env
 open Bddleaf
 
-type 'a man = {
-  apron : 'a Apron.Manager.t;
+type 'b elt = (Cudd.Man.v, 'b Apron.Abstract0.t) Bddleaf.elt
+
+type 'b t = {
+  mutable list : 'b elt list;
+  bottom : 'b elt;
+  mutable unique : bool;
+  mutable disjoint : bool;
+}
+
+type ('a,'b) man = {
+  apron : 'b Apron.Manager.t;
   mutable bdd_restrict : Cudd.Bdd.vt -> Cudd.Bdd.vt -> Cudd.Bdd.vt;
-  mutable expr_restrict : Expr0.t -> Cudd.Bdd.vt -> Expr0.t;
+  mutable expr_restrict : 'a Expr0.t -> Cudd.Bdd.vt -> 'a Expr0.t;
   mutable meet_disjoint : bool;
   mutable join_disjoint : bool;
   mutable meet_cond_unique : bool;
@@ -27,15 +36,6 @@ type 'a man = {
   mutable forget_disjoint : bool;
   mutable change_environment_unique : bool;
   mutable change_environment_disjoint : bool;
-}
-
-type 'a elt = (Cudd.Man.v, 'a Apron.Abstract0.t) Bddleaf.elt
-
-type 'a t = {
-  mutable list : 'a elt list;
-  bottom : 'a elt;
-  mutable unique : bool;
-  mutable disjoint : bool;
 }
 
 module O = struct
@@ -546,7 +546,7 @@ module O = struct
       Array.map
 	(begin fun idb ->
 	  let `Apron condition = Bdd.Cond.cond_of_idb cond idb in
-	  let tcons0 = Apronexpr.Condition.to_tcons0 eapron condition in
+	  let tcons0 = Apronexpr.Condition.to_tcons0 env.symbol eapron condition in
 	  tcons0
 	end)
 	tidcondb
@@ -554,7 +554,7 @@ module O = struct
     Apron.Abstract0.meet_tcons_array apron abs ttcons0
 
   (** Intersection of an element with a general cube *)
-  let elt_meet_cube apron env cond (elt:'a elt) cube =
+  let elt_meet_cube apron env cond (elt:'b elt) cube =
     let supp = Cudd.Bdd.support cube in
     let suppbool = Cudd.Bdd.support_diff supp cond.supp in
     let cubecond = Cudd.Bdd.exist suppbool cube in
@@ -610,7 +610,7 @@ module O = struct
 
   (* main function *)
   let meet_cond_internal ~unique ~disjoint ~maxdepth
-      (man:'a man) env cond (t:'a t) (bdd:Cudd.Bdd.vt)
+      (man:('a,'b) man) env cond (t:'b t) (bdd:Cudd.Bdd.vt)
       =
     assert(if disjoint then unique else true);
     let cudd = Cudd.Bdd.manager t.bottom.guard in
@@ -709,7 +709,7 @@ module O = struct
     let eapron = env.ext.eapron in
     let tabsorbant = Array.make (Array.length texpr) None in
     let default = (Cudd.Bdd.dfalse env.cudd, []) in
-    let (lbvar,tavar) = Descend.split_lvar lvar lexpr in
+    let (lbvar,tavar) = Descend.split_lvar env.symbol lvar lexpr in
     let tadim = Array.map (Apron.Environment.dim_of_var eapron) tavar in
     let ores =
       Descend.descend
@@ -727,7 +727,7 @@ module O = struct
 	  else Cudd.Bdd.topvar suppcond
 	)
 	~ite:(fun ~depth ~newcube ~cond ~dthen ~delse ->
-	  let res = 
+	  let res =
 	    match (dthen,delse) with
 	    | None,x | x,None -> x
 	    | Some(glista),Some(glistb) ->
@@ -751,7 +751,7 @@ module O = struct
 		  let taexpr = Array.map Cudd.Mtbdd.get taexpr in
 		  let taexpr =
 		    Array.map
-		      (Apronexpr.to_texpr0 eapron)
+		      (Apronexpr.to_texpr0 env.symbol eapron)
 		      taexpr
 		  in
 		  asssub ~merge apron env org lbvar lbexpr tadim taexpr dest
@@ -772,7 +772,7 @@ module O = struct
       ?relational ?nodependency
       ~merge
       apron env
-      (org:'a elt) lbvar lbexpr tadim taexpr (oldest:'a elt list option)
+      (org:'b elt) lbvar lbexpr tadim taexpr (oldest:'b elt list option)
       =
     if Cudd.Bdd.is_false org.guard then
       (org.guard,[])
@@ -810,10 +810,10 @@ module O = struct
       (Cudd.Bdd.dtrue env.cudd, nlist)
 
   let assign_internal
-      ~(expr_restrict:Expr0.t -> Cudd.Bdd.vt -> Expr0.t)
+      ~(expr_restrict:'a Expr0.t -> Cudd.Bdd.vt -> 'a Expr0.t)
       ~unique ~disjoint
       ?relational ?nodependency
-      man env cond org lvar (lexpr:Expr0.t list) odest
+      man env cond org lvar (lexpr:'a Expr0.t list) odest
       =
     let cudd = env.cudd in
     let oldest = match odest with
@@ -901,7 +901,6 @@ module O = struct
       | None -> top man env
       | Some dest -> dest
     in
-    let (lbvar,lbexpr,tavar,taexpr) = Descend.split_lvarlexpr lvar lexpr in
     let nlist =
       List.fold_left
 	(begin fun res org ->
@@ -951,7 +950,7 @@ module O = struct
 	    match Env.typ_of_var env var with
 	    | #Bdd.Env.typ -> (var::lbvar,ladim)
 	    | _ ->
-		let avar = Apron.Var.of_string var in
+		let avar = Apron.Var.of_string (env.symbol.marshal var) in
 		let adim = Apron.Environment.dim_of_var eapron avar in
 		(lbvar,adim::ladim)
 	  end)

@@ -7,13 +7,14 @@
 (** {2 Datatypes } *)
 (*  ********************************************************************** *)
 
-type ('a,'b,'c) t = {
-  compare_cond : 'a -> 'a -> int;
-  negate_cond : 'b -> 'a -> 'a;
-  support_cond : 'b -> 'a -> string PSette.t;
-  mutable print_cond : 'b -> Format.formatter -> 'a -> unit;
+type ('a,'b,'c,'d) t = {
+  symbol : 'a Env.symbol;
+  compare_cond : 'c -> 'c -> int;
+  negate_cond : 'b -> 'c -> 'c;
+  support_cond : 'b -> 'c -> 'a PSette.t;
+  mutable print_cond : 'b -> Format.formatter -> 'c -> unit;
 
-  mutable cudd : 'c Cudd.Man.t;
+  mutable cudd : 'd Cudd.Man.t;
     (** CUDD manager *)
   mutable bddindex0 : int;
     (** First index for conditions *)
@@ -22,12 +23,12 @@ type ('a,'b,'c) t = {
   mutable bddindex : int;
     (** Next free index in BDDs used by {!idb_of_cond}. *)
   mutable bddincr : int;
-  mutable condidb : ('a,int*bool) PDMappe.t;
+  mutable condidb : ('c,int*bool) PDMappe.t;
     (** Two-way association between a condition and a pair of a
 	BDD index and a polarity *)
-  mutable supp : 'c Cudd.Bdd.t;
+  mutable supp : 'd Cudd.Bdd.t;
     (** Support of conditions *)
-  mutable careset : 'c Cudd.Bdd.t;
+  mutable careset : 'd Cudd.Bdd.t;
     (** Boolean formula indicating which logical combination known
 	as true could be exploited for simplification.  For
 	instance, [x>=1 => x>=0]. *)
@@ -37,55 +38,57 @@ type ('a,'b,'c) t = {
 (** {2 Printing} *)
 (*  ********************************************************************** *)
 
-val print : 'b -> Format.formatter -> ('a, 'b, 'c) t -> unit
+val print : 'b -> Format.formatter -> ('a,'b,'c,'d) t -> unit
 
 (*  ********************************************************************** *)
 (** {2 Constructors} *)
 (*  ********************************************************************** *)
 
 val make :
+  symbol:'a Env.symbol ->
+  compare_cond:('c -> 'c -> int) ->
+  negate_cond:('b -> 'c -> 'c) ->
+  support_cond:('b -> 'c -> 'a PSette.t) ->
+  print_cond:('b -> Format.formatter -> 'c -> unit) ->
   ?bddindex0:int ->
   ?bddsize:int ->
-  'c Cudd.Man.t ->
-  compare_cond:('a -> 'a -> int) ->
-  negate_cond:('b -> 'a -> 'a) ->
-  support_cond:('b -> 'a -> string PSette.t) ->
-  print_cond:('b -> Format.formatter -> 'a -> unit) -> ('a, 'b, 'c) t
+  'd Cudd.Man.t ->
+  ('a,'b,'c,'d) t
 
-val copy : ('a, 'b, 'c) t -> ('a, 'b, 'c) t
+val copy : ('a,'b,'c,'d) t -> ('a,'b,'c,'d) t
 
 (*  ********************************************************************** *)
 (** {2 Internal functions} *)
 (*  ********************************************************************** *)
 
-val permutation : ('a, 'b, 'c) t -> int array
+val permutation : ('a,'b,'c,'d) t -> int array
     (** Compute the permutation for normalizing the environment *)
-val permute_with : ('a, 'b, 'c) t -> int array -> unit
+val permute_with : ('a,'b,'c,'d) t -> int array -> unit
     (** Apply the given permutation to the environment *)
-val normalize_with : ('a, 'b, 'c) t -> int array
+val normalize_with : ('a,'b,'c,'d) t -> int array
     (** Combine the two previous functions, and return the permutation *)
-val reduce_with : ('a, 'b, 'c) t -> 'c Cudd.Bdd.t -> unit
+val reduce_with : ('a,'b,'c,'d) t -> 'd Cudd.Bdd.t -> unit
     (** Remove from the environment all conditions that do not
 	belong to the given support. Does not perform
 	normalization (so there may be "holes" in the allocation
 	of indices *)
-val clear : ('a, 'b, 'c) t -> unit
+val clear : ('a,'b,'c,'d) t -> unit
     (** Clear all the conditions (results in a normalized environments) *)
-val check_normalized : 'a -> ('b, 'a, 'c) t -> bool
+val check_normalized : 'b -> ('a,'b,'c,'d) t -> bool
 
 (*  ********************************************************************** *)
 (** {2 Operations} *)
 (*  ********************************************************************** *)
 
-val cond_of_idb : ('a, 'b, 'c) t -> int * bool -> 'a
-val idb_of_cond : 'a -> ('b, 'a, 'c) t -> 'b -> int * bool
-val compute_careset : ('a, 'b, 'c) t -> normalized:bool -> unit
-val is_leq : ('a, 'b, 'c) t -> ('a, 'b, 'c) t -> bool
-val is_eq : ('a, 'b, 'c) t -> ('a, 'b, 'c) t -> bool
-val shift : ('a, 'b, 'c) t -> int -> ('a, 'b, 'c) t
-val lce : ('a, 'b, 'c) t -> ('a, 'b, 'c) t -> ('a, 'b, 'c) t
-val permutation12 : ('a, 'b, 'c) t -> ('a, 'b, 'c) t -> int array
-val permutation21 : ('a, 'b, 'c) t -> ('a, 'b, 'c) t -> int array
+val cond_of_idb : ('a,'b,'c,'d) t -> int * bool -> 'c
+val idb_of_cond : 'a -> ('b, 'a, 'c, 'd) t -> 'c -> int * bool
+val compute_careset : ('a,'b,'c,'d) t -> normalized:bool -> unit
+val is_leq : ('a,'b,'c,'d) t -> ('a,'b,'c,'d) t -> bool
+val is_eq : ('a,'b,'c,'d) t -> ('a,'b,'c,'d) t -> bool
+val shift : ('a,'b,'c,'d) t -> int -> ('a,'b,'c,'d) t
+val lce : ('a,'b,'c,'d) t -> ('a,'b,'c,'d) t -> ('a,'b,'c,'d) t
+val permutation12 : ('a,'b,'c,'d) t -> ('a,'b,'c,'d) t -> int array
+val permutation21 : ('a,'b,'c,'d) t -> ('a,'b,'c,'d) t -> int array
 
 (*  ********************************************************************** *)
 (** {2 Level 2} *)

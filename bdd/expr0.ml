@@ -37,14 +37,14 @@ module O = struct
   (** {3 Internal functions} *)
   (*  ====================================================================== *)
 
-  let register_of_var (env:('a,'b,'c,'d) Env.O.t) (var:string) : 'c Cudd.Bdd.t array
+  let register_of_var (env:('a,'b,'c,'d,'e) Env.O.t) (var:'a) : 'd Cudd.Bdd.t array
       =
     let tid = PMappe.find var env.vartid in
     let cudd = env.cudd in
     let reg = Array.map (fun id -> Cudd.Bdd.ithvar cudd id) tid in
     reg  
 
-  let bddvar (env:('a,'b,'c,'d) Env.O.t) (var:string) : 'c expr
+  let bddvar (env:('a,'b,'c,'d,'e) Env.O.t) (var:'a) : 'd expr
       =
     begin match Env.typ_of_var env var with
     | #Env.typ as typ ->
@@ -59,31 +59,31 @@ module O = struct
 	      })
 	  | `Benum s ->
 	      `Benum({
-		Enum.typ = s;
+		Enum.typ = env.symbol.marshal s;
 		Enum.reg = reg;
 	      })
 	with Not_found ->
 	  `Benum (Enum.of_label env var)
 	end
-    | _ -> Env.notfound "unknown type for variable %s" var
+    | _ -> Env.notfound "unknown type for variable %a" env.symbol.print var
     end
 
   (*  ---------------------------------------------------------------------- *)
   (** {4 Accessors} *)
   (*  ---------------------------------------------------------------------- *)
 
-  let mem_id (env:('a,'b,'c,'d) Env.O.t) (id:int) : bool =
+  let mem_id (env:('a,'b,'c,'d,'e) Env.O.t) (id:int) : bool =
     PMappe.mem id env.idcondvar
 
-  let vartyptid_of_id (env:('a,'b,'c,'d) Env.O.t) (id:int) =
+  let vartyptid_of_id (env:('a,'b,'c,'d,'e) Env.O.t) (id:int) =
     let var = PMappe.find id env.idcondvar in
     (var, PMappe.find var env.vartyp, PMappe.find var env.vartid)
 
-  let tid_of_var (env:('a,'b,'c,'d) Env.O.t) (var:string) : int array
+  let tid_of_var (env:('a,'b,'c,'d,'e) Env.O.t) (var:'a) : int array
       =
     PMappe.find var env.vartid
 
-  let reg_of_expr (expr:'a expr) : 'a Cudd.Bdd.t array
+  let reg_of_expr (expr:'a expr) : 'a Reg.t
       =
     match expr with
     | `Bool(x) -> [| x |]
@@ -96,38 +96,37 @@ module O = struct
 
   module Expr = struct
     (** Syntax tree for printing *)
-    
+
     (** Atom *)
-    type atom =
-      | Tbool of string * bool
-	  (** variable name and sign *)
-      | Tint of string * int list
-	  (** variable name and list of possible values *)
-      | Tenum of string * string list
-	  (** variable name, possibly primed, and list of possible labels *)
+    type 'a atom =
+      | Tbool of 'a * bool
+	(** variable name and sign *)
+      | Tint of 'a * int list
+	(** variable name and list of possible values *)
+      | Tenum of 'a * 'a list
+	(** variable name, possibly primed, and list of possible labels *)
 
     (** Basic term *)
-    type term =
-      | Tatom of atom
-	  (** *)
+    type 'a term =
+      | Tatom of 'a atom
+	(** *)
       | Texternal of (int * bool)
-	  (** Unregistered BDD identifier and a Boolean for
-	      possible negation *)
+	(** Unregistered BDD identifier and a Boolean for possible negation *)
       | Tcst of bool
-	  (** Boolean constant *)
+	(** Boolean constant *)
 
     (** Conjunction *)
-    type conjunction =
-      | Conjunction of term list
-         (** Conjunction of terms. Empty list means true. *)
+    type 'a conjunction =
+      | Conjunction of 'a term list
+       (** Conjunction of terms. Empty list means true. *)
       | Cfalse
 
     (** Disjunction *)
-    type disjunction =
-      | Disjunction of conjunction list
-        (** Disjunction of conjunctions. Empty list means false *)
+    type 'a disjunction =
+      | Disjunction of 'a conjunction list
+      (** Disjunction of conjunctions. Empty list means false *)
       | Dtrue
-
+    
     let map_atom f = function
       | Tbool(n,b) -> Tbool(f n,b)
       | Tint(n,l) -> Tint(f n,l)
@@ -135,7 +134,8 @@ module O = struct
 
     let map_term f = function
       | Tatom atom -> Tatom (map_atom f atom)
-      | _ as x -> x
+      | Texternal _ as x -> x
+      | Tcst _ as x -> x
 	  
     let map_conjunction f = function
       | Conjunction lterm -> Conjunction (List.map (map_term f) lterm)
@@ -153,10 +153,10 @@ module O = struct
     minterm that concerns the argument variable. *)
 
     let term_of_vint
-	(var:string) (reg:'c Int.t)
+	(var:'a) (reg:'d Int.t)
 	(minterm:Cudd.Man.tbool array)
 	:
-	term
+	'a term
 	=
       let lcode =
 	Reg.Minterm.map
@@ -166,18 +166,19 @@ module O = struct
       Tatom(Tint(var,lcode))
 
     let term_of_venum
-	(env:('a,'b,'c,'d) Env.O.t)
-	(var:string) (reg:'c Enum.t)
+	(env:('a,'b,'c,'d,'e) Env.O.t)
+	(var:'a) (reg:'d Enum.t)
 	(minterm:Cudd.Man.tbool array)
 	:
-	term
+	'a term
 	=
+      let typ = env.symbol.unmarshal reg.Enum.typ in
       let labels = ref [] in
       Reg.Minterm.iter
 	(begin fun valminterm ->
 	  let code = Reg.Minterm.to_int ~signed:false valminterm in
-	  if Enum.mem_typcode env reg.Enum.typ code then begin
-	    let label = Enum.label_of_typcode env reg.Enum.typ code in
+	  if Enum.mem_typcode env typ code then begin
+	    let label = Enum.label_of_typcode env typ code in
 	    labels :=  label :: !labels
 	  end;
 	end)
@@ -188,7 +189,7 @@ module O = struct
       if length=0 then
 	Tcst(false)
       else begin
-	let tlabels = Enum.labels_of_typ env reg.Enum.typ in
+	let tlabels = Enum.labels_of_typ env typ in
 	if length=Array.length tlabels then
 	  Tcst(true)
 	else
@@ -199,7 +200,7 @@ module O = struct
     (** {4 Converts a BDD condition} *)
     (*  -------------------------------------------------------------------- *)
 
-    let term_of_idcondb (env:('a,'b,'c,'d) Env.O.t) (idcondb:int*bool) : term
+    let term_of_idcondb (env:('a,'b,'c,'d,'e) Env.O.t) (idcondb:int*bool) : 'a term
 	=
       let (idcond,b) = idcondb in
       if mem_id env idcond then begin
@@ -242,7 +243,7 @@ module O = struct
       | Cudd.Man.Top -> failwith ""
 
     (** Raises Exit if false value *)
-    let mand (rconjunction:term list ref) (term:term) : unit
+    let mand (rconjunction:'a term list ref) (term:'a term) : unit
 	=
       match term with
       | Tcst(true) -> ()
@@ -250,13 +251,13 @@ module O = struct
       | _ -> rconjunction := term :: !rconjunction
 
     let conjunction_of_minterm
-	(env:('a,'b,'c,'d) Env.O.t)
+	(env:('a,'b,'c,'d,'e) Env.O.t)
 	(gminterm:Cudd.Man.tbool array)
 	:
-	conjunction
+	'a conjunction
 	=
       try
-	let res = ref ([]:term list) in
+	let res = ref [] in
         (* We iterate first on the Boolean variables *)
 	PMappe.iter
 	  (begin fun var tid ->
@@ -309,10 +310,10 @@ module O = struct
     (*  -------------------------------------------------------------------- *)
 
     let disjunction_of_bdd
-	(env:('a,'b,'c,'d) Env.O.t)
-	(bdd:'c Cudd.Bdd.t)
+	(env:('a,'b,'c,'d,'e) Env.O.t)
+	(bdd:'d Cudd.Bdd.t)
 	:
-	disjunction
+	'a disjunction
 	=
       if Cudd.Bdd.is_true bdd then
 	Dtrue
@@ -320,7 +321,7 @@ module O = struct
 	Disjunction([])
       else begin
 	try
-	  let res = ref ([]:conjunction list) in
+	  let res = ref [] in
 	  Cudd.Bdd.iter_cube
 	    (begin fun cube ->
 	      let conjunction = conjunction_of_minterm env cube in
@@ -339,30 +340,32 @@ module O = struct
     (** {4 Printing} *)
     (*  -------------------------------------------------------------------- *)
 
-    let print_term ?print_external_idcondb (env:('a,'b,'c,'d) Env.O.t) fmt (term:term) =
+    let print_term ?print_external_idcondb (env:('a,'b,'c,'d,'e) Env.O.t) fmt (term:'a term) =
       match term with
       | Tatom(atom) ->
 	  begin match atom with
 	  | Tbool(var,s) ->
-	      fprintf fmt "%s%s"
+	      fprintf fmt "%s%a"
 		(if s then "" else "not ")
-		var
+		env.symbol.print var
 	  | Tenum(var,labels) ->
 	      if List.tl labels = [] then
-		fprintf fmt "%s = %s" var (List.hd labels)
+		fprintf fmt "%a = %a" 
+		  env.symbol.print var 
+		  env.symbol.print (List.hd labels)
 	      else
-		fprintf fmt "%s in {%a}"
-		  var
+		fprintf fmt "%a in {%a}"
+		  env.symbol.print var
 		  (Print.list
 		    ~first:"@[<h>" ~sep:",@," ~last:"@]"
-		    pp_print_string)
+		    env.symbol.print)
 		  labels
 	  | Tint(var,codes) ->
 	      if List.tl codes = [] then
-		fprintf fmt "%s = %i" var (List.hd codes)
+		fprintf fmt "%a = %i" env.symbol.print var (List.hd codes)
 	      else
-		fprintf fmt "%s in {%a}"
-		  var
+		fprintf fmt "%a in {%a}"
+		  env.symbol.print var
 		  (Print.list
 		    ~first:"@[<h>" ~sep:",@," ~last:"@]"
 		    pp_print_int)
@@ -378,7 +381,7 @@ module O = struct
       | Tcst(b) ->
 	  pp_print_bool fmt b
 
-    let print_conjunction ?print_external_idcondb env fmt (conjunction:conjunction) =
+    let print_conjunction ?print_external_idcondb env fmt (conjunction:'a conjunction) =
       match conjunction with
       | Cfalse -> pp_print_string fmt "false"
       | Conjunction([]) -> pp_print_string fmt "true"
@@ -389,7 +392,7 @@ module O = struct
 	    fmt
 	    conjunction
 
-    let print_disjunction ?print_external_idcondb env fmt (disjunction:disjunction) =
+    let print_disjunction ?print_external_idcondb env fmt (disjunction:'a disjunction) =
       match disjunction with
       | Dtrue -> pp_print_string fmt "true"
       | Disjunction([]) -> pp_print_string fmt "false"
@@ -415,7 +418,7 @@ module O = struct
 
   let print_minterm
       ?print_external_idcondb 
-      (env:('a,'b,'c,'d) Env.O.t)
+      (env:('a,'b,'c,'d,'e) Env.O.t)
       (fmt:Format.formatter) (gminterm:Cudd.Man.tbool array)
       :
       unit
@@ -449,7 +452,7 @@ module O = struct
     ;
     !res
 
-  let print_bdd ?print_external_idcondb (env:('a,'b,'c,'d) Env.O.t) fmt (bdd:'c Cudd.Bdd.t) =
+  let print_bdd ?print_external_idcondb (env:('a,'b,'c,'d,'e) Env.O.t) fmt (bdd:'d Cudd.Bdd.t) =
     if Cudd.Bdd.is_true bdd then
       pp_print_string fmt "true"
     else if Cudd.Bdd.is_false bdd then
@@ -478,14 +481,14 @@ module O = struct
   (** {4 Conditions} *)
   (*  ---------------------------------------------------------------------- *)
 
-  let print_idcondb ?print_external_idcondb (env:('a,'b,'c,'d) Env.O.t) fmt (idcondb:int*bool)
+  let print_idcondb ?print_external_idcondb (env:('a,'b,'c,'d,'e) Env.O.t) fmt (idcondb:int*bool)
       =
     let term = Expr.term_of_idcondb env idcondb in
     Expr.print_term ?print_external_idcondb env fmt term
 
   let print_idcond 
       ?print_external_idcondb 
-      (env:('a,'b,'c,'d) Env.O.t) fmt (idcond:int)
+      (env:('a,'b,'c,'d,'e) Env.O.t) fmt (idcond:int)
       =
     print_idcondb ?print_external_idcondb env fmt (idcond,true)
 
@@ -493,7 +496,7 @@ module O = struct
   (** {4 Expressions} *)
   (*  ---------------------------------------------------------------------- *)
 
-  let print ?print_external_idcondb (env:('a,'b,'c,'d) Env.O.t) (fmt:Format.formatter) expr : unit =
+  let print ?print_external_idcondb (env:('a,'b,'c,'d,'e) Env.O.t) (fmt:Format.formatter) expr : unit =
     match expr with
     | `Bool x -> 
 	print_bdd ?print_external_idcondb env fmt x
@@ -588,7 +591,7 @@ module O = struct
   (** {3 Expressions} *)
   (*  ====================================================================== *)
 
-  let bddsupport (env:('a,'b,'c,'d) Env.O.t) (set:string list)  : 'c Cudd.Bdd.t
+  let bddsupport (env:('a,'b,'c,'d,'e) Env.O.t) (set:'a list)  : 'd Cudd.Bdd.t
       =
     let cudd = env.cudd in
     let dtrue = Cudd.Bdd.dtrue cudd in
@@ -603,12 +606,12 @@ module O = struct
       set;
     !res
 
-  let typ_of_expr (expr:'a expr) : [>Env.typ]
+  let typ_of_expr (env:('a, 'b, 'c, 'd, 'e) Env.O.t) (expr:'d expr) : [>'a Env.typ]
       =
     match expr with
     | `Bool _ -> `Bool
     | `Bint(x) -> `Bint(x.Int.signed, Array.length x.Int.reg)
-    | `Benum(x) -> `Benum(x.Enum.typ)
+    | `Benum(x) -> `Benum(env.symbol.unmarshal x.Enum.typ)
 
   let mapmonop
       (monop : 'a Cudd.Bdd.t -> 'a Cudd.Bdd.t)
@@ -630,8 +633,8 @@ module O = struct
 	}
 
   let permutation_of_rename
-      (env:('a,'b,'c,'d) Env.O.t)
-      (substitution : (string * string) list)
+      (env:('a,'b,'c,'d,'e) Env.O.t)
+      (substitution : ('a * 'a) list)
       :
       int array
       =
@@ -653,10 +656,10 @@ module O = struct
     res
 
   let composition_of_lvarexpr
-      (env:('a,'b,'c,'d) Env.O.t)
-      (lvarexpr : (string * 'c expr) list)
+      (env:('a,'b,'c,'d,'e) Env.O.t)
+      (lvarexpr : ('a * 'd expr) list)
       :
-      'c Cudd.Bdd.t array
+      'd Cudd.Bdd.t array
       =
     let manager = env.cudd in
     let res =
@@ -665,7 +668,7 @@ module O = struct
     in
     List.iter
       (begin fun (var,expr) ->
-	assert ((Env.typ_of_var env var) = (typ_of_expr expr));
+	assert ((Env.typ_of_var env var) = (typ_of_expr env expr));
 	let tid = tid_of_var env var in
 	let reg = reg_of_expr expr in
 	Array.iteri
@@ -680,10 +683,10 @@ module O = struct
     res
 
   let composition_of_lvarlexpr
-      (env:('a,'b,'c,'d) Env.O.t)
-      (lvar:string list) (lexpr:'c expr list)
+      (env:('a,'b,'c,'d,'e) Env.O.t)
+      (lvar:'a list) (lexpr:'d expr list)
       :
-      'c Cudd.Bdd.t array
+      'd Cudd.Bdd.t array
       =
     let manager = env.cudd in
     let res =
@@ -692,7 +695,7 @@ module O = struct
     in
     List.iter2
       (begin fun var expr ->
-	assert ((Env.typ_of_var env var) = (typ_of_expr expr));
+	assert ((Env.typ_of_var env var) = (typ_of_expr env expr));
 	let tid = tid_of_var env var in
 	let reg = reg_of_expr expr in
 	Array.iteri
@@ -723,19 +726,19 @@ module O = struct
     mapmonop (Cudd.Bdd.vectorcompose composition) expr
 
   let substitute_by_var
-      (env:('a,'b,'c,'d) Env.O.t)
-      (expr:'c expr)
-      (substitution: (string * string) list)
-      : 'c expr
+      (env:('a,'b,'c,'d,'e) Env.O.t)
+      (expr:'d expr)
+      (substitution: ('a * 'a) list)
+      : 'd expr
       =
     let perm = permutation_of_rename env substitution in
     permute expr perm
 
   let substitute
-      (env:('a,'b,'c,'d) Env.O.t)
-      (expr:'c expr)
-      (substitution: (string * 'c expr) list)
-      : 'c expr
+      (env:('a,'b,'c,'d,'e) Env.O.t)
+      (expr:'d expr)
+      (substitution: ('a * 'd expr) list)
+      : 'd expr
       =
     let composition = composition_of_lvarexpr env substitution in
     compose expr composition
@@ -752,7 +755,7 @@ module O = struct
 
   module Bool = struct
 
-    type 'c t = 'c Cudd.Bdd.t
+    type 'd t = 'd Cudd.Bdd.t
     type dt = Cudd.Man.d t
     type vt = Cudd.Man.v t
 
@@ -762,17 +765,17 @@ module O = struct
 
     let to_expr bdd = `Bool bdd
 
-    let dtrue (env:('a,'b,'c,'d) Env.O.t) = Cudd.Bdd.dtrue env.cudd
-    let dfalse (env:('a,'b,'c,'d) Env.O.t) = Cudd.Bdd.dfalse env.cudd
-    let of_bool (env:('a,'b,'c,'d) Env.O.t) b =
+    let dtrue (env:('a,'b,'c,'d,'e) Env.O.t) = Cudd.Bdd.dtrue env.cudd
+    let dfalse (env:('a,'b,'c,'d,'e) Env.O.t) = Cudd.Bdd.dfalse env.cudd
+    let of_bool (env:('a,'b,'c,'d,'e) Env.O.t) b =
       if b then Cudd.Bdd.dtrue env.cudd else Cudd.Bdd.dfalse env.cudd
 
-    let var (env:('a,'b,'c,'d) Env.O.t) (var:string) =
+    let var (env:('a,'b,'c,'d,'e) Env.O.t) (var:'a) =
       match bddvar env var with
       | `Bool x -> x
-      | _ -> failwith (Print.sprintf "Formula.Bool.var: variable %s of type %a instead of Boolean"
-	  var
-	  Env.print_typ (Env.typ_of_var env var))
+      | _ -> failwith (Print.sprintf "Formula.Bool.var: variable %a of type %a instead of Boolean"
+	  env.symbol.print var
+	  (Env.print_typ env.symbol.print) (Env.typ_of_var env var))
 
     let dnot env = Cudd.Bdd.dnot
     let dand env = Cudd.Bdd.dand
@@ -792,10 +795,10 @@ module O = struct
     let is_eq env = Cudd.Bdd.is_equal
     let is_and_false env = Cudd.Bdd.is_inter_empty
 
-    let exist env (lvar:string list) expr =
+    let exist env (lvar:'a list) expr =
       Cudd.Bdd.exist (bddsupport env lvar) expr
 
-    let forall env (lvar:string list) expr =
+    let forall env (lvar:'a list) expr =
       Cudd.Bdd.forall (bddsupport env lvar) expr
 
     let cofactor = Cudd.Bdd.cofactor
@@ -804,17 +807,17 @@ module O = struct
     let permute = Cudd.Bdd.permute
     let varmap = Cudd.Bdd.varmap
 
-    let substitute_by_var (env:('a,'b,'c,'d) Env.O.t) expr (substitution:(string*string) list)
+    let substitute_by_var (env:('a,'b,'c,'d,'e) Env.O.t) expr (substitution:('a*'a) list)
 	=
       let perm = permutation_of_rename env substitution in
       Cudd.Bdd.permute expr perm
 
-    let substitute (env:('a,'b,'c,'d) Env.O.t) expr (substitution: (string * 'c expr) list)
+    let substitute (env:('a,'b,'c,'d,'e) Env.O.t) expr (substitution: ('a * 'd expr) list)
 	=
       let composition = composition_of_lvarexpr env substitution in
       Cudd.Bdd.vectorcompose composition expr
 
-    let print ?print_external_idcondb (env:('a,'b,'c,'d) Env.O.t) fmt (x:'c t) =
+    let print ?print_external_idcondb (env:('a,'b,'c,'d,'e) Env.O.t) fmt (x:'d t) =
       print_bdd env fmt x
 
   end
@@ -825,7 +828,7 @@ module O = struct
 
   module Bint = struct
 
-    type 'c t = 'c Int.t
+    type 'd t = 'd Int.t
     type dt = Cudd.Man.d t
     type vt = Cudd.Man.v t
 
@@ -833,38 +836,38 @@ module O = struct
       | `Bint x -> x
       | _ -> failwith "Bint.of_expr: bounded integer expression expected"
 
-    let to_expr (bddint:'c t) = `Bint bddint
+    let to_expr (bddint:'d t) = `Bint bddint
 
-    let of_int (env:('a,'b,'c,'d) Env.O.t) typ cst =
+    let of_int (env:('a,'b,'c,'d,'e) Env.O.t) typ cst =
       match typ with
       | `Bint(sgn,size) ->
 	  Int.of_int env.cudd sgn size cst
       | _ -> failwith ""
 
-    let var (env:('a,'b,'c,'d) Env.O.t) (var:string) =
+    let var (env:('a,'b,'c,'d,'e) Env.O.t) (var:'a) =
       match bddvar env var with
       | `Bint x -> x
-      | _ -> failwith (Print.sprintf "Formula.Bint.var: variable %s of type %a instead of bounded integer"
-	  var Env.print_typ (Env.typ_of_var env var))
+      | _ -> failwith (Print.sprintf "Formula.Bint.var: variable %a of type %a instead of bounded integer"
+	  env.symbol.print var (Env.print_typ env.symbol.print) (Env.typ_of_var env var))
 
-    let neg (env:('a,'b,'c,'d) Env.O.t) = Int.neg
-    let succ (env:('a,'b,'c,'d) Env.O.t) = Int.succ
-    let pred (env:('a,'b,'c,'d) Env.O.t) = Int.pred
-    let add (env:('a,'b,'c,'d) Env.O.t) = Int.add
-    let sub (env:('a,'b,'c,'d) Env.O.t) = Int.sub
-    let mul (env:('a,'b,'c,'d) Env.O.t) = Int.mul
-    let shift_left (env:('a,'b,'c,'d) Env.O.t) = Int.shift_left
-    let shift_right (env:('a,'b,'c,'d) Env.O.t) = Int.shift_right
-    let scale (env:('a,'b,'c,'d) Env.O.t) = Int.scale
-    let ite (env:('a,'b,'c,'d) Env.O.t) = Int.ite
+    let neg (env:('a,'b,'c,'d,'e) Env.O.t) = Int.neg
+    let succ (env:('a,'b,'c,'d,'e) Env.O.t) = Int.succ
+    let pred (env:('a,'b,'c,'d,'e) Env.O.t) = Int.pred
+    let add (env:('a,'b,'c,'d,'e) Env.O.t) = Int.add
+    let sub (env:('a,'b,'c,'d,'e) Env.O.t) = Int.sub
+    let mul (env:('a,'b,'c,'d,'e) Env.O.t) = Int.mul
+    let shift_left (env:('a,'b,'c,'d,'e) Env.O.t) = Int.shift_left
+    let shift_right (env:('a,'b,'c,'d,'e) Env.O.t) = Int.shift_right
+    let scale (env:('a,'b,'c,'d,'e) Env.O.t) = Int.scale
+    let ite (env:('a,'b,'c,'d,'e) Env.O.t) = Int.ite
 
-    let zero (env:('a,'b,'c,'d) Env.O.t) = Int.zero env.cudd
-    let eq (env:('a,'b,'c,'d) Env.O.t) = Int.equal env.cudd
-    let eq_int (env:('a,'b,'c,'d) Env.O.t) = Int.equal_int env.cudd
-    let supeq (env:('a,'b,'c,'d) Env.O.t) = Int.greatereq env.cudd
-    let supeq_int (env:('a,'b,'c,'d) Env.O.t) = Int.greatereq_int env.cudd
-    let sup (env:('a,'b,'c,'d) Env.O.t) = Int.greater env.cudd
-    let sup_int (env:('a,'b,'c,'d) Env.O.t) = Int.greater_int env.cudd
+    let zero (env:('a,'b,'c,'d,'e) Env.O.t) = Int.zero env.cudd
+    let eq (env:('a,'b,'c,'d,'e) Env.O.t) = Int.equal env.cudd
+    let eq_int (env:('a,'b,'c,'d,'e) Env.O.t) = Int.equal_int env.cudd
+    let supeq (env:('a,'b,'c,'d,'e) Env.O.t) = Int.greatereq env.cudd
+    let supeq_int (env:('a,'b,'c,'d,'e) Env.O.t) = Int.greatereq_int env.cudd
+    let sup (env:('a,'b,'c,'d,'e) Env.O.t) = Int.greater env.cudd
+    let sup_int (env:('a,'b,'c,'d,'e) Env.O.t) = Int.greater_int env.cudd
 
     let cofactor = Int.cofactor
     let restrict = Int.restrict
@@ -872,20 +875,20 @@ module O = struct
     let permute = Int.permute
     let varmap = Int.varmap
 
-    let substitute_by_var env expr (substitution:(string*string) list)
+    let substitute_by_var env expr (substitution:('a*'a) list)
 	=
       let perm = permutation_of_rename env substitution in
       Int.permute expr perm
 
-    let substitute env expr (substitution: (string * 'c expr) list)
+    let substitute env expr (substitution: ('a * 'd expr) list)
 	=
       let composition = composition_of_lvarexpr env substitution in
       Int.vectorcompose composition expr
 
-    let guard_of_int (env:('a,'b,'c,'d) Env.O.t) = Int.guard_of_int env.cudd
-    let guardints (env:('a,'b,'c,'d) Env.O.t) = Int.guardints env.cudd
+    let guard_of_int (env:('a,'b,'c,'d,'e) Env.O.t) = Int.guard_of_int env.cudd
+    let guardints (env:('a,'b,'c,'d,'e) Env.O.t) = Int.guardints env.cudd
 
-    let print ?print_external_idcondb (env:('a,'b,'c,'d) Env.O.t) fmt (x:'c t) =
+    let print ?print_external_idcondb (env:('a,'b,'c,'d,'e) Env.O.t) fmt (x:'d t) =
       Int.print_minterm (Bool.print env) fmt x
   end
 
@@ -894,7 +897,7 @@ module O = struct
   (*  ---------------------------------------------------------------------- *)
 
   module Benum = struct
-    type 'c t = 'c Enum.t
+    type 'd t = 'd Enum.t
     type dt = Cudd.Man.d t
     type vt = Cudd.Man.v t
 
@@ -902,18 +905,18 @@ module O = struct
       | `Benum x -> x
       | _ -> failwith "Benum.of_expr: bounded integer expression expected"
 
-    let to_expr (bddenum:'c t) = `Benum bddenum
+    let to_expr (bddenum:'d t) = `Benum bddenum
 
-    let var (env:('a,'b,'c,'d) Env.O.t) (var:string) =
+    let var (env:('a,'b,'c,'d,'e) Env.O.t) (var:'a) =
       match bddvar env  var with
       | `Benum x -> x
-      | _ -> failwith (Print.sprintf "Formula.Bint.var: variable %s of type %a instead of enumerated type"
-	  var Env.print_typ (Env.typ_of_var env var))
+      | _ -> failwith (Print.sprintf "Formula.Bint.var: variable %a of type %a instead of enumerated type"
+	  env.symbol.print var (Env.print_typ env.symbol.print) (Env.typ_of_var env var))
 
-    let ite (env:('a,'b,'c,'d) Env.O.t) bdd x y = Enum.ite bdd x y
+    let ite (env:('a,'b,'c,'d,'e) Env.O.t) bdd x y = Enum.ite bdd x y
 
-    let eq (env:('a,'b,'c,'d) Env.O.t) x y = Enum.equal env x y
-    let eq_label (env:('a,'b,'c,'d) Env.O.t) x y = Enum.equal_label env x y
+    let eq (env:('a,'b,'c,'d,'e) Env.O.t) x y = Enum.equal env x y
+    let eq_label (env:('a,'b,'c,'d,'e) Env.O.t) x y = Enum.equal_label env x y
 
     let cofactor = Enum.cofactor
     let restrict = Enum.restrict
@@ -921,12 +924,12 @@ module O = struct
     let permute = Enum.permute
     let varmap = Enum.varmap
 
-    let substitute_by_var env expr (substitution:(string*string) list)
+    let substitute_by_var env expr (substitution:('a*'a) list)
 	=
       let perm = permutation_of_rename env substitution in
       Enum.permute expr perm
 
-    let substitute env expr (substitution: (string * 'c expr) list)
+    let substitute env expr (substitution: ('a * 'd expr) list)
 	=
       let composition = composition_of_lvarexpr env substitution in
       Enum.vectorcompose composition expr
@@ -934,7 +937,7 @@ module O = struct
     let guard_of_label = Enum.guard_of_label
     let guardlabels = Enum.guardlabels
 
-    let print ?print_external_idcondb (env:('a,'b,'c,'d) Env.O.t) fmt (x:'c t) =
+    let print ?print_external_idcondb (env:('a,'b,'c,'d,'e) Env.O.t) fmt (x:'d t) =
       Enum.print_minterm (Bool.print env) env fmt x
 
   end
@@ -953,7 +956,7 @@ module O = struct
     | _ ->
 	failwith "Bddexpr.ite: typing error"
 
-  let eq (env:('a,'b,'c,'d) Env.O.t) (e1:'c expr) (e2:'c expr) : 'c Cudd.Bdd.t
+  let eq (env:('a,'b,'c,'d,'e) Env.O.t) (e1:'d expr) (e2:'d expr) : 'd Cudd.Bdd.t
       =
     match (e1,e2) with
     | (`Bool e1, `Bool e2) -> Cudd.Bdd.eq e1 e2
@@ -962,7 +965,7 @@ module O = struct
     | _ ->
 	failwith "Bddexpr.eq: typing error"
 
-  let support_cond cudd (expr:'c expr) : 'c Cudd.Bdd.t
+  let support_cond cudd (expr:'d expr) : 'd Cudd.Bdd.t
       =
     match expr with
     | `Bool(x) -> Cudd.Bdd.support x
@@ -978,7 +981,7 @@ module O = struct
 	  Cudd.Bdd.vectorsupport x.Enum.reg
 
   (** Concatenates in an array the BDDs involved in the expressions *)
-  let tbdd_of_texpr (texpr:'c expr array) : 'c Cudd.Bdd.t array
+  let tbdd_of_texpr (texpr:'d expr array) : 'd Cudd.Bdd.t array
       =
     let nb =
       Array.fold_left
@@ -1053,7 +1056,7 @@ module O = struct
       =
     Cudd.Bdd.vectorsupport (tbdd_of_texpr texpr)
 
-  let support_of_bdd env (supp:'a Cudd.Bdd.t) : string PSette.t
+  let support_of_bdd env (supp:'d Cudd.Bdd.t) : 'a PSette.t
       =
     let list = Cudd.Bdd.list_of_support supp in
     List.fold_left
@@ -1061,10 +1064,10 @@ module O = struct
 	let var = PMappe.find id env.idcondvar in
 	PSette.add var res
       end)
-      (PSette.empty String.compare)
+      (PSette.empty env.symbol.compare)
       list
 
-  let support env (expr:'a expr) : string PSette.t =
+  let support env (expr:'d expr) : 'a PSette.t =
     let supp = support_cond env.cudd expr in
     support_of_bdd env supp
 

@@ -52,8 +52,8 @@ val precedence_of_unop : unop -> int
 val precedence_of_binop : binop -> int
 val precedence_of_expr : expr -> int
 
-val print_typdef : Format.formatter -> Env.typdef -> unit
-val print_typ : Format.formatter -> [<Env.typ] -> unit
+val print_typdef : Format.formatter -> string Env.typdef -> unit
+val print_typ : Format.formatter -> [<string Env.typ] -> unit
 val print_cst : Format.formatter -> cst -> unit
 val print_unop : Format.formatter -> unop -> unit
 val print_bbinop : Format.formatter -> bbinop -> unit

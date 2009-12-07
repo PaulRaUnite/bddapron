@@ -9,7 +9,7 @@ type ('a,'b) elt = {
 }
 
 type ('a,'b) t = ('a,'b) elt list
-  
+
 (*  ********************************************************************** *)
 (** {2 Utilities} *)
 (*  ********************************************************************** *)
@@ -17,8 +17,8 @@ type ('a,'b) t = ('a,'b) elt list
 val fold2 : ('a -> 'b -> 'c -> 'a) -> 'a -> 'b list -> 'c list -> 'a
 val iter2 : ('a -> 'b -> unit) -> 'a list -> 'b list -> unit
     (** Applies f to all pairs [(elt1,elt2)] with [elt1] in
-        [list1] and [elt2] in [list2]. Iterates first of the first
-        list, then on the second. *)
+	[list1] and [elt2] in [list2]. Iterates first of the first
+	list, then on the second. *)
 
 (*  ********************************************************************** *)
 (** {2 Normalisation} *)
@@ -35,7 +35,7 @@ val check_unicity : is_equal:('b -> 'b -> bool) -> ('a,'b) elt list -> bool
     *)
 val check_disjointness : ('a, 'b) elt list -> bool
     (** Checking function: raises [Failure] if problem, returns
-        [true] otherwise. Checks that the guards are exclusive. *)
+	[true] otherwise. Checks that the guards are exclusive. *)
 
 val cons_unique :
   is_equal:('b -> 'b -> bool) ->
@@ -73,7 +73,7 @@ val append_disjoint :
 val cons :
   is_equal:('b -> 'b -> bool) -> merge:('b -> 'b -> 'b) ->
   unique:bool ->
-  disjoint:bool -> 
+  disjoint:bool ->
   ('a,'b) elt -> ('a,'b) elt list -> ('a,'b) elt list
     (** Calls the right cons function depending on the options. *)
 
@@ -87,7 +87,7 @@ val append :
 
 val make_unique :
   is_equal:('b -> 'b -> bool) -> merge:('b -> 'b -> 'b) ->
-  disjoint:bool -> 
+  disjoint:bool ->
   ('a,'b) elt list -> ('a,'b) elt list
     (** Remove duplicatas (by reconstructing the list) *)
 

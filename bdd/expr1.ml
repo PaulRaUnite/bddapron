@@ -16,20 +16,20 @@ module O = struct
   (** {3 Datatypes} *)
   (*  ==================================================================== *)
 
-  type ('a,'b) t = ('a, 'b Expr0.expr) Env.value
-  constraint 'a = ('c,'d,'b,'e) Env.O.t
+  type ('a,'b,'c) t = ('b, 'c Expr0.t) Env.value
+  constraint 'b = ('a,'d,'e,'c,'f) Env.O.t
 
-  type 'a dt = ('a,Cudd.Man.d) t
-  type 'a vt = ('a,Cudd.Man.v) t
-
-  type ('a,'b) expr = ('a,'b) t
+  type ('a,'b,'c) expr = ('a,'b,'c) t
     (** Type of general expressions *)
+
+  type ('a,'b) dt = ('a,'b,Cudd.Man.d) t
+  type ('a,'b) vt = ('a,'b,Cudd.Man.v) t
 
   (*  ==================================================================== *)
   (** {3 Expressions} *)
   (*  ==================================================================== *)
 
-  let typ_of_expr e = Expr0.O.typ_of_expr e.val0
+  let typ_of_expr e = Expr0.O.typ_of_expr e.env e.val0
 
   let extend_environment e nenv =
     Env.extend_environment Expr0.O.permute e nenv
@@ -49,29 +49,29 @@ module O = struct
 
   let eq e1 e2 = Env.mapbinope Expr0.O.eq e1 e2
 
-  let support (e:('a,'b) expr) = Expr0.O.support e.env e.val0
+  let support (e:('a,'b,'c) expr) = Expr0.O.support e.env e.val0
 
-  let support_cond (e:('a,'b) expr) = Expr0.O.support_cond e.env.cudd e.val0
+  let support_cond (e:('a,'b,'c) expr) = Expr0.O.support_cond e.env.cudd e.val0
 
-  let print fmt (e:('a,'b) expr) : unit = Expr0.O.print e.env fmt e.val0
+  let print fmt (e:('a,'b,'c) expr) : unit = Expr0.O.print e.env fmt e.val0
 
   (*  -------------------------------------------------------------------- *)
   (** {4 Boolean expressions} *)
   (*  -------------------------------------------------------------------- *)
 
   module Bool = struct
-    type ('a,'b) t = ('a, 'b Cudd.Bdd.t) Env.value
-    constraint 'a = ('c,'d,'b,'e) Env.O.t
+    type ('a,'b,'c) t = ('b, 'c Cudd.Bdd.t) Env.value
+    constraint 'b = ('a,'d,'e,'c,'f) Env.O.t
 
-    type 'a dt = ('a,Cudd.Man.d) t
-    type 'a vt = ('a,Cudd.Man.v) t
+    type ('a,'b) dt = ('a,'b,Cudd.Man.d) t
+    type ('a,'b) vt = ('a,'b,Cudd.Man.v) t
 
-    let of_expr e : ('a,'b) t =
+    let of_expr e : ('a,'b,'c) t =
       match e.val0 with
       | `Bool x -> make_value e.env x
       | _ -> failwith "Bool.of_expr: Boolean expression expected"
 
-    let to_expr (e:('a,'b) t) =
+    let to_expr (e:('a,'b,'c) t) =
       make_value e.env (`Bool e.val0)
 
     let extend_environment e nenv = Env.extend_environment Cudd.Bdd.permute e nenv
@@ -80,7 +80,7 @@ module O = struct
     let dfalse env = make_value env (Cudd.Bdd.dfalse env.cudd)
     let of_bool env b = if b then dtrue env else dfalse env
 
-    let var env (var:string) =
+    let var env (var:'a) =
       Env.check_var env var;
       make_value env (Expr0.O.Bool.var env var)
 
@@ -111,13 +111,13 @@ module O = struct
       Env.check_value2 e1 e2;
       Cudd.Bdd.is_inter_empty e1.val0 e2.val0
 	
-    let exist (lvar:string list) e =
+    let exist (lvar:'a list) e =
       Env.check_lvar e.env lvar;
       make_value
 	e.env
 	(Cudd.Bdd.exist (Expr0.O.bddsupport e.env lvar) e.val0)
 
-    let forall (lvar:string list) e =
+    let forall (lvar:'a list) e =
       Env.check_lvar e.env lvar;
       make_value
 	e.env
@@ -133,7 +133,7 @@ module O = struct
     let substitute e lvarexpr =
       of_expr (substitute (to_expr e) lvarexpr)
 
-    let print fmt (x:('a,'b) t) =
+    let print fmt (x:('a,'b,'c) t) =
       Expr0.O.print_bdd x.env fmt x.val0
 
   end
@@ -143,18 +143,18 @@ module O = struct
   (*  -------------------------------------------------------------------- *)
 
   module Bint = struct
-    type ('a,'b) t = ('a, 'b Int.t) Env.value
-    constraint 'a = ('c,'d,'b,'e) Env.O.t
+    type ('a,'b,'c) t = ('b, 'c Int.t) Env.value
+    constraint 'b = ('a,'d,'e,'c,'f) Env.O.t
 
-    type 'a dt = ('a,Cudd.Man.d) t
-    type 'a vt = ('a,Cudd.Man.v) t
+    type ('a,'b,'c) dt = ('a,'b,Cudd.Man.d) t
+    type ('a,'b,'c) vt = ('a,'b,Cudd.Man.v) t
 
-    let of_expr e : ('a,'b) t =
+    let of_expr e : ('a,'b,'c) t =
       match e.val0 with
       | `Bint x -> make_value e.env x
       | _ -> failwith "Bint.of_expr: bounded integer expression expected"
 
-    let to_expr (e:('a,'b) t)  =
+    let to_expr (e:('a,'b,'c) t)  =
       make_value e.env (`Bint e.val0)
 
     let extend_environment e nenv = Env.extend_environment Int.permute e nenv
@@ -164,7 +164,7 @@ module O = struct
       | `Bint(sgn,size) ->
 	  make_value env (Int.of_int env.cudd sgn size cst)
 
-    let var env (var:string) =
+    let var env (var:'a) =
       make_value env (Expr0.O.Bint.var env var)
 
     let neg e = Env.mapunop Int.neg e
@@ -198,14 +198,14 @@ module O = struct
     let substitute e lvarexpr =
       of_expr (substitute (to_expr e) lvarexpr)
 
-    let guard_of_int (e:('a,'b) t) (n:int) : ('a,'b) Bool.t =
+    let guard_of_int (e:('a,'b,'c) t) (n:int) : ('a,'b,'c) Bool.t =
       make_value e.env (Int.guard_of_int e.env.cudd e.val0 n)
 
-    let guardints (e:('a,'b) t) : (('a,'b) Bool.t*int) list =
+    let guardints (e:('a,'b,'c) t) : (('a,'b,'c) Bool.t*int) list =
       let res = Int.guardints e.env.cudd e.val0 in
       List.map (fun (bdd,n) -> (make_value e.env bdd, n)) res
 
-    let print fmt (x:('a,'b) t) =
+    let print fmt (x:('a,'b,'c) t) =
       Int.print_minterm (Expr0.O.print_bdd x.env) fmt x.val0
 
   end
@@ -215,23 +215,23 @@ module O = struct
   (*  -------------------------------------------------------------------- *)
 
   module Benum = struct
-    type ('a,'b) t = ('a, 'b Enum.t) Env.value
-    constraint 'a = ('c,'d,'b,'e) Env.O.t
+    type ('a,'b,'c) t = ('b, 'c Enum.t) Env.value
+    constraint 'b = ('a,'d,'e,'c,'f) Env.O.t
 
-    type 'a dt = ('a,Cudd.Man.d) t
-    type 'a vt = ('a,Cudd.Man.v) t
+    type ('a,'b) dt = ('a,'b,Cudd.Man.d) t
+    type ('a,'b) vt = ('a,'b,Cudd.Man.v) t
 
-    let of_expr e : ('a,'b) t =
+    let of_expr e : ('a,'b,'c) t =
       match e.val0 with
       | `Benum x -> make_value e.env x
       | _ -> failwith "Benum.of_expr: bounded integer expression expected"
 
-    let to_expr (e:('a,'b) t) =
+    let to_expr (e:('a,'b,'c) t) =
       make_value e.env (`Benum e.val0)
 
     let extend_environment e nenv = Env.extend_environment Enum.permute e nenv
 
-    let var env (var:string) =
+    let var env (var:'a) =
       make_value env (Expr0.O.Benum.var env var)
 
     let ite e1 e2 e3 = Env.mapterop Enum.ite e1 e2 e3
@@ -251,14 +251,14 @@ module O = struct
     let substitute e lvarexpr =
       of_expr (substitute (to_expr e) lvarexpr)
 
-    let guard_of_label (e:('a,'b) t) (n:string) : ('a,'b) Bool.t =
+    let guard_of_label (e:('a,'b,'c) t) (n:'a) : ('a,'b,'c) Bool.t =
       make_value e.env (Enum.guard_of_label e.env e.val0 n)
 
-    let guardlabels (e:('a,'b) t) : (('a,'b) Bool.t*string) list =
+    let guardlabels (e:('a,'b,'c) t) : (('a,'b,'c) Bool.t*'a) list =
       let res = Enum.guardlabels e.env e.val0 in
       List.map (fun (bdd,n) -> (make_value e.env bdd, n)) res
 
-    let print fmt (x:('a,'b) t) =
+    let print fmt (x:('a,'b,'c) t) =
       Enum.print_minterm (Expr0.O.print_bdd x.env) x.env fmt x.val0
 
   end
@@ -267,7 +267,7 @@ module O = struct
   (** {3 General expressions} *)
   (*  ==================================================================== *)
 
-  let var env (var:string) : ('a,'b) expr
+  let var env (var:'a) : ('a,'b,'c) expr
       =
     make_value env (Expr0.O.var env var)
 
@@ -278,13 +278,14 @@ module O = struct
   (*  ====================================================================== *)
 
   module List = struct
-    type ('a,'b) t = ('a, 'b Expr0.t list) Env.value
-    constraint 'a = ('c,'d,'b,'e) Env.O.t
-      
-    type 'a dt = ('a,Cudd.Man.d) t
-    type 'a vt = ('a,Cudd.Man.v) t
+    type ('a,'b,'c) t = ('b, 'c Expr0.t list) Env.value
+    constraint 'b = ('a,'d,'e,'c,'f) Env.O.t
 
-    let of_lexpr0 = make_value
+    type ('a,'b) dt = ('a,'b,Cudd.Man.d) t
+    type ('a,'b) vt = ('a,'b,Cudd.Man.v) t
+
+    let of_lexpr0 : 'b -> 'c Expr0.t list -> ('a,'b,'c) t
+ = make_value
     let of_lexpr env lexpr1 =
       let lexpr0 = Env.check_lvalue env lexpr1 in
       of_lexpr0 env lexpr0
@@ -309,12 +310,12 @@ end
 (** {3 Expressions} *)
 (*  ====================================================================== *)
 
-type 'a t = ('a Env.t, 'a Expr0.expr) Env.value
+type ('a,'b) t = (('a,'b) Env.t, 'b Expr0.t) Env.value
+type ('a,'b) expr = ('a,'b) t
+  (** Type of general expressions *)
 
-type 'a expr = 'a t
-
-type dt = Cudd.Man.d t
-type vt = Cudd.Man.v t
+type 'a dt = ('a,Cudd.Man.d) t
+type 'a vt = ('a,Cudd.Man.v) t
 
 let typ_of_expr = O.typ_of_expr
 let make = O.make
@@ -332,10 +333,10 @@ let tdrestrict = O.tdrestrict
 let print = O.print
 
 module Bool = struct
-  type 'a t = ('a Env.t, 'a Cudd.Bdd.t) Env.value
-    
-  type dt = Cudd.Man.d t
-  type vt = Cudd.Man.v t
+  type ('a,'b) t = (('a,'b) Env.t, 'b Cudd.Bdd.t) Env.value
+
+  type 'a dt = ('a,Cudd.Man.d) t
+  type 'a vt = ('a,Cudd.Man.v) t
 
   let of_expr = O.Bool.of_expr
   let to_expr = O.Bool.to_expr
@@ -370,10 +371,10 @@ module Bool = struct
   let print = O.Bool.print
 end
 module Bint = struct
-  type 'a t = ('a Env.t, 'a Int.t) Env.value
-  
-  type dt = Cudd.Man.d t
-  type vt = Cudd.Man.v t
+  type ('a,'b) t = (('a,'b) Env.t, 'b Int.t) Env.value
+
+  type 'a dt = ('a,Cudd.Man.d) t
+  type 'a vt = ('a,Cudd.Man.v) t
 
   let of_expr = O.Bint.of_expr
   let to_expr = O.Bint.to_expr
@@ -407,10 +408,10 @@ module Bint = struct
   let print = O.Bint.print
 end
 module Benum = struct
-  type 'a t = ('a Env.t, 'a Enum.t) Env.value
+  type ('a,'b) t = (('a,'b) Env.t, 'b Enum.t) Env.value
 
-  type dt = Cudd.Man.d t
-  type vt = Cudd.Man.v t
+  type 'a dt = ('a,Cudd.Man.d) t
+  type 'a vt = ('a,Cudd.Man.v) t
 
   let of_expr = O.Benum.of_expr
   let to_expr = O.Benum.to_expr
@@ -429,10 +430,9 @@ module Benum = struct
   let print = O.Benum.print
 end
 module List = struct
-  type 'a t = ('a Env.t, 'a Expr0.t list) Env.value
-    
-  type dt = Cudd.Man.d t
-  type vt = Cudd.Man.v t
+  type ('a,'b) t = (('a,'b) Env.t, 'b Expr0.t list) Env.value
+  type 'a dt = ('a,Cudd.Man.d) t
+  type 'a vt = ('a,Cudd.Man.v) t    
 
   let of_lexpr0 = O.List.of_lexpr0
   let of_lexpr = O.List.of_lexpr

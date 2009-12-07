@@ -6,29 +6,56 @@
 open Format
 open Bdd.Env
 
-type typ = [
-  | Bdd.Env.typ
+(** Types *)
+type 'a typ = [
+  | 'a Bdd.Env.typ
   | Apronexpr.typ
 ]
-type typdef = Bdd.Env.typdef
-(** Environment *)
-type 'a ext = {
-  mutable eapron : Apron.Environment.t;
-  mutable aext : 'a;
-}
-type ('a,'b,'c) t0 = ('a,'b,Cudd.Man.v,'c ext) Bdd.Env.t0
-module O = struct
-  type ('a,'b,'c) t = ('a,'b,'c) t0
-  constraint 'a = [>typ]
-  constraint 'b = [>typdef]
 
-  let make ?bddindex0 ?bddsize ?relational cudd aext copy_aext =
-    Bdd.Env.O.make ?bddindex0 ?bddsize ?relational cudd
-      {
-	eapron = Apron.Environment.make [||] [||];
-	aext = aext;
-      }
-      (fun ext -> { ext with aext = copy_aext ext.aext })
+(** Type definitions *)
+type 'a typdef = 'a Bdd.Env.typdef
+
+(** Environment *)
+type ('a,'b) ext = {
+  mutable table : 'a Apronexpr.t Cudd.Mtbdd.table;
+  mutable eapron : Apron.Environment.t;
+  mutable aext : 'b;
+}
+type ('a,'b,'c,'d) t0 = ('a,'b,'c,Cudd.Man.v,('a,'d) ext) Bdd.Env.t0
+
+module O = struct
+  type ('a,'b,'c,'d) t = ('a,'b,'c,'d) t0
+  constraint 'b = [>'a typ]
+  constraint 'c = [>'a typdef]
+
+  let make
+      ?compare_symbol
+      ?marshal_symbol
+      ?unmarshal_symbol
+      ~print_symbol
+      ~copy_aext
+      ?bddindex0 ?bddsize ?relational cudd aext
+      =
+    let env =
+      Bdd.Env.O.make
+	?compare_symbol
+	?marshal_symbol
+	?unmarshal_symbol
+	~print_symbol
+	~copy_ext:(fun ext -> { ext with aext = copy_aext ext.aext })
+	?bddindex0 ?bddsize ?relational cudd
+	{
+	  table = Cudd.Mtbdd.make_table ~hash:Hashtbl.hash ~equal:(=);
+	  eapron = Apron.Environment.make [||] [||];
+	  aext = aext;
+	}
+    in
+    env.ext.table <-
+      Cudd.Mtbdd.make_table
+      ~hash:(Apronexpr.hash env.symbol)
+      ~equal:(Apronexpr.equal env.symbol)
+    ;
+    env
 
   let print_ext print_aext fmt ext =
     Format.fprintf fmt "{@[<v>eapron = %a;@ aext = %a@]}"
@@ -41,20 +68,21 @@ module O = struct
       fmt env
 end
 
-type t = (typ,typdef,unit) O.t
+type 'a t = ('a,'a typ,'a typdef,unit) O.t
 
 (*  ********************************************************************** *)
 (** {2 Printing} *)
 (*  ********************************************************************** *)
 
-let print_typ fmt typ =
+let print_typ print_symbol fmt typ =
   match typ with
   | #Apronexpr.typ as x -> Apronexpr.print_typ fmt x
-  | _ as x -> Bdd.Env.print_typ fmt x
-let print_typdef fmt typdef = Bdd.Env.print_typdef fmt typdef
+  | _ as x -> Bdd.Env.print_typ print_symbol fmt x
+
+let print_typdef print_symbol fmt typdef = Bdd.Env.print_typdef print_symbol fmt typdef
 
 let print fmt env =
-  O.print print_typ print_typdef (fun fmt _ -> pp_print_string fmt "_") fmt env
+  O.print (print_typ env.symbol.print) (print_typdef env.symbol.print) (fun fmt _ -> pp_print_string fmt "_") fmt env
 
 let print_idcondb = Bdd.Env.print_idcondb
 let print_order = Bdd.Env.print_order
@@ -62,8 +90,19 @@ let print_order = Bdd.Env.print_order
 (*  ********************************************************************** *)
 (** {2 Constructors} *)
 (*  ********************************************************************** *)
-let make ?bddindex0 ?bddsize ?relational cudd = 
-  O.make ?bddindex0 ?bddsize ?relational cudd () (fun x -> x)
+let make
+    ?compare_symbol
+    ?marshal_symbol
+    ?unmarshal_symbol
+    ~print_symbol
+    ?bddindex0 ?bddsize ?relational cudd =
+  O.make
+    ?compare_symbol
+    ?marshal_symbol
+    ?unmarshal_symbol
+    ~print_symbol
+    ~copy_aext:(fun () -> ())
+    ?bddindex0 ?bddsize ?relational cudd ()
 
 let copy = Bdd.Env.copy
 
@@ -79,7 +118,7 @@ let typ_of_var = Bdd.Env.typ_of_var
 let vars env =
   let vars = PMappe.maptoset env.vartid in
   let (ivar,qvar) = Apron.Environment.vars env.ext.eapron in
-  let add ap_var set = PSette.add (Apron.Var.to_string ap_var) set in
+  let add ap_var set = PSette.add (env.symbol.unmarshal (Apron.Var.to_string ap_var)) set in
   let vars = Array.fold_right add ivar vars in
   let vars = Array.fold_right add qvar vars in
   vars
@@ -92,13 +131,13 @@ let labels = Bdd.Env.labels
 let add_typ_with = Bdd.Env.add_typ_with
 let add_typ = Bdd.Env.add_typ
 
-let add_vars_with env (lvartyp:(string*'a) list) : int array option =
+let add_vars_with env lvartyp : int array option =
   let (integer,real) =
     List.fold_left
       (begin fun ((integer,real) as acc) (var,typ) ->
 	match typ with
-	| `Int -> ((Apron.Var.of_string var)::integer,real)
-	| `Real -> (integer,(Apron.Var.of_string var)::real)
+	| `Int  -> ((Apron.Var.of_string (env.symbol.marshal var))::integer,real)
+	| `Real -> (integer,(Apron.Var.of_string (env.symbol.marshal var))::real)
 	| _ -> acc
       end)
       ([],[]) lvartyp
@@ -111,13 +150,13 @@ let add_vars_with env (lvartyp:(string*'a) list) : int array option =
   end;
   operm
 
-let remove_vars_with env (lvar:string list) : int array option =
+let remove_vars_with env lvar : int array option =
   let arith =
     List.fold_left
       (begin fun acc var ->
 	match typ_of_var env var with
 	| `Int
-	| `Real -> (Apron.Var.of_string var)::acc
+	| `Real -> (Apron.Var.of_string (env.symbol.marshal var))::acc
 	| _ -> acc
       end)
       [] lvar
@@ -129,7 +168,7 @@ let remove_vars_with env (lvar:string list) : int array option =
   end;
   operm
 
-let rename_vars_with env (lvarvar:(string*string) list)
+let rename_vars_with env lvarvar
     :
     int array option * Apron.Dim.perm option
     =
@@ -139,8 +178,8 @@ let rename_vars_with env (lvarvar:(string*string) list)
 	match (typ_of_var env var1) with
 	| `Int
 	| `Real ->
-	    ((Apron.Var.of_string var1)::lvar1,
-	    (Apron.Var.of_string var2)::lvar2)
+	    ((Apron.Var.of_string (env.symbol.marshal var1))::lvar1,
+	    (Apron.Var.of_string (env.symbol.marshal var2))::lvar2)
 	| _ -> acc
       end)
       ([],[]) lvarvar

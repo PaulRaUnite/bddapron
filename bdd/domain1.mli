@@ -7,119 +7,117 @@
 (** {2 Abstract domain} *)
 (*  ********************************************************************** *)
 
-type 'a t = 'a Expr1.Bool.t
+type ('a,'b) t = ('a,'b) Expr1.Bool.t
   (** Abstract value *)
-  
-type dt = Cudd.Man.d t
-type vt = Cudd.Man.v t
 
-val size : 'a t -> int
+type 'a dt = ('a,Cudd.Man.d) t
+type 'a vt = ('a,Cudd.Man.v) t
+
+val size : ('a,'b) t -> int
   (** Size of an abstract value (number of nodes) *)
-val print : Format.formatter -> 'a t -> unit
-  
-val bottom : 'a Env.t -> 'a t
-val top : 'a Env.t -> 'a t
+val print : Format.formatter -> ('a,'b) t -> unit
+
+val bottom : ('a,'b) Env.t -> ('a,'b) t
+val top : ('a,'b) Env.t -> ('a,'b) t
   (** Constructors *)
-  
-val is_bottom : 'a t -> bool
-val is_top : 'a t -> bool
-val is_leq : 'a t -> 'a t -> bool
-val is_eq : 'a t -> 'a t -> bool
-val is_variable_unconstrained : 'a t -> string -> bool
+
+val is_bottom : ('a,'b) t -> bool
+val is_top : ('a,'b) t -> bool
+val is_leq : ('a,'b) t -> ('a,'b) t -> bool
+val is_eq : ('a,'b) t -> ('a,'b) t -> bool
+val is_variable_unconstrained : ('a,'b) t -> 'a -> bool
   (** Tests *)
-  
-val meet : 'a t -> 'a t -> 'a t
-val join : 'a t -> 'a t -> 'a t
-val meet_condition : 'a t -> 'a Expr1.Bool.t -> 'a t
+
+val meet : ('a,'b) t -> ('a,'b) t -> ('a,'b) t
+val join : ('a,'b) t -> ('a,'b) t -> ('a,'b) t
+val meet_condition : ('a,'b) t -> ('a,'b) Expr1.Bool.t -> ('a,'b) t
   (** Lattice operations *)
 
-val assign_lexpr : ?relational:bool -> ?nodependency:bool -> 'a t -> string list -> 'a Expr1.t list -> 'a t
-val assign_listexpr : ?relational:bool -> ?nodependency:bool -> 'a t -> string list -> 'a Expr1.List.t -> 'a t
+val assign_lexpr : ?relational:bool -> ?nodependency:bool -> ('a,'b) t -> 'a list -> ('a,'b) Expr1.t list -> ('a,'b) t
+val assign_listexpr : ?relational:bool -> ?nodependency:bool -> ('a,'b) t -> 'a list -> ('a,'b) Expr1.List.t -> ('a,'b) t
   (** Assignement
-      
+
       If [nodependency=true], which means that no expression depends on the
       assigned variables, it uses an optimized algorithm.
-      
+
       If [rel=true], it is assumed that [env#bddincr=2] (checked), starting from
       a pair index. It is also advised to have paired variables in groups.
-      
+
       [rel=true] is most probably much better for assignements of a few
       variables.  *)
-val substitute_lexpr : 'a t -> string list -> 'a Expr1.t list -> 'a t
-val substitute_listexpr : 'a t -> string list -> 'a Expr1.List.t -> 'a t
+val substitute_lexpr : ('a,'b) t -> 'a list -> ('a,'b) Expr1.t list -> ('a,'b) t
+val substitute_listexpr : ('a,'b) t -> 'a list -> ('a,'b) Expr1.List.t -> ('a,'b) t
   (** Substitution *)
-  
-val forget_list : 'a t -> string list -> 'a t
+
+val forget_list : ('a,'b) t -> 'a list -> ('a,'b) t
   (** Eliminating variables *)
-  
-val change_environment : 'a t -> 'a Env.t -> 'a t
-val rename :'a t -> (string*string) list -> 'a t
+
+val change_environment : ('a,'b) t -> ('a,'b) Env.t -> ('a,'b) t
+val rename :('a,'b) t -> ('a*'a) list -> ('a,'b) t
   (** Change of environments *)
-  
+
 (*  ********************************************************************** *)
 (** {2 Opened signature and Internal functions} *)
 (*  ********************************************************************** *)
-  
+
 (** We provide here the same functions and modules as before, but with opened
     types (this allows etxensions). The functions above are axtually derived from
     the functions below by just constraining their types.  We provide here also
     more internal functions *)
-  
+
 module O : sig
-  
+
   val check_value :
     ('a -> int array -> 'a) ->
-    (('b, 'c, 'd, 'e) Env.O.t, 'a) Env.value ->
-    ('b, 'c, 'd, 'e) Env.O.t -> 'a
+    (('b, 'c, 'd, 'e, 'f) Env.O.t, 'a) Env.value ->
+    ('b, 'c, 'd, 'e, 'f) Env.O.t -> 'a
   val check_lvalue :
     ('a -> int array -> 'a) ->
-    (('b, 'c, 'd, 'e) Env.O.t, 'a) Env.value list -> 
-    ('b, 'c, 'd, 'e) Env.O.t -> 'a list
-    
-  type ('a,'b) t = ('a,'b) Expr1.O.Bool.t
-  constraint 'a = ('c,'d,'b,'e) Env.O.t
-    
-  type 'a dt = ('a,Cudd.Man.d) t
-  type 'a vt = ('a,Cudd.Man.v) t
+    (('b, 'c, 'd, 'e, 'f) Env.O.t, 'a) Env.value list ->
+    ('b, 'c, 'd, 'e, 'f) Env.O.t -> 'a list
 
-  val size : ('a,'b) t -> int
-  val print : Format.formatter -> ('a,'b) t -> unit
-    
-  val bottom : 'a -> ('a,'b) t
-  val top : 'a -> ('a,'b) t
+  type ('a,'b,'c) t = ('a,'b,'c) Expr1.O.Bool.t
+
+  type ('a,'b) dt = ('a,'b,Cudd.Man.d) t
+  type ('a,'b) vt = ('a,'b,Cudd.Man.v) t
+
+  val size : ('a,'b,'c) t -> int
+  val print : Format.formatter -> ('a,'b,'c) t -> unit
+
+  val bottom : 'b -> ('a,'b,'c) t
+  val top : 'b -> ('a,'b,'c) t
   (** Constructors *)
-    
-  val is_bottom : ('a,'b) t -> bool
-  val is_top : ('a,'b) t -> bool
-  val is_leq : ('a,'b) t -> ('a,'b) t -> bool
-  val is_eq : ('a,'b) t -> ('a,'b) t -> bool
-  val is_variable_unconstrained : ('a,'b) t -> string -> bool
+
+  val is_bottom : ('a,'b,'c) t -> bool
+  val is_top : ('a,'b,'c) t -> bool
+  val is_leq : ('a,'b,'c) t -> ('a,'b,'c) t -> bool
+  val is_eq : ('a,'b,'c) t -> ('a,'b,'c) t -> bool
+  val is_variable_unconstrained : ('a,'b,'c) t -> 'a -> bool
   (** Tests *)
-    
-  val meet : ('a,'b) t -> ('a,'b) t -> ('a,'b) t
-  val join : ('a,'b) t -> ('a,'b) t -> ('a,'b) t
-  val meet_condition : ('a,'b) t -> ('a,'b) Expr1.O.Bool.t -> ('a,'b) t
+
+  val meet : ('a,'b,'c) t -> ('a,'b,'c) t -> ('a,'b,'c) t
+  val join : ('a,'b,'c) t -> ('a,'b,'c) t -> ('a,'b,'c) t
+  val meet_condition : ('a,'b,'c) t -> ('a,'b,'c) Expr1.O.Bool.t -> ('a,'b,'c) t
   (** Lattice operations *)
 
-  val assign_lexpr : ?relational:bool -> ?nodependency:bool -> ('a,'b) t -> string list -> ('a,'b) Expr1.O.t list -> ('a,'b) t
-  val assign_listexpr : ?relational:bool -> ?nodependency:bool -> ('a,'b) t -> string list -> ('a,'b) Expr1.O.List.t -> ('a,'b) t
+  val assign_lexpr : ?relational:bool -> ?nodependency:bool -> ('a,'b,'c) t -> 'a list -> ('a,'b,'c) Expr1.O.t list -> ('a,'b,'c) t
+  val assign_listexpr : ?relational:bool -> ?nodependency:bool -> ('a,'b,'c) t -> 'a list -> ('a,'b,'c) Expr1.O.List.t -> ('a,'b,'c) t
   (** Assignement
-      
+
       If [rel=true], it is assumed that [env#bddincr=2] (checked), starting from
       a pair index. It is also advised to have paired variables in groups.
-      
+
       [rel=true] is most probably much better for assignements of a few
       variables.  *)
-  val substitute_lexpr : ('a,'b) t -> string list -> ('a,'b) Expr1.O.t list -> ('a,'b) t
-  val substitute_listexpr : ('a,'b) t -> string list -> ('a,'b) Expr1.O.List.t -> ('a,'b) t
+  val substitute_lexpr : ('a,'b,'c) t -> 'a list -> ('a,'b,'c) Expr1.O.t list -> ('a,'b,'c) t
+  val substitute_listexpr : ('a,'b,'c) t -> 'a list -> ('a,'b,'c) Expr1.O.List.t -> ('a,'b,'c) t
   (** Substitution *)
-    
-  val forget_list : ('a,'b) t -> string list -> ('a,'b) t
+
+  val forget_list : ('a,'b,'c) t -> 'a list -> ('a,'b,'c) t
   (** Eliminating variables *)
-    
-  val change_environment : ('a,'b) t -> 'a -> ('a,'b) t
-  val rename :('a,'b) t -> (string*string) list -> ('a,'b) t
+
+  val change_environment : ('a,'b,'c) t -> 'b -> ('a,'b,'c) t
+  val rename :('a,'b,'c) t -> ('a*'a) list -> ('a,'b,'c) t
     (** Change of environments *)
-    
+
 end
-  

@@ -4,21 +4,19 @@
    Please read the COPYING file packaged in the distribution  *)
 
 open Format
+open Env
 
 (*  ********************************************************************** *)
 (** {2 Types} *)
 (*  ********************************************************************** *)
 
-type label = string
-  (** A label is just a name *)
-
-type typ = [
-  `Benum of string
+type 'a typ = [
+  `Benum of 'a
 ]
   (** A type is just a name *)
 
-type typdef = [
-  `Benum of string array
+type 'a typdef = [
+  `Benum of 'a array
 ]
   (** An enumerated type is defined by its (ordered) set of labels *)
 
@@ -34,96 +32,35 @@ type 'a t = {
 type dt = Cudd.Man.d t
 type vt = Cudd.Man.v t
 
-(** {3 Database} *)
-
-(** We need a global store where we register type names with their type
-  definitions, and also an auxiliary table to efficiently associate types to
-  labels. *)
-
-type ('a,'b,'c,'d) env0 = {
-  mutable cudd : 'c Cudd.Man.t;
-    (** CUDD manager *)
-  mutable typdef : (string, 'b) PMappe.t;
-    (** Named types definitions *)
-  mutable vartyp : (string, 'a) PMappe.t;
-    (** Associate to a var/label its type *)
-  mutable bddindex0 : int;
-    (** First index for finite-type variables *)
-  mutable bddsize : int;
-    (** Number of indices dedicated to finite-type variables *)
-  mutable bddindex : int;
-    (** Next free index in BDDs used by [self#add_var]. *)
-  mutable bddincr : int;
-    (** Increment used by [self#add_var] for incrementing
-	[self#_bddindex] *)
-  mutable idcondvar : (int, string) PMappe.t;
-    (** Associates to a BDD index the variable involved by it *)
-  mutable vartid : (string, int array) PMappe.t;
-    (** (Sorted) array of BDD indices associated to finite-type variables. *)
-  mutable varset : (string, 'c Cudd.Bdd.t) PMappe.t;
-    (** Associates to enumerated variable the (care)set of
-	possibled values. *)
-  mutable print_external_idcondb : Format.formatter -> int*bool -> unit;
-    (** Printing conditions not managed by the environment..
-	By default, [pp_print_int]. *)
-  mutable ext : 'd;
-  copy_ext : 'd -> 'd;
-}
-type ('a,'b,'c,'d) env = ('a,'b,'c,'d) env0
-constraint 'a = [>typ]
-constraint 'b = [>typdef]
-
-(*  ********************************************************************** *)
-(** {2 Database} *)
-(*  ********************************************************************** *)
-
-(*  ====================================================================== *)
-(** {3 Printing} *)
-(*  ====================================================================== *)
-
-let print_typdef (fmt:Format.formatter) (typdef:[>typdef]) : unit
-  =
-  begin match typdef with
-  | `Benum tlabel ->
-      Print.array pp_print_string fmt tlabel
-  end
-
-let print_typ (fmt:Format.formatter) (typ:[>typ]) : unit
-  =
-  begin match typ with
-  | `Benum name ->
-      pp_print_string fmt name
-  end
-
 (*  ====================================================================== *)
 (** {3 Associations} *)
 (*  ====================================================================== *)
 
-let labels_of_typ env (typ:string) : string array
+let labels_of_typ (env:('a,'b,'c,'d,'e) Env.O.t) typ : 'a array
   =
   let typdef = PMappe.find typ env.typdef in
   begin match typdef with
   | `Benum tlabel -> tlabel
   | _ ->
-      failwith (sprintf "Bddenum.labels_of_typ: type %s not defined as an enumerated type" typ)
+      failwith (Print.sprintf "Bddenum.labels_of_typ: type %a not defined as an enumerated type" env.symbol.print typ)
   end
 
-let size_of_typ env (typ:string) : int
+let size_of_typ env (typ:'b) : int
   =
   let labels = labels_of_typ env typ in
   let nb = Array.length labels in
   Reg.min_size (nb-1)
 
-let maxcode_of_typ env (typ:string) : int
+let maxcode_of_typ env (typ:'b) : int
   =
   let labels = labels_of_typ env typ in
   pred(Array.length labels)
 
-let mem_typcode env (typ:string) (code:int) : bool
+let mem_typcode env (typ:'b) (code:int) : bool
   =
   code <= maxcode_of_typ env typ
 
-let findcode (label:string) (tlabels:string array) : int
+let findcode (label:'a) (tlabels:'a array) : int
   =
   let i = ref 0 in
   while !i < Array.length tlabels && tlabels.(!i) <> label do incr i done;
@@ -132,41 +69,41 @@ let findcode (label:string) (tlabels:string array) : int
   else
     !i
 
-let typ_of_label (env:('a,'b,'c,'d) env) (label:string) : string
+let typ_of_label (env:('a,'b,'c,'d,'e) Env.O.t) (label:'a) : 'a
   =
   let typ = PMappe.find label env.vartyp in
   match typ with
   | `Benum typ -> typ
   | _ -> failwith ""
 
-let code_of_label (env:('a,'b,'c,'d) env) (label:string) : int
+let code_of_label (env:('a,'b,'c,'d,'e) Env.O.t) (label:'a) : int
   =
   let typ = typ_of_label env label in
   let labels = labels_of_typ env typ in
   let code = findcode label labels in
   code
 
-let label_of_typcode (env:('a,'b,'c,'d) env) (typ:string) (code:int) : string
+let label_of_typcode (env:('a,'b,'c,'d,'e) Env.O.t) (typ:'a) (code:int) : 'a
   =
   let t = labels_of_typ env typ in
   if code < Array.length t then
     t.(code)
   else
-    failwith (sprintf "Bddenum.label_of_typcode: no label for typ=%s, code=%i"
-      typ code)
+    failwith (Print.sprintf "Bddenum.label_of_typcode: no label for typ=%a, code=%i"
+      env.symbol.print typ code)
 
 
 (*  *********************************************************************** *)
 (** {2 Constants and Operation(s)} *)
 (*  *********************************************************************** *)
 
-let of_label (env:('a,'b,'c,'d) env) (label:string) :'c t  =
+let of_label (env:('a,'b,'c,'d,'e) Env.O.t) (label:'a) :'d t  =
   let typ = typ_of_label env label in
   let labels = labels_of_typ env typ in
   let size = size_of_typ env typ in
   let code = findcode label labels in
   let t = {
-    typ = typ;
+    typ = env.symbol.marshal typ;
     reg = Reg.of_int env.cudd size code
   } in
 (*
@@ -176,18 +113,18 @@ let of_label (env:('a,'b,'c,'d) env) (label:string) :'c t  =
 *)
   t
 
-let is_cst (x:'c t) :bool
+let is_cst (x:'e t) :bool
   =
   Reg.is_cst x.reg
 
-let to_code (x:'c t) : int
+let to_code (x:'e t) : int
   =
   Reg.to_int ~signed:false x.reg
 
-let to_label (env:('a,'b,'c,'d) env) (x:'c t) : string
+let to_label (env:('a,'b,'c,'d,'e) Env.O.t) (x:'d t) : 'a
   =
   let code = to_code x in
-  let label = label_of_typcode env x.typ code in
+  let label = label_of_typcode env (env.symbol.unmarshal x.typ) code in
 (*
   printf "to_label %a = %i,%a@."
     (Reg.print string_of_int) x.reg
@@ -195,11 +132,11 @@ let to_label (env:('a,'b,'c,'d) env) (x:'c t) : string
 *)
   label
 
-let equal_label (env:('a,'b,'c,'d) env) (x:'c t) (label:string) : 'c Cudd.Bdd.t
+let equal_label (env:('a,'b,'c,'d,'e) Env.O.t) (x:'d t) (label:'a) : 'd Cudd.Bdd.t
   =
   Reg.equal_int env.cudd x.reg (code_of_label env label)
 
-let equal (env:('a,'b,'c,'d) env) (x:'c t) (y:'c t) : 'c Cudd.Bdd.t
+let equal (env:('a,'b,'c,'d,'e) Env.O.t) (x:'d t) (y:'d t) : 'd Cudd.Bdd.t
   =
   if x.typ<>y.typ then
     failwith (sprintf "Bddenum.equal: applied between different types %s and %s" x.typ y.typ)
@@ -219,7 +156,7 @@ let ite bdd a b =
 
 module Minterm = struct
 
-  let iter (env:('a,'b,'c,'d) env) (typ:string) (f:string -> unit) (minterm:Reg.Minterm.t) : unit =
+  let iter (env:('a,'b,'c,'d,'e) Env.O.t) (typ:'a) (f:'a -> unit) (minterm:Reg.Minterm.t) : unit =
     let maxcode = maxcode_of_typ env typ in
     Int.Minterm.iter ~signed:false
       (begin fun code ->
@@ -228,7 +165,7 @@ module Minterm = struct
       end)
       minterm
 
-  let map (env:('a,'b,'c,'d) env) (typ:string) (f:string -> 'd) (minterm:Reg.Minterm.t) : 'd list =
+  let map (env:('a,'b,'c,'d,'e) Env.O.t) (typ:'a) (f:'a -> 'f) (minterm:Reg.Minterm.t) : 'f list =
     let res = ref [] in
     let nf minterm = begin res := (f minterm) :: !res end in
     iter env typ nf minterm;
@@ -236,19 +173,20 @@ module Minterm = struct
 
 end
 
-let guard_of_label (env:('a,'b,'c,'d) env) (x:'c t) (label:string) : 'c Cudd.Bdd.t
+let guard_of_label (env:('a,'b,'c,'d,'e) Env.O.t) (x:'d t) (label:'a) : 'd Cudd.Bdd.t
   =
   Reg.guard_of_int env.cudd x.reg (code_of_label env label)
 
-let guardlabels (env:('a,'b,'c,'d) env) (x:'c t) : ('c Cudd.Bdd.t * string) list
+let guardlabels (env:('a,'b,'c,'d,'e) Env.O.t) (x:'d t) : ('d Cudd.Bdd.t * 'a) list
   =
+  let typ = env.symbol.unmarshal x.typ in
   let lguardints = Reg.guardints env.cudd ~signed:false x.reg in
-  let maxcode = maxcode_of_typ env x.typ in
+  let maxcode = maxcode_of_typ env typ in
   let res =
     List.fold_left
       (begin fun res (bdd,code) ->
 	if code<=maxcode then
-	  (bdd, label_of_typcode env x.typ code)::res
+	  (bdd, label_of_typcode env typ code)::res
 	else
 	  res
       end)
@@ -277,20 +215,20 @@ let print f fmt t =
     (Reg.print f) t.reg
 
 let print_minterm
-  (print_bdd: Format.formatter -> 'c Cudd.Bdd.t -> unit)
+  (print_bdd: Format.formatter -> 'd Cudd.Bdd.t -> unit)
   env
   fmt
-  (x:'c t)
+  (x:'d t)
   =
   if is_cst x then begin
     let label = to_label env x in
-    fprintf fmt "{ %s }" label
+    fprintf fmt "{ %a }" env.symbol.print label
   end
   else begin
     let lguardlabels = guardlabels env x in
     Print.list ~first:"{ @[<v>" ~sep:"@; " ~last:"@] }"
       (fun fmt (guard,label) ->
-	fprintf fmt "%s IF %a" label print_bdd guard)
+	fprintf fmt "%a IF %a" env.symbol.print label print_bdd guard)
       fmt
       lguardlabels
   end

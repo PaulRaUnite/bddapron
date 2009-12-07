@@ -17,25 +17,25 @@ module O = struct
   (** {3 General expressions} *)
   (*  ==================================================================== *)
 
-  type 'a t = ('a, Expr0.t) Env.value
-  constraint 'a = ('b,'c,'d) Env.O.t
+  type ('a,'b) t = ('b, 'a Expr0.t) Env.value
+  constraint 'b = ('a,'c,'d,'e) Env.O.t
 
-  type 'a expr = 'a t
+  type ('a,'b) expr = ('a,'b) t
 
-  let substitute (cond:'a Cond.O.t) (e:'a t) (substitution:(string * 'a t) list) : 'a t
+  let substitute (cond:('a,'b) Cond.O.t) (e:('a,'b) t) (substitution:('a * ('a,'b) t) list) : ('a,'b) t
       =
     let lvarexpr =
       Env.check_lvarvalue e.env substitution
     in
     make_value e.env (Expr0.O.substitute e.env cond e.val0 lvarexpr)
 
-  let substitute_by_var (cond:'a Cond.O.t) (e:'a t) (substitution:(string*string) list) =
+  let substitute_by_var (cond:('a,'b) Cond.O.t) (e:('a,'b) t) (substitution:('a*'a) list) =
     make_value e.env (Expr0.O.substitute_by_var e.env cond e.val0 substitution)
 
   let ddsubstitute = substitute
   let ddsubstitute_by_var = substitute_by_var
 
-  let var env cond (var:string) : 'a t
+  let var env cond (var:'a) : ('a,'b) t
       =
     make_value env (Expr0.O.var env cond var)
 
@@ -44,8 +44,8 @@ module O = struct
   (*  ==================================================================== *)
 
   module Bool = struct
-    type 'a t = ('a, Cudd.Man.v Cudd.Bdd.t) Env.value
-    constraint 'a = ('b,'c,'d) Env.O.t
+    type ('a,'b) t = ('b, Cudd.Man.v Cudd.Bdd.t) Env.value
+    constraint 'b = ('a,'c,'d,'e) Env.O.t
 
     let of_expr = Bdd.Expr1.O.Bool.of_expr
     let to_expr = Bdd.Expr1.O.Bool.to_expr
@@ -86,8 +86,8 @@ module O = struct
   end
 
   module Bint = struct
-    type 'a t = ('a, Cudd.Man.v Bdd.Int.t) Env.value
-    constraint 'a = ('b,'c,'d) Env.O.t
+    type ('a,'b) t = ('b, Cudd.Man.v Bdd.Int.t) Env.value
+    constraint 'b = ('a,'c,'d,'e) Env.O.t
 
     let of_expr = Bdd.Expr1.O.Bint.of_expr
     let to_expr = Bdd.Expr1.O.Bint.to_expr
@@ -130,8 +130,8 @@ module O = struct
 
   end
   module Benum = struct
-    type 'a t = ('a, Cudd.Man.v Bdd.Enum.t) Env.value
-    constraint 'a = ('b,'c,'d) Env.O.t
+    type ('a,'b) t = ('b, Cudd.Man.v Bdd.Enum.t) Env.value
+    constraint 'b = ('a,'c,'d,'e) Env.O.t
 
     let of_expr = Bdd.Expr1.O.Benum.of_expr
     let to_expr = Bdd.Expr1.O.Benum.to_expr
@@ -160,15 +160,15 @@ module O = struct
   (*  ==================================================================== *)
 
   module Apron = struct
-    type 'a t = ('a, ApronexprDD.t) Env.value
-    constraint 'a = ('b,'c,'d) Env.O.t
+    type ('a,'b) t = ('b, 'a ApronexprDD.t) Env.value
+    constraint 'b = ('a,'c,'d,'e) Env.O.t
 
-    let of_expr e : 'a t =
+    let of_expr e : ('a,'b) t =
       match e.val0 with
       | `Apron x -> make_value e.env x
       | _ -> failwith "Apron.of_expr: arithmetic expression expected"
 
-    let to_expr (e:'a t) =
+    let to_expr (e:('a,'b) t) =
       make_value e.env (`Apron e.val0)
 
     let extend_environment e nenv =
@@ -186,29 +186,29 @@ module O = struct
     let cst env cond cst = make_value env (Expr0.O.Apron.cst env cond cst)
     let add cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
       Env.mapbinop
-	(ApronexprDD.add ~typ ~round) e1 e2
+	(ApronexprDD.add e1.env ~typ ~round) e1 e2
     let mul cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
       Env.mapbinop
-	(ApronexprDD.mul ~typ ~round) e1 e2
+	(ApronexprDD.mul e1.env ~typ ~round) e1 e2
     let sub cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
       Env.mapbinop
-	(ApronexprDD.sub ~typ ~round) e1 e2
+	(ApronexprDD.sub e1.env ~typ ~round) e1 e2
     let div cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
       Env.mapbinop
-	(ApronexprDD.div ~typ ~round) e1 e2
+	(ApronexprDD.div e1.env ~typ ~round) e1 e2
     let gmod cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
       Env.mapbinop
-	(ApronexprDD.gmod ~typ ~round) e1 e2
-    let negate cond e = Env.mapunop ApronexprDD.negate e
+	(ApronexprDD.gmod e1.env ~typ ~round) e1 e2
+    let negate cond e = Env.mapunop (ApronexprDD.negate e.env) e
     let sqrt cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e =
-      Env.mapunop (ApronexprDD.sqrt ~typ ~round) e
+      Env.mapunop (ApronexprDD.sqrt e.env ~typ ~round) e
     let cast cond ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e =
-      Env.mapunop (ApronexprDD.cast ~typ ~round) e
+      Env.mapunop (ApronexprDD.cast e.env ~typ ~round) e
 
     let ite cond e1 e2 e3 =
       Env.mapterop Cudd.Mtbdd.ite e1 e2 e3
 
-    let condition (cond:'a Cond.O.t) typ (e:'a t) : 'a Bool.t =
+    let condition (cond:('a,'b) Cond.O.t) typ (e:('a,'b) t) : ('a,'b) Bool.t =
       make_value e.env (ApronexprDD.Condition.make e.env cond typ e.val0)
 
     let supeq cond expr = condition cond Apron.Tcons1.SUPEQ expr
@@ -219,8 +219,8 @@ module O = struct
     let restrict e1 e2 = Env.mapbinop Cudd.Mtbdd.restrict e1 e2
     let tdrestrict e1 e2 = Env.mapbinop Cudd.Mtbdd.tdrestrict e1 e2
 
-    let print cond fmt (x:'a t) =
-      ApronexprDD.print (Expr0.O.print_bdd x.env cond) fmt x.val0
+    let print cond fmt (x:('a,'b) t) =
+      ApronexprDD.print (Expr0.O.print_bdd x.env cond) x.env.symbol fmt x.val0
 
     let substitute_by_var cond e sub =
       of_expr (ddsubstitute_by_var cond (to_expr e) sub)
@@ -232,12 +232,12 @@ module O = struct
   (** {3 General expressions} *)
   (*  ====================================================================== *)
 
-  let typ_of_expr e = Expr0.typ_of_expr e.val0
+  let typ_of_expr e = Expr0.O.typ_of_expr e.env e.val0
 
-  let permute (e:Expr0.t) (tab:int array) : Expr0.t = match e with
+  let permute (e:'a Expr0.t) (tab:int array) : 'a Expr0.t = match e with
     | #Bdd.Expr0.t as e ->
 	let res = Bdd.Expr0.O.permute e tab in
-	(res:>Expr0.t)
+	(res:>'a Expr0.t)
     | `Apron e -> `Apron (Cudd.Mtbdd.permute e tab)
 
   let extend_environment abs nenv =
@@ -260,7 +260,8 @@ module O = struct
   let tdrestrict e1 e2 = Env.mapbinop Expr0.tdrestrict e1 e2
 
   let eq cond e1 e2 =
-    let t = Expr0.O.check_typ2 e1.val0 e2.val0 in
+    Env.check_value2 e1 e2;
+    let t = Expr0.O.check_typ2 e1.env e1.val0 e2.val0 in
     match t with
     | `Bool ->
 	Bool.eq cond (Bool.of_expr e1) (Bool.of_expr e2)
@@ -276,10 +277,10 @@ module O = struct
 	Apron.eq cond diff
     | _ -> failwith ""
 
-  let support cond (e:'a t) = Expr0.O.support e.env cond e.val0
-  let support_cond cudd (e:'a t) = Expr0.O.support_cond cudd e.val0
+  let support cond (e:('a,'b) t) = Expr0.O.support e.env cond e.val0
+  let support_cond cudd (e:('a,'b) t) = Expr0.O.support_cond cudd e.val0
 
-  let print cond fmt (e:'a t) : unit =
+  let print cond fmt (e:('a,'b) t) : unit =
     Expr0.O.print e.env cond fmt e.val0
 
   let make = make_value
@@ -301,8 +302,8 @@ module O = struct
   (*  ====================================================================== *)
 
   module List = struct
-    type 'a t = ('a, Expr0.t list) Env.value
-    constraint 'a = ('b,'c,'d) Env.O.t
+    type ('a,'b) t = ('b, 'a Expr0.t list) Env.value
+    constraint 'b = ('a,'c,'d,'e) Env.O.t
 
     let of_lexpr0 = make_value
     let of_lexpr1 env lexpr1 =
@@ -316,10 +317,12 @@ module O = struct
 	e nenv
 
     let normalize ?reduce ?careset (cond,list) =
-      let (cond,lexpr0) = Expr0.O.normalize ?reduce ?careset (cond,list.val0) in
+      let (cond,lexpr0) =
+	Expr0.O.normalize ?reduce ?careset (cond,list.val0)
+      in
       (cond, of_lexpr0 list.env lexpr0)
 
-    let print ?first ?sep ?last (cond:'a Cond.O.t) fmt (x:'a t) =
+    let print ?first ?sep ?last (cond:('a,'b) Cond.O.t) fmt (x:('a,'b) t) =
       Print.list ?first ?sep ?last
 	(Expr0.O.print x.env cond) fmt x.val0
 
@@ -335,9 +338,9 @@ end
 (** {3 Operations on general expressions} *)
 (*  ====================================================================== *)
 
-type t = (Env.t, Expr0.t) Env.value
+type 'a t = ('a Env.t, 'a Expr0.t) Env.value
 
-type expr = t
+type 'a expr = 'a t
 let typ_of_expr = O.typ_of_expr
 let make = O.make
 let extend_environment = O.extend_environment
@@ -360,7 +363,7 @@ let normalize = O.normalize
 (*  ====================================================================== *)
 
 module Bool = struct
-  type t = (Env.t, Cudd.Man.v Cudd.Bdd.t) Env.value
+  type 'a t = ('a Env.t, Cudd.Man.v Cudd.Bdd.t) Env.value
   let of_expr = O.Bool.of_expr
   let to_expr = O.Bool.to_expr
   let extend_environment = O.Bool.extend_environment
@@ -399,7 +402,7 @@ end
 (*  ====================================================================== *)
 
 module Bint = struct
-  type t = (Env.t, Cudd.Man.v Bdd.Int.t) Env.value
+  type 'a t = ('a Env.t, Cudd.Man.v Bdd.Int.t) Env.value
   let of_expr = O.Bint.of_expr
   let to_expr = O.Bint.to_expr
   let extend_environment = O.Bint.extend_environment
@@ -437,7 +440,7 @@ end
 (*  ====================================================================== *)
 
 module Benum = struct
-  type t = (Env.t, Cudd.Man.v Bdd.Enum.t) Env.value
+  type 'a t = ('a Env.t, Cudd.Man.v Bdd.Enum.t) Env.value
   let of_expr = O.Benum.of_expr
   let to_expr = O.Benum.to_expr
   let extend_environment = O.Benum.extend_environment
@@ -458,8 +461,13 @@ end
 (*  ====================================================================== *)
 (** {3 Arithmetic expressions} *)
 (*  ====================================================================== *)
+type apron_coeff = Apron.Coeff.t
+type apron_typ = Apron.Texpr1.typ
+type apron_round = Apron.Texpr1.round
+type apron_cons_typ = Apron.Tcons1.typ
+
 module Apron = struct
-  type t = (Env.t, ApronexprDD.t) Env.value
+  type 'a t = ('a Env.t, 'a ApronexprDD.t) Env.value
   let of_expr = O.Apron.of_expr
   let to_expr = O.Apron.to_expr
   let extend_environment = O.Apron.extend_environment
@@ -491,7 +499,7 @@ end
 (*  ====================================================================== *)
 
 module List = struct
-  type t = (Env.t, Expr0.t list) Env.value
+  type 'a t = ('a Env.t, 'a Expr0.t list) Env.value
 
   let of_lexpr0 = O.List.of_lexpr0
   let of_lexpr1 = O.List.of_lexpr1

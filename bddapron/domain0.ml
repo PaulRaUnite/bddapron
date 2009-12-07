@@ -7,39 +7,40 @@
 (** {2 Generic interface} *)
 (*  ********************************************************************** *)
 
-type ('a,'b,'c) man = {
+type ('a,'b,'c,'d) man = {
   typ : string;
-  man : 'b;
-  canonicalize : ?apron:bool -> 'b -> 'c -> unit;
-  size : 'b -> 'c -> int;
-  print : Env.t -> Format.formatter -> 'c -> unit;
-  bottom : 'b -> Env.t -> 'c;
-  top : 'b -> Env.t -> 'c;
-  of_apron : 'b -> Env.t -> 'a Apron.Abstract0.t -> 'c;
-  is_bottom : 'b -> 'c -> bool;
-  is_top : 'b -> 'c -> bool;
-  is_leq : 'b -> 'c -> 'c -> bool;
-  is_eq : 'b -> 'c -> 'c -> bool;
-  to_bddapron : 'b -> 'c -> (Expr0.Bool.t * 'a Apron.Abstract0.t) list;
-  meet : 'b -> 'c -> 'c -> 'c;
-  join : 'b -> 'c -> 'c -> 'c;
-  meet_condition : 'b -> Env.t -> Cond.t -> 'c -> Expr0.Bool.t -> 'c;
-  assign_lexpr : ?relational:bool -> ?nodependency:bool -> 'b ->  Env.t -> Cond.t -> 'c -> string list -> Expr0.t list -> 'c option -> 'c;
-  substitute_lexpr : 'b ->  Env.t -> Cond.t -> 'c -> string list -> Expr0.t list -> 'c option -> 'c;
-  forget_list : 'b -> Env.t -> 'c -> string list -> 'c;
-  widening : 'b -> 'c -> 'c -> 'c;
-  apply_change :  bottom:'c -> 'b -> 'c -> Env.change -> 'c;
-  apply_permutation : 'b -> 'c -> int array option * Apron.Dim.perm option -> 'c;
+  man : 'c;
+  canonicalize : ?apron:bool -> 'c -> 'd -> unit;
+  size : 'c -> 'd -> int;
+  print : 'a Env.t -> Format.formatter -> 'd -> unit;
+  bottom : 'c -> 'a Env.t -> 'd;
+  top : 'c -> 'a Env.t -> 'd;
+  of_apron : 'c -> 'a Env.t -> 'b Apron.Abstract0.t -> 'd;
+  is_bottom : 'c -> 'd -> bool;
+  is_top : 'c -> 'd -> bool;
+  is_leq : 'c -> 'd -> 'd -> bool;
+  is_eq : 'c -> 'd -> 'd -> bool;
+  to_bddapron : 'c -> 'd -> ('a Expr0.Bool.t * 'b Apron.Abstract0.t) list;
+  meet : 'c -> 'd -> 'd -> 'd;
+  join : 'c -> 'd -> 'd -> 'd;
+  meet_condition : 'c -> 'a Env.t -> 'a Cond.t -> 'd -> 'a Expr0.Bool.t -> 'd;
+  assign_lexpr : ?relational:bool -> ?nodependency:bool -> 'c ->  'a Env.t -> 'a Cond.t -> 'd -> 'a list -> 'a Expr0.t list -> 'd option -> 'd;
+  substitute_lexpr : 'c -> 'a Env.t -> 'a Cond.t -> 'd -> 'a list -> 'a Expr0.t list -> 'd option -> 'd;
+  forget_list : 'c -> 'a Env.t -> 'd -> 'a list -> 'd;
+  widening : 'c -> 'd -> 'd -> 'd;
+  apply_change :  bottom:'d -> 'c -> 'd -> Env.change -> 'd;
+  apply_permutation : 'c -> 'd -> int array option * Apron.Dim.perm option -> 'd;
 }
 (** Type of generic managers.
 
-    - ['a]: as in ['a Apron.Manager.t]
+    - ['a]: type of symbols
+    - ['b]: as in ['b Apron.Manager.t]
 	    ([Box.t], [Polka.strict Polka.t], etc);
-    - ['b]: type of the underlying manager;
-    - ['c]: type of the underlying abstract values of level 0.
+    - ['c]: type of the underlying manager;
+    - ['d]: type of the underlying abstract values of level 0.
 *)
 
-type 'c t = 'c
+type 'd t = 'd
 (** Type of generic abstract values *)
 
 let canonicalize ?apron man = man.canonicalize ?apron man.man
@@ -67,14 +68,15 @@ let apply_permutation man = man.apply_permutation man.man
 (** {2 Implementation based on {!Mtbdddomain0}} *)
 (*  ********************************************************************** *)
 
-type 'a mtbdd =
+type ('a,'b) mtbdd =
   (
     'a,
-    'a Mtbdddomain0.man,
-    'a Mtbdddomain0.t
+    'b,
+    ('a,'b) Mtbdddomain0.man,
+    'b Mtbdddomain0.t
   ) man
 
-let make_mtbdd ?global (apron:'a Apron.Manager.t) : 'a mtbdd =
+let make_mtbdd ?global (apron:'b Apron.Manager.t) : ('a,'b) mtbdd =
   let man = Mtbdddomain0.make_man ?global apron in
   {
     typ = "mtbdd";
@@ -101,20 +103,20 @@ let make_mtbdd ?global (apron:'a Apron.Manager.t) : 'a mtbdd =
     apply_permutation = Mtbdddomain0.apply_permutation;
   }
 
-let man_of_mtbdd (man:'a mtbdd) : ('a,'b,'c) man =
+let man_of_mtbdd (man:('a,'b) mtbdd) : ('a,'b,'c,'d) man =
   Obj.magic man
-let of_mtbdd (manabs:'a mtbdd * 'a Mtbdddomain0.t) : ('a,'b,'c) man * 'c t =
+let of_mtbdd (manabs:('a,'b) mtbdd * 'b Mtbdddomain0.t) : ('a,'b,'c,'d) man * 'd t =
   Obj.magic manabs
-    
-let man_is_mtbdd man = 
+
+let man_is_mtbdd man =
   man.typ="mtbdd"
 
-let man_to_mtbdd (man:('a,'b,'c) man) : 'a mtbdd =
+let man_to_mtbdd (man:('a,'b,'c,'d) man) : ('a,'b) mtbdd =
   if man_is_mtbdd man then
     Obj.magic man
   else
     failwith ""
-let to_mtbdd (manabs:('a,'b,'c) man * 'c t) : 'a mtbdd * 'a Mtbdddomain0.t =
+let to_mtbdd (manabs:('a,'b,'c,'d) man * 'd t) : ('a,'b) mtbdd * 'b Mtbdddomain0.t =
   if man_is_mtbdd (fst manabs) then
     Obj.magic manabs
   else
@@ -124,14 +126,15 @@ let to_mtbdd (manabs:('a,'b,'c) man * 'c t) : 'a mtbdd * 'a Mtbdddomain0.t =
 (** {2 Implementation based on {!Bdddomain0}} *)
 (*  ********************************************************************** *)
 
-type 'a bdd =
+type ('a,'b) bdd =
   (
     'a,
-    'a Bdddomain0.man,
-    'a Bdddomain0.t
+    'b,
+    ('a,'b) Bdddomain0.man,
+    'b Bdddomain0.t
   ) man
 
-let make_bdd (apron:'a Apron.Manager.t) : 'a bdd =
+let make_bdd (apron:'b Apron.Manager.t) : ('a,'b) bdd =
   let man = Bdddomain0.make_man apron in
   {
     typ = "bdd";
@@ -158,20 +161,20 @@ let make_bdd (apron:'a Apron.Manager.t) : 'a bdd =
     apply_permutation = Bdddomain0.apply_permutation;
   }
 
-let man_of_bdd (man:'a bdd) : ('a,'b,'c) man =
+let man_of_bdd (man:('a,'b) bdd) : ('a,'b,'c,'d) man =
   Obj.magic man
-let of_bdd (manabs:'a bdd * 'a Bdddomain0.t) : ('a,'b,'c) man * 'c t =
+let of_bdd (manabs:('a,'b) bdd * 'b Bdddomain0.t) : ('a,'b,'c,'d) man * 'd t =
   Obj.magic manabs
 
-let man_is_bdd man = 
+let man_is_bdd man =
   man.typ="bdd"
 
-let man_to_bdd (man:('a,'b,'c) man) : 'a bdd =
+let man_to_bdd (man:('a,'b,'c,'d) man) : ('a,'b) bdd =
   if man_is_bdd man then
     Obj.magic man
   else
     failwith ""
-let to_bdd (manabs:('a,'b,'c) man * 'c t) : 'a bdd * 'a Bdddomain0.t =
+let to_bdd (manabs:('a,'b,'c,'d) man * 'd t) : ('a,'b) bdd * 'b Bdddomain0.t =
   if man_is_bdd (fst manabs) then
     Obj.magic manabs
   else
@@ -184,7 +187,7 @@ let apron = Oct.manager_alloc ();;
 
 let make () =
   let man =
-    if true then 
+    if true then
       man_of_bdd (make_bdd apron)
     else
       man_of_mtbdd (make_mtbdd apron)

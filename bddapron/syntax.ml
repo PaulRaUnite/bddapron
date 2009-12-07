@@ -59,14 +59,14 @@ let error format =
     fmt
     format
 
-let print_typdef fmt (typdef:Env.typdef) = 
+let print_typdef fmt (typdef:string Env.typdef) =
   match typdef with
   | `Benum array ->
       fprintf fmt "enum { %a }"
       (Print.array ~first:"@[" ~sep:",@ " ~last:"@]" pp_print_string)
       array
   | `Bint(sign,size) -> fprintf fmt "%cint[%i]" (if sign then 's' else 'u') size
-let print_typ fmt (typ:[<Env.typ]) =
+let print_typ fmt (typ:[<string Env.typ]) =
   match typ with
   | `Bool -> pp_print_string fmt "bool"
   | `Bint(sign,size) -> fprintf fmt "%cint[%i]" (if sign then 's' else 'u') size
@@ -74,12 +74,12 @@ let print_typ fmt (typ:[<Env.typ]) =
   | `Int -> pp_print_string fmt "int"
   | `Real -> pp_print_string fmt "real"
 
-let print_cst fmt (cst:cst) 
+let print_cst fmt (cst:cst)
   =
   match cst with
   | `Bool(b) -> pp_print_bool fmt b
   | `Apron(x) -> Apron.Coeff.print fmt x
-  | `Bint((sign,size),c) -> 
+  | `Bint((sign,size),c) ->
       fprintf fmt "%cint[%i](%i)" (if sign then 's' else 'u') size c
 
 let print_unop fmt (op:unop) : unit =
@@ -91,7 +91,7 @@ let print_unop fmt (op:unop) : unit =
     end
 
 let print_bbinop fmt (op:bbinop) : unit =
-  pp_print_string fmt 
+  pp_print_string fmt
     begin match op with
     | Or -> "or"
     | And -> "and"
@@ -119,20 +119,20 @@ let precedence_of_unop = function
   | `Not -> 4
   | `Apron(_,_,_) -> 8
 let precedence_of_binop = function
-  | `Bool op -> 
+  | `Bool op ->
       begin match op with
       | Or -> 1
       | And -> 2
       | EQ | NEQ -> 3
       | GT | GEQ | LEQ | LT -> 5
       end
-  | `Apron(op,_,_) -> 
+  | `Apron(op,_,_) ->
       begin match op with
       | Apron.Texpr1.Add | Apron.Texpr1.Sub -> 6
       | Apron.Texpr1.Mul | Apron.Texpr1.Div | Apron.Texpr1.Mod -> 7
       end
 let precedence_of_expr = function
-  | Cst _ 
+  | Cst _
   | Ref _ -> 8
   | Unop(op,_) -> precedence_of_unop op
   | Binop(op,_,_) -> precedence_of_binop op
@@ -141,7 +141,7 @@ let precedence_of_expr = function
 
 let print_expr fmt expr =
   (* priority: correspondance with priorities in [parser.mly] *)
-  let rec print_expr ?(specialif=false) fmt expr = 
+  let rec print_expr ?(specialif=false) fmt expr =
     match expr with
     | Cst(cst) -> print_cst fmt cst
     | Ref(var) -> pp_print_string fmt var
@@ -161,13 +161,13 @@ let print_expr fmt expr =
 	let par1 = prec1<prec in
 	let par2 = prec2<=prec in
 	fprintf fmt "@[<hov>%s%a%s %a@ %s%a%s@]"
-  	  (if par1 then "(" else "")
+	  (if par1 then "(" else "")
 	  (print_expr ~specialif:false) e1
-  	  (if par1 then ")" else "")
+	  (if par1 then ")" else "")
 	  print_binop op
-  	  (if par2 then "(" else "")
+	  (if par2 then "(" else "")
 	  (print_expr ~specialif:false) e2
-  	  (if par2 then ")" else "")
+	  (if par2 then ")" else "")
     | If(e1,e2,e3) ->
 	let nif = match e3 with
 	  | If _ -> true
@@ -178,10 +178,10 @@ let print_expr fmt expr =
 	let par1 = prec1<=prec in
 	if not specialif then fprintf fmt "@[<hov>";
 	fprintf fmt "if %s%a%s@ then %a@ else %a"
-  	  (if par1 then "(" else "")
-	  (print_expr ~specialif:false) e1 
-  	  (if par1 then ")" else "")
-	  (print_expr ~specialif:false) e2 
+	  (if par1 then "(" else "")
+	  (print_expr ~specialif:false) e1
+	  (if par1 then ")" else "")
+	  (print_expr ~specialif:false) e2
 	  (print_expr ~specialif:nif) e3
 	;
 	if not specialif then fprintf fmt "@]";
@@ -190,9 +190,9 @@ let print_expr fmt expr =
 	let prec1 = precedence_of_expr expr in
 	let par1 = prec1<=prec in
 	fprintf fmt "%s%a%s in {%a}"
-  	  (if par1 then "(" else "")
+	  (if par1 then "(" else "")
 	  (print_expr ~specialif:false) expr
-  	  (if par1 then ")" else "")
+	  (if par1 then ")" else "")
 	  (Print.list
 	    ~first:"@[<hov>" ~sep:",@," ~last:"@]"
 	    (fun fmt expr ->
@@ -201,7 +201,7 @@ let print_expr fmt expr =
 	      fprintf fmt "%s%a%s"
 		(if par1 then "(" else "")
 		(print_expr ~specialif:false) expr
-  		(if par1 then ")" else "")
+		(if par1 then ")" else "")
 	    )
 	  )
 	  lexpr
