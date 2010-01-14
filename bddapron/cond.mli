@@ -34,3 +34,13 @@ val make :
   Cudd.Man.vt -> 'a t
 
 val print : 'a Env.t -> Format.formatter -> 'a t -> unit
+
+(*  ********************************************************************** *)
+(** {2 Level 2} *)
+(*  ********************************************************************** *)
+
+type ('a,'b) value = ('a,'b) Bdd.Cond.value = {
+  cond : 'a;
+  val1 : 'b
+}
+val make_value : 'a -> 'b -> ('a,'b) value

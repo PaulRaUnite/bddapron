@@ -42,3 +42,14 @@ type 'a t = ('a, 'a Env.t) O.t
 let make = O.make
 
 let print = Bdd.Cond.print
+
+(*  ********************************************************************** *)
+(** {2 Level 2} *)
+(*  ********************************************************************** *)
+
+type ('a,'b) value = ('a,'b) Bdd.Cond.value = {
+  cond : 'a;
+  val1 : 'b
+}
+
+let make_value = Bdd.Cond.make_value
