@@ -77,11 +77,7 @@ module O : sig
 
    val extend_environment : ('a,'b) t -> 'b -> ('a,'b) t
 
-   val print :
-     ?first:(unit,Format.formatter,unit) format ->
-     ?sep:(unit,Format.formatter,unit) format ->
-     ?last:(unit,Format.formatter,unit) format ->
-     Format.formatter -> ('a,'b) t -> unit
+   val print : Format.formatter -> ('a,'b) t -> unit
   end
 end
 
@@ -134,9 +130,5 @@ module List : sig
     ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
     'a Cond.t -> 'a Expr1.List.t -> 'a t
   val extend_environment : 'a t -> 'a Env.t -> 'a t
-  val print :
-    ?first:(unit,Format.formatter,unit) format ->
-    ?sep:(unit,Format.formatter,unit) format ->
-    ?last:(unit,Format.formatter,unit) format ->
-     Format.formatter -> 'a t -> unit
+  val print : Format.formatter -> 'a t -> unit
 end

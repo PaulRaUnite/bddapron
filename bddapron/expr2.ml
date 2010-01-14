@@ -111,9 +111,8 @@ module O = struct
   module List = struct
     type ('a,'b) t = (('a,'b) Cond.O.t, ('a,'b) Expr1.O.List.t) Bdd.Cond.value
 
-    let print ?first ?sep ?last fmt (listexpr:('a,'b) t) =
-      Expr1.O.List.print ?first ?sep ?last
-	listexpr.cond fmt listexpr.val1
+    let print fmt (listexpr:('a,'b) t) =
+      Expr1.O.List.print listexpr.cond fmt listexpr.val1
 
     let of_lexpr0
 	?(normalize=false) ?reduce ?careset

@@ -322,8 +322,13 @@ module O = struct
       in
       (cond, of_lexpr0 list.env lexpr0)
 
-    let print ?first ?sep ?last (cond:('a,'b) Cond.O.t) fmt (x:('a,'b) t) =
-      Print.list ?first ?sep ?last
+    let print
+	?(first=("(@[":(unit,Format.formatter,unit) format)) 
+	?(sep=(",@ ":(unit,Format.formatter,unit) format))
+	?(last=("@])":(unit,Format.formatter,unit) format))
+	(cond:('a,'b) Cond.O.t) fmt (x:('a,'b) t) 
+	=
+      Print.list ~first ~sep ~last
 	(Expr0.O.print x.env cond) fmt x.val0
 
   end
