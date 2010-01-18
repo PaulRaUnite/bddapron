@@ -6,14 +6,29 @@
 open Format
 open Bdd.Env
 
+(** Type definitions *)
+type 'a typdef = 'a Bdd.Env.typdef
+
 (** Types *)
 type 'a typ = [
   | 'a Bdd.Env.typ
   | Apronexpr.typ
 ]
 
-(** Type definitions *)
-type 'a typdef = 'a Bdd.Env.typdef
+(** Manager for manipulating symbols.
+
+    DO NOT USE [Marshal.to_string] and [Marshal.from_string], as they
+    generate strings with NULL character, which is not handled
+    properly when converted to C strings.  *)
+type 'a symbol = 'a Bdd.Env.symbol = {
+  compare : 'a -> 'a -> int; (** Total order *)
+  marshal : 'a -> string;    (** Conversion to string.  The
+				 generated strings SHOULD NOT
+				 contain NULL character, as they
+				 may be converted to C strings. *)
+  unmarshal : string -> 'a;  (** Conversion from string *)
+  mutable print : Format.formatter -> 'a -> unit; (** Printing *)
+}
 
 (** Environment *)
 type ('a,'b) ext = {
@@ -23,26 +38,24 @@ type ('a,'b) ext = {
 }
 type ('a,'b,'c,'d) t0 = ('a,'b,'c,Cudd.Man.v,('a,'d) ext) Bdd.Env.t0
 
+let copy_ext ~copy_aext ext =
+  { ext with
+    aext = copy_aext ext.aext }
+
 module O = struct
   type ('a,'b,'c,'d) t = ('a,'b,'c,'d) t0
   constraint 'b = [>'a typ]
   constraint 'c = [>'a typdef]
 
   let make
-      ?compare_symbol
-      ?marshal_symbol
-      ?unmarshal_symbol
-      ~print_symbol
+      ~symbol
       ~copy_aext
       ?bddindex0 ?bddsize ?relational cudd aext
       =
     let env =
       Bdd.Env.O.make
-	?compare_symbol
-	?marshal_symbol
-	?unmarshal_symbol
-	~print_symbol
-	~copy_ext:(fun ext -> { ext with aext = copy_aext ext.aext })
+	~symbol
+	~copy_ext:(copy_ext ~copy_aext)
 	?bddindex0 ?bddsize ?relational cudd
 	{
 	  table = Cudd.Mtbdd.make_table ~hash:Hashtbl.hash ~equal:(=);
@@ -90,17 +103,15 @@ let print_order = Bdd.Env.print_order
 (*  ********************************************************************** *)
 (** {2 Constructors} *)
 (*  ********************************************************************** *)
+
+let make_symbol = Bdd.Env.make_symbol
+let string_symbol = Bdd.Env.string_symbol
+
 let make
-    ?compare_symbol
-    ?marshal_symbol
-    ?unmarshal_symbol
-    ~print_symbol
+    ~symbol
     ?bddindex0 ?bddsize ?relational cudd =
   O.make
-    ?compare_symbol
-    ?marshal_symbol
-    ?unmarshal_symbol
-    ~print_symbol
+    ~symbol
     ~copy_aext:(fun () -> ())
     ?bddindex0 ?bddsize ?relational cudd ()
 

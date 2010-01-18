@@ -97,6 +97,95 @@ let notfound format =
     fmt
     format
 
+let string_remove_null s =
+  let l = String.length s in
+  let nl = ref l in
+  for i=0 to l-1 do
+    match String.unsafe_get s i with
+    | '\\' | '\000'  -> incr nl
+    | _ -> ()
+  done;
+  if !nl = l then 
+    s 
+  else begin
+    let ns = String.create !nl in
+    let ni = ref 0 in
+    for i=0 to l-1 do
+      match String.unsafe_get s i with
+      | '\\' ->
+	  String.unsafe_set ns !ni '\\';
+	  incr ni;
+	  String.unsafe_set ns !ni '\\';
+	  incr ni
+      | '\000' ->
+	  String.unsafe_set ns !ni '\\';
+	  incr ni;
+	  String.unsafe_set ns !ni '0';
+	  incr ni;
+      | _ as c ->
+	  String.unsafe_set ns !ni c;
+	  incr ni;
+    done;
+    assert(!ni == !nl);
+    ns
+  end
+
+let string_add_null ns =
+  let nl = String.length ns in
+  let l = ref nl in
+  let ni = ref 0 in
+  while !ni < nl do
+    if String.unsafe_get ns !ni = '\\' then begin
+      incr ni;
+      decr l
+    end;
+    incr ni
+  done;
+  if !l == nl then
+    ns
+  else begin
+    let s = String.create !l in
+    ni := 0;
+    for i=0 to !l - 1 do
+      match String.unsafe_get ns !ni with
+      | '\\' ->
+	  String.unsafe_set s i 
+	    begin match String.unsafe_get ns (!ni + 1) with
+	    | '\\' -> '\\'
+	    | _ -> '\000'
+	    end;
+	  ni := !ni + 2
+      | _ as c -> 
+	  String.unsafe_set s i c;
+	  incr ni
+    done;
+    s
+  end
+
+let marshal_symbol s = string_remove_null (Marshal.to_string s [Marshal.No_sharing])
+let unmarshal_symbol s = Marshal.from_string (string_add_null s) 0
+
+let make_symbol
+    ?(compare=Pervasives.compare)
+    ?(marshal=marshal_symbol)
+    ?(unmarshal=unmarshal_symbol)
+    print
+    =
+  {
+    compare = compare;
+    marshal = marshal;
+    unmarshal = unmarshal;
+    print = print;
+  }
+
+let string_symbol =
+  let id = fun x -> x in {
+    compare = String.compare;
+    marshal = id;
+    unmarshal = id;
+    print = Format.pp_print_string
+  }
+
 module O = struct
   type ('a,'b,'c,'d,'e) t = ('a,'b,'c,'d,'e) t0
   constraint 'b = [>'a typ]
@@ -112,26 +201,8 @@ module O = struct
       (PMappe.print env.symbol.print print_tid) env.vartid
       print_ext env.ext
 
-  let marshal_symbol s = Marshal.to_string s [Marshal.No_sharing]
-  let unmarshal_symbol str = Marshal.from_string str 0
-
-  let make_symbol
-      ?(compare_symbol=Pervasives.compare)
-      ?(marshal_symbol=marshal_symbol)
-      ?(unmarshal_symbol=unmarshal_symbol)
-      ~print_symbol
-      =
-    {
-      compare = compare_symbol;
-      marshal = marshal_symbol;
-      unmarshal = unmarshal_symbol;
-      print = print_symbol;
-    }
   let make
-      ?compare_symbol
-      ?marshal_symbol
-      ?unmarshal_symbol
-      ~print_symbol
+      ~symbol
       ~(copy_ext:'e -> 'e)
       ?(bddindex0=0)
       ?(bddsize=100)
@@ -141,13 +212,6 @@ module O = struct
       :
       ('a,'b,'c,'d,'e) t
       =
-    let symbol =
-      make_symbol
-	?compare_symbol
-	?marshal_symbol
-	?unmarshal_symbol
-	~print_symbol
-    in
     {
       cudd = cudd;
       typdef = PMappe.empty symbol.compare;
@@ -242,17 +306,11 @@ let print fmt (env:('a,'b,'c,'d,'e) O.t) =
     fmt env
 
 let make
-    ?compare_symbol
-    ?marshal_symbol
-    ?unmarshal_symbol
-    ~print_symbol
+    ~symbol
     ?bddindex0 ?bddsize ?relational cudd
     =
   O.make
-    ?compare_symbol
-    ?marshal_symbol
-    ?unmarshal_symbol
-    ~print_symbol
+    ~symbol
     ~copy_ext:(fun x -> ())
     ?bddindex0 ?bddsize ?relational cudd ()
 

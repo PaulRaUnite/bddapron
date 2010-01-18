@@ -7,21 +7,43 @@
 (** {2 Types} *)
 (*  ********************************************************************** *)
 
-(** Types *)
+(** Type definitions. ['a] is the type of symbols (typically, [string]). *)
+type 'a typdef = 'a Bdd.Env.typdef
+
+(** Types. ['a] is the type of symbols (typically, [string]). *)
 type 'a typ = [
   | 'a Bdd.Env.typ
   | Apronexpr.typ
 ]
 
-(** Type definitions *)
-type 'a typdef = 'a Bdd.Env.typdef
+(** Manager for manipulating symbols.
 
-(** Environment *)
+    DO NOT USE [Marshal.to_string] and [Marshal.from_string], as they
+    generate strings with NULL character, which is not handled
+    properly when converted to C strings.  *)
+type 'a symbol = 'a Bdd.Env.symbol = {
+  compare : 'a -> 'a -> int; (** Total order *)
+  marshal : 'a -> string;    (** Conversion to string.  The
+				 generated strings SHOULD NOT
+				 contain NULL character, as they
+				 may be converted to C strings. *)
+  unmarshal : string -> 'a;  (** Conversion from string *)
+  mutable print : Format.formatter -> 'a -> unit; (** Printing *)
+}
+
+(** Environment extension. ['a] is the type of symbols, ['b] is the type of further extension. *)
 type ('a,'b) ext = {
   mutable table : 'a Apronexpr.t Cudd.Mtbdd.table;
   mutable eapron : Apron.Environment.t;
   mutable aext : 'b;
 }
+
+(** Environment.
+
+- ['a] is the type of symbols;
+- ['b] is the type of variables type;
+- ['c] is the type of type definitions;
+- ['d] is the type of further extension *)
 type ('a,'b,'c,'d) t0 = ('a,'b,'c,Cudd.Man.v,('a,'d) ext) Bdd.Env.t0
 
 (** {3 Opened signature} *)
@@ -31,10 +53,7 @@ module O : sig
   constraint 'c = [>'a typdef]
 
   val make :
-    ?compare_symbol:('a -> 'a -> int) ->
-    ?marshal_symbol:('a -> string) ->
-    ?unmarshal_symbol:(string -> 'a) ->
-    print_symbol:(Format.formatter -> 'a -> unit) ->
+    symbol:'a symbol ->
     copy_aext:('d -> 'd) ->
     ?bddindex0:int -> ?bddsize:int -> ?relational:bool ->
     Cudd.Man.vt -> 'd -> ('a,'b,'c,'d) t
@@ -76,11 +95,19 @@ val print : Format.formatter -> ('a,'b,'c,'d) O.t -> unit
 (** {2 Constructors} *)
 (*  ********************************************************************** *)
 
+val make_symbol :
+  ?compare:('a -> 'a -> int) ->
+  ?marshal:('a -> string) ->
+  ?unmarshal:(string -> 'a) ->
+  (Format.formatter -> 'a -> unit) ->
+  'a symbol
+      (** Generic function for creating a manager for symbols *)
+
+val string_symbol : string symbol
+      (** Standard manager for symbols of type [string] *)
+
 val make :
-  ?compare_symbol:('a -> 'a -> int) ->
-  ?marshal_symbol:('a -> string) ->
-  ?unmarshal_symbol:(string -> 'a) ->
-  print_symbol:(Format.formatter -> 'a -> unit) ->
+  symbol:'a symbol ->
   ?bddindex0:int -> ?bddsize:int -> ?relational:bool -> Cudd.Man.vt -> 'a t
       (** Same as [O.make], but constrained signature. *)
 

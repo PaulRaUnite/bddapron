@@ -9,25 +9,42 @@
 
 exception Bddindex
 
-(** Type defintion *)
+(** Type defintions. ['a] is the type of symbols (typically, [string]). *)
 type 'a typdef = [
   | `Benum of 'a array
+      (** An enumerated type is defined by an ordered list of labels *)
 ]
 
-(** Types *)
+(** Types. ['a] is the type of symbols (typically, [string]. *)
 type 'a typ = [
-  | `Bool
-  | `Bint of (bool * int)
-  | `Benum of 'a
+  | `Bool                 (** Boolean. *)
+  | `Bint of (bool * int) (** [`Bint(s,n)]: bounded integer on [n] bits, signed iff [s=true]. *)
+  | `Benum of 'a          (** Named enumerated type *)
 ]
 
-(** Environment *)
+(** Manager for manipulating symbols.
+
+    DO NOT USE [Marshal.to_string] and [Marshal.from_string], as they
+    generate strings with NULL character, which is not handled
+    properly when converted to C strings.  *)
 type 'a symbol = {
-  compare : 'a -> 'a -> int;
-  marshal : 'a -> string;
-  unmarshal : string -> 'a;
-  mutable print : Format.formatter -> 'a -> unit;
+  compare : 'a -> 'a -> int; (** Total order *)
+  marshal : 'a -> string;    (** Conversion to string.  The
+				 generated strings SHOULD NOT
+				 contain NULL character, as they
+				 may be converted to C strings. *)
+  unmarshal : string -> 'a;  (** Conversion from string *)
+  mutable print : Format.formatter -> 'a -> unit; (** Printing *)
 }
+
+(** Environment
+
+- ['a] is the type of symbols;
+- ['b] is the type of variables type;
+- ['c] is the type of type definitions;
+- ['d] is the type of CUDD managers and BDDs ([Cudd.Man.d] or [Cudd.Man.v]);
+- ['e] is the type of "extension"
+ *)
 type ('a,'b,'c,'d,'e) t0 = {
   mutable cudd : 'd Cudd.Man.t;
     (** CUDD manager *)
@@ -65,25 +82,11 @@ module O : sig
   constraint 'b = [>'a typ]
   constraint 'c = [>'a typdef]
 
-  val make_symbol :
-    ?compare_symbol:('a -> 'a -> int) ->
-    ?marshal_symbol:('a -> string) ->
-    ?unmarshal_symbol:(string -> 'a) ->
-    print_symbol:(Format.formatter -> 'a -> unit) ->
-    'a symbol 
-
-  val make : 
-    ?compare_symbol:('a -> 'a -> int) ->
-    ?marshal_symbol:('a -> string) ->
-    ?unmarshal_symbol:(string -> 'a) ->
-    print_symbol:(Format.formatter -> 'a -> unit) ->
+  val make :
+    symbol:'a symbol ->
     copy_ext:('e -> 'e) ->
-    ?bddindex0:int -> ?bddsize:int -> ?relational:bool -> 
+    ?bddindex0:int -> ?bddsize:int -> ?relational:bool ->
     'd Cudd.Man.t -> 'e -> ('a,'b,'c,'d,'e) t
-      (** Create a new database.  Default values for
-	  [bddindex0,bddsize,relational] are [0,100,false].
-	  [bddincr] is initialized to 1 if [relational=false], 2
-	  otherwise. *)
 
   val print :
     (Format.formatter -> 'b -> unit) ->
@@ -98,11 +101,11 @@ type ('a,'d) t = ('a,'a typ,'a typdef,'d,unit) O.t
 (*  ********************************************************************** *)
 (** {2 Printing} *)
 (*  ********************************************************************** *)
-val print_typ : 
+val print_typ :
   (Format.formatter -> 'a -> unit) ->
   Format.formatter -> [> 'a typ] -> unit
   (** Print a type *)
-val print_typdef : 
+val print_typdef :
   (Format.formatter -> 'a -> unit) ->
   Format.formatter -> [> 'a typdef] -> unit
   (** Print a type definition *)
@@ -119,17 +122,37 @@ val print : Format.formatter -> ('a,'b,'c,'d,'e) O.t -> unit
 (** {2 Constructors} *)
 (*  ********************************************************************** *)
 
+val make_symbol :
+  ?compare:('a -> 'a -> int) ->
+  ?marshal:('a -> string) ->
+  ?unmarshal:(string -> 'a) ->
+  (Format.formatter -> 'a -> unit) ->
+  'a symbol
+      (** Generic function for creating a manager for symbols *)
+
+val string_symbol : string symbol
+      (** Standard manager for symbols of type [string] *)
 
 val make :
-  ?compare_symbol:('a -> 'a -> int) ->
-  ?marshal_symbol:('a -> string) ->
-  ?unmarshal_symbol:(string -> 'a) ->
-  print_symbol:(Format.formatter -> 'a -> unit) ->
+  symbol:'a symbol ->
   ?bddindex0:int ->
   ?bddsize:int -> ?relational:bool -> 'd Cudd.Man.t -> ('a,'d) t
-      (** Same as [O.make], but constrained signature. *)
+      (** Create a new database.
 
-val copy : ('a,'b,'c,'d,'e) O.t -> ('a,'b,'c,'d,'e) O.t 
+	  - [symbol] is the manager for manipulating symbols;
+	  - [bddindex0]: starting index in BDDs for finite-type variables;
+	  - [bddsize]: number of indices booked for finite-type
+          variables.  If at some point, there is no such
+          available index, a [Failure] exception is raised.
+	  - [relational]: if true, primed indices (unprimed
+	  indices plus one) are booked together with unprimed
+	  indices. [bddincr] is initialized to 1 if
+	  [relational=false], 2 otherwise.
+
+	  Default values for [bddindex0,bddsize,relational] are
+	  [0,100,false]. *)
+
+val copy : ('a,'b,'c,'d,'e) O.t -> ('a,'b,'c,'d,'e) O.t
       (** Copy *)
 
 (*  ********************************************************************** *)
@@ -173,7 +196,7 @@ val rename_vars_with : ('a,'b,'c,'d,'e) O.t -> ('a * 'a) list -> int array optio
     (** Rename the variables, possibly normalize the environment
 	and return the applied permutation. *)
 
-val add_typ : ('a,'b,'c,'d,'e) O.t -> 'a -> 'c -> ('a,'b,'c,'d,'e) O.t 
+val add_typ : ('a,'b,'c,'d,'e) O.t -> 'a -> 'c -> ('a,'b,'c,'d,'e) O.t
 val add_vars : ('a,'b,'c,'d,'e) O.t -> ('a * 'b) list -> ('a,'b,'c,'d,'e) O.t
 val remove_vars : ('a,'b,'c,'d,'e) O.t -> 'a list -> ('a,'b,'c,'d,'e) O.t
 val rename_vars : ('a,'b,'c,'d,'e) O.t -> ('a * 'a) list -> ('a,'b,'c,'d,'e) O.t
@@ -197,7 +220,7 @@ val is_eq : ('a,'b,'c,'d,'e) O.t -> ('a,'b,'c,'d,'e) O.t -> bool
     (** Test equality of environments in terms of types and
 	variables (but not in term of indexes) *)
 val shift : ('a,'b,'c,'d,'e) O.t -> int -> ('a,'b,'c,'d,'e) O.t
-    (** Shift all the indices by the offset *) 
+    (** Shift all the indices by the offset *)
 val lce : ('a,'b,'c,'d,'e) O.t -> ('a,'b,'c,'d,'e) O.t -> ('a,'b,'c,'d,'e) O.t
     (** Least common environment *)
 val permutation12 : ('a,'b,'c,'d,'e) O.t -> ('a,'b,'c,'d,'e) O.t -> int array
@@ -280,14 +303,14 @@ val permutation_of_offset : int -> int -> int array
 val check_var : ('a,'b,'c,'d,'e) O.t -> 'a -> unit
 val check_lvar : ('a,'b,'c,'d,'e) O.t -> 'a list -> unit
 val check_value :
-  ('a,'b,'c,'d,'e) O.t -> 
+  ('a,'b,'c,'d,'e) O.t ->
   (('a,'b,'c,'d,'e) O.t, 'f) value -> unit
 val check_value2 :
   (('a,'b,'c,'d,'e) O.t, 'f) value ->
   (('a,'b,'c,'d,'e) O.t, 'g) value -> unit
 val check_value3 :
   (('a,'b,'c,'d,'e) O.t, 'f) value ->
-  (('a,'b,'c,'d,'e) O.t, 'g) value -> 
+  (('a,'b,'c,'d,'e) O.t, 'g) value ->
   (('a,'b,'c,'d,'e) O.t, 'h) value -> unit
 
 val check_lvarvalue :
@@ -320,4 +343,3 @@ val mapterop :
   (('a,'b,'c,'d,'e) O.t, 'g) value ->
   (('a,'b,'c,'d,'e) O.t, 'h) value ->
   (('a,'b,'c,'d,'e) O.t, 'i) value
-
