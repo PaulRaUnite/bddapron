@@ -158,9 +158,9 @@ html: html_bdd html_bddapron
 homepage: html bdd.pdf bddapron.pdf
 	hyperlatex index
 	cp -r index.html html_bdd html_bddapron bdd.pdf bddapron.pdf Changes \
-		$(HOME)/web/mlxxxidl-forge/bddapron
-	chmod -R ugoa+rx $(HOME)/web/mlxxxidl-forge/bddapron
-	scp -r $(HOME)/web/mlxxxidl-forge/bddapron johns:/home/wwwpop-art/people/bjeannet/bjeannet-forge
+		$(HOME)/web/bjeannet-forge/bddapron
+	chmod -R ugoa+rx $(HOME)/web/bjeannet-forge/bddapron
+	scp -r $(HOME)/web/bjeannet-forge/bddapron johns:/home/wwwpop-art/people/bjeannet/bjeannet-forge
 	ssh johns chmod -R ugoa+rx /home/wwwpop-art/people/bjeannet/bjeannet-forge/bddapron
 
 #---------------------------------------
@@ -174,8 +174,7 @@ bddtop: bdd.cma
 bddaprontop: bddapron.cma
 	$(OCAMLMKTOP) -g -verbose $(OCAMLFLAGS) $(OCAMLINC) -o $@ \
 	-custom -cc "$(CC)" cudd.cma camllib.cma \
-	bigarray.cma gmp.cma apron.cma box.cma oct.cma polka.cma bddapron.cma -cclib "-loctMPQ"
-
+	bigarray.cma gmp.cma apron.cma boxMPQ.cma octMPQ.cma polkaMPQ.cma bddapron.cma 
 
 example1.byte: bdd/example1.ml bdd.cma
 	$(OCAMLC) -g $(OCAMLFLAGS) $(OCAMLINC) -o $@ cudd.cma camllib.cma bdd.cma $<
