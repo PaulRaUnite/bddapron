@@ -25,8 +25,9 @@ open Bddapron;;
 #install_printer Cudd.Bdd.print__minterm;;
 let print fmt x = Apron.Environment.print fmt x;;
 #install_printer print;;
-#install_printer Bddapron.Apronexpr.print;;
-let print fmt x = Cudd.Weakke.print Apronexpr.print fmt x;;
+let print fmt x = Bddapron.Apronexpr.print Env.string_symbol fmt x;;
+#install_printer print;;
+let print fmt x = Cudd.Weakke.print (Bddapron.Apronexpr.print Env.string_symbol) fmt x;;
 #install_printer print;;
 let print fmt x = Cudd.Weakke.print Apron.Abstract1.print fmt x ;;
 #install_printer print;;
@@ -43,7 +44,7 @@ Cudd.Man.set_gc 10000
   (begin fun () -> printf "@.CUDD REORDER@." end)
 ;;
 
-let env = Env.make cudd;;
+let env = Env.make ~symbol:Env.string_symbol cudd;;
 Env.add_typ_with env "enum2" (`Benum [|"l1"; "l2"; "l3"|]);;
 env;;
 Env.add_vars_with env [
@@ -60,7 +61,7 @@ Env.add_vars_with env [
 ];;
 env;;
 
-let cond = Bddapron.Cond.make cudd;;
+let cond = Bddapron.Cond.make ~symbol:Env.string_symbol cudd;;
 
 let apron = Polka.manager_alloc_loose ();;
 let bddapron = Domain1.make_mtbdd apron;;
@@ -256,7 +257,7 @@ let b = Array.init 5 (fun i -> Cudd.Bdd.ithvar cudd i);;
 let i = Array.init 5 (fun i -> Cudd.Mtbdd.cst cudd table (Leaf.cst i));;
 
 let add t1 t2 =
-  Cudd.Mtbdd.mapleaf2 
+  Cudd.Mtbdd.mapleaf2
     (fun x y -> Gc.compact(); Cudd.Mtbdd.unique table (Leaf.add (Cudd.Mtbdd.get x) (Cudd.Mtbdd.get y))) t1 t2;;
 
 let proc1 () =
@@ -275,9 +276,3 @@ let proc2 () =
 
 proc2();;
 *)
-
-
-
-
-
-

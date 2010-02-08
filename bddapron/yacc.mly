@@ -41,7 +41,7 @@ open Syntax
 */
 
 /* types */
-%type <Syntax.expr> expr
+%type <string Syntax.expr> expr
 /* %type <(string * Bddapron.Env.typ) list> declarations */
 %start expr
 %%
@@ -80,54 +80,54 @@ list_expr0:
 
 expr0:
   expr1 { $1 }
-| TK_IF expr0 TK_THEN expr0 TK_ELSE expr0 { If($2,$4,$6) }
+| TK_IF expr0 TK_THEN expr0 TK_ELSE expr0 { `If($2,$4,$6) }
 expr1:
   expr2 { $1 }
-| expr1 TK_OR expr2   { Binop(`Bool Or,$1,$3) }
+| expr1 TK_OR expr2   { `Binop(`Bool `Or,$1,$3) }
 expr2:
   expr3 { $1 }
-| expr2 TK_AND expr3  { Binop(`Bool And,$1,$3) }
+| expr2 TK_AND expr3  { `Binop(`Bool `And,$1,$3) }
 expr3:
   expr4 { $1 }
-| expr3 TK_NEQ expr4  { Binop((`Bool NEQ),$1,$3) }
-| expr3 TK_EQ expr4   { Binop((`Bool EQ),$1,$3) }
-| expr6 TK_IN TK_LBRACE list_expr0 TK_RBRACE  { In($1,$4) }
+| expr3 TK_NEQ expr4  { `Binop((`Bool `NEQ),$1,$3) }
+| expr3 TK_EQ expr4   { `Binop((`Bool `EQ),$1,$3) }
+| expr6 TK_IN TK_LBRACE list_expr0 TK_RBRACE  { `In($1,$4) }
 expr4:
   expr5 { $1 }
-| TK_NOT expr4 { Unop(`Not,$2) }
+| TK_NOT expr4 { `Unop(`Not,$2) }
 expr5:
   expr6 { $1 }
-| expr6 TK_GEQ expr6 { Binop(`Bool GEQ,$1,$3) }
-| expr6 TK_GT expr6 { Binop(`Bool GT,$1,$3) }
-| expr6 TK_LEQ expr6 { Binop(`Bool LEQ,$1,$3) }
-| expr6 TK_LT expr6 { Binop(`Bool LT,$1,$3) }
+| expr6 TK_GEQ expr6 { `Binop(`Bool `GEQ,$1,$3) }
+| expr6 TK_GT expr6 { `Binop(`Bool `GT,$1,$3) }
+| expr6 TK_LEQ expr6 { `Binop(`Bool `LEQ,$1,$3) }
+| expr6 TK_LT expr6 { `Binop(`Bool `LT,$1,$3) }
 expr6:
   expr7 { $1 }
 | expr6 TK_ADD expr7
-    { let (t,r) = $2 in Binop(`Apron(Apron.Texpr1.Add,t,r), $1,$3) }
+    { let (t,r) = $2 in `Binop(`Apron(Apron.Texpr1.Add,t,r), $1,$3) }
 | expr6 TK_SUB expr7
-    { let (t,r) = $2 in Binop(`Apron(Apron.Texpr1.Sub,t,r), $1,$3) }
+    { let (t,r) = $2 in `Binop(`Apron(Apron.Texpr1.Sub,t,r), $1,$3) }
 expr7:
   expr8 { $1 }
 | expr7 TK_MUL expr8
-    { let (t,r) = $2 in Binop(`Apron(Apron.Texpr1.Mul,t,r), $1,$3) }
+    { let (t,r) = $2 in `Binop(`Apron(Apron.Texpr1.Mul,t,r), $1,$3) }
 | expr7 TK_DIV expr8
-    { let (t,r) = $2 in Binop(`Apron(Apron.Texpr1.Div,t,r), $1,$3) }
+    { let (t,r) = $2 in `Binop(`Apron(Apron.Texpr1.Div,t,r), $1,$3) }
 | expr7 TK_MODULO expr8
-    { let (t,r) = $2 in Binop(`Apron(Apron.Texpr1.Mod,t,r), $1,$3) }
+    { let (t,r) = $2 in `Binop(`Apron(Apron.Texpr1.Mod,t,r), $1,$3) }
 expr8:
   TK_CAST expr8
-    { let (t,r) = $1 in Unop(`Apron(Apron.Texpr1.Cast,t,r),$2) }
+    { let (t,r) = $1 in `Unop(`Apron(Apron.Texpr1.Cast,t,r),$2) }
 | TK_SQRT expr8
-    { let (t,r) = $1 in Unop(`Apron(Apron.Texpr1.Sqrt,t,r),$2) }
+    { let (t,r) = $1 in `Unop(`Apron(Apron.Texpr1.Sqrt,t,r),$2) }
 | TK_SUB expr8
-    { let (t,r) = $1 in Unop(`Apron(Apron.Texpr1.Neg,t,r),$2) }
+    { let (t,r) = $1 in `Unop(`Apron(Apron.Texpr1.Neg,t,r),$2) }
 | TK_LPAR expr0 TK_RPAR
     { $2 }
 | cst
-   { Cst $1 }
+   { `Cst $1 }
 | TK_ID
-    { Ref $1 }
+    { `Ref $1 }
 
 typ:
   TK_BOOL { `Bool }

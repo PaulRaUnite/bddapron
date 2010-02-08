@@ -115,6 +115,9 @@ let make
     ~copy_aext:(fun () -> ())
     ?bddindex0 ?bddsize ?relational cudd ()
 
+let make_string ?bddindex0 ?bddsize ?relational cudd = 
+  make ~symbol:string_symbol ?bddindex0 ?bddsize ?relational cudd
+
 let copy = Bdd.Env.copy
 
 (*  ********************************************************************** *)

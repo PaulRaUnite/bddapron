@@ -20,19 +20,6 @@ val boolexpr2_of_string :
   ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
   string Env.t -> string Cond.t -> string -> string Expr2.Bool.t
 
-(** {2 From abstract syntax tree} *)
-
-val expr0_of_expr : string Env.t -> string Cond.t -> Syntax.expr -> string Expr0.t
-val expr1_of_expr : string Env.t -> string Cond.t -> Syntax.expr -> string Expr1.t
-val listexpr1_of_lexpr :
-  string Env.t -> string Cond.t -> Syntax.expr list -> string Expr1.List.t
-val listexpr2_of_lexpr :
-  ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
-  string Env.t -> string Cond.t -> Syntax.expr list -> string Expr2.List.t
-val boolexpr2_of_expr :
-  ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
-  string Env.t -> string Cond.t -> Syntax.expr -> string Expr2.Bool.t
-
 (** {2 Misc.} *)
 
 val expr0_of_lexbuf : string Env.t -> string Cond.t -> Lexing.lexbuf -> string Expr0.t

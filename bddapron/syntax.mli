@@ -1,4 +1,4 @@
-(** Abstract syntax tree for BDDAPRON expressions *)
+(** Abstract syntax tree for BDD expressions *)
 
 (* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
@@ -21,8 +21,16 @@ type unop = [
 ]
 
 (** Boolean/finite-type binary operators *)
-type bbinop = Or | And | EQ | NEQ | GT | GEQ | LEQ | LT
-
+type bbinop = [
+  | `Or 
+  | `And 
+  | `EQ  
+  | `NEQ 
+  | `GT 
+  | `GEQ 
+  | `LEQ 
+  | `LT
+]
 (** Binary operators *)
 type binop = [
 | `Bool of bbinop
@@ -30,32 +38,57 @@ type binop = [
 ]
 
 (** Expressions *)
-type expr =
-  | Cst of cst
-  | Ref of string
-  | Unop of unop * expr
-  | Binop of binop * expr * expr
-  | If of expr * expr * expr
-  | In of expr * expr list
-
-exception Error of string
+type 'a expr = [
+  | `Cst of cst
+  | `Ref of 'a
+  | `Unop of unop * 'a expr
+  | `Binop of binop * 'a expr * 'a expr
+  | `If of 'a expr * 'a expr * 'a expr
+  | `In of 'a expr * 'a expr list
+]
 
 (*  ********************************************************************** *)
-(** {2 Functions} *)
+(** {2 Error and printing functions} *)
 (*  ********************************************************************** *)
 
-val error : ('a, Format.formatter, unit, 'b) format4 -> 'a
-
-val is_zero : expr -> bool
-
-val precedence_of_unop : unop -> int
-val precedence_of_binop : binop -> int
-val precedence_of_expr : expr -> int
-
-val print_typdef : Format.formatter -> string Env.typdef -> unit
-val print_typ : Format.formatter -> [<string Env.typ] -> unit
 val print_cst : Format.formatter -> cst -> unit
 val print_unop : Format.formatter -> unop -> unit
 val print_bbinop : Format.formatter -> bbinop -> unit
 val print_binop : Format.formatter -> binop -> unit
-val print_expr : Format.formatter -> expr -> unit
+val print_expr :
+  (Format.formatter -> 'a -> unit) ->
+  Format.formatter -> 'a expr -> unit
+
+(*  ********************************************************************** *)
+(** {2 Translation functions} *)
+(*  ********************************************************************** *)
+exception Error of string
+  (** Exception raised in case of typing error *)
+
+val to_expr0 : 'a Env.t -> 'a Cond.t -> 'a expr -> 'a Expr0.t
+val to_expr1 : 'a Env.t -> 'a Cond.t -> 'a expr -> 'a Expr1.t
+val to_listexpr1 : 'a Env.t -> 'a Cond.t -> 'a expr list -> 'a Expr1.List.t
+val to_listexpr2 :
+  ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
+  'a Env.t -> 'a Cond.t -> 'a expr list -> 'a Expr2.List.t
+val to_boolexpr2 :
+  ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
+  'a Env.t -> 'a Cond.t -> 'a expr -> 'a Expr2.Bool.t
+
+(*  ********************************************************************** *)
+(** {2 Internal functions} *)
+(*  ********************************************************************** *)
+
+val error : ('a, Format.formatter, unit, 'b) format4 -> 'a
+val is_zero : 'a expr -> bool
+
+val precedence_of_unop : unop -> int
+val precedence_of_binop : binop -> int
+val precedence_of_expr : 'a expr -> int
+
+val cst_to_expr0 : 'a Env.t -> 'a Cond.t -> [< cst ] -> 'a Expr0.expr
+val apply_bbinop :
+  'a Env.t -> 'a Cond.t ->
+  bbinop -> 'a Expr0.expr -> 'a Expr0.expr -> 'a Expr0.Bool.t
+val apply_binop :
+  'a Env.t -> 'a Cond.t -> binop -> 'a Expr0.t -> 'a Expr0.t -> 'a Expr0.t

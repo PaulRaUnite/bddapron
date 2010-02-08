@@ -41,6 +41,8 @@ type 'a t = ('a, 'a Env.t) O.t
 
 let make = O.make
 
+let copy = Bdd.Cond.copy
+
 let print = Bdd.Cond.print
 
 (*  ********************************************************************** *)

@@ -31,7 +31,8 @@ type 'a symbol = 'a Bdd.Env.symbol = {
   mutable print : Format.formatter -> 'a -> unit; (** Printing *)
 }
 
-(** Environment extension. ['a] is the type of symbols, ['b] is the type of further extension. *)
+(** Environment extension. ['a] is the type of symbols, ['b] is
+    the type of further extension. *)
 type ('a,'b) ext = {
   mutable table : 'a Apronexpr.t Cudd.Mtbdd.table;
   mutable eapron : Apron.Environment.t;
@@ -40,10 +41,13 @@ type ('a,'b) ext = {
 
 (** Environment.
 
-- ['a] is the type of symbols;
-- ['b] is the type of variables type;
-- ['c] is the type of type definitions;
-- ['d] is the type of further extension *)
+    - ['a] is the type of symbols;
+    - ['b] is the type of variables type;
+    - ['c] is the type of type definitions;
+    - ['d] is the type of further extension
+
+    See {!Bdd.Env.t0} for more (internal) details. 
+ *)
 type ('a,'b,'c,'d) t0 = ('a,'b,'c,Cudd.Man.v,('a,'d) ext) Bdd.Env.t0
 
 (** {3 Opened signature} *)
@@ -101,7 +105,11 @@ val make_symbol :
   ?unmarshal:(string -> 'a) ->
   (Format.formatter -> 'a -> unit) ->
   'a symbol
-      (** Generic function for creating a manager for symbols *)
+      (** Generic function for creating a manager for symbols 
+
+	  DO NOT USE [Marshal.to_string] and [Marshal.from_string], as they
+	  generate strings with NULL character, which is not handled
+	  properly when converted to C strings.  *)
 
 val string_symbol : string symbol
       (** Standard manager for symbols of type [string] *)
@@ -109,7 +117,25 @@ val string_symbol : string symbol
 val make :
   symbol:'a symbol ->
   ?bddindex0:int -> ?bddsize:int -> ?relational:bool -> Cudd.Man.vt -> 'a t
-      (** Same as [O.make], but constrained signature. *)
+      (** Create a new environment.
+
+	  - [symbol] is the manager for manipulating symbols;
+	  - [bddindex0]: starting index in BDDs for finite-type variables;
+	  - [bddsize]: number of indices booked for finite-type
+	  variables.  If at some point, there is no such
+	  available index, a [Failure] exception is raised.
+	  - [relational]: if true, primed indices (unprimed
+	  indices plus one) are booked together with unprimed
+	  indices. [bddincr] is initialized to 1 if
+	  [relational=false], 2 otherwise.
+
+	  Default values for [bddindex0,bddsize,relational] are
+	  [0,100,false]. *)
+
+
+val make_string : 
+  ?bddindex0:int -> ?bddsize:int -> ?relational:bool -> Cudd.Man.vt -> string t
+      (** [make_string XXX = make ~symbol:string_symbol XXX] *)
 
 val copy : ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t
       (** Copy *)
