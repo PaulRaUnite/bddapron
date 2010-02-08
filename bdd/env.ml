@@ -70,7 +70,7 @@ let compare_idb (id1,b1) (id2,b2) =
 
 let print_typ print_symbol (fmt:Format.formatter) typ = match typ with
   | `Bool -> pp_print_string fmt "bool"
-  | `Bint(sign,size) -> fprintf fmt "bint(%b,%i)" sign size
+  | `Bint(sign,size) -> fprintf fmt "%cint[%i]" (if sign then 's' else 'u') size
   | `Benum s -> print_symbol fmt s
   | _ -> pp_print_string fmt "Bdd.Env.print_typ: unknown type"
 
@@ -313,6 +313,9 @@ let make
     ~symbol
     ~copy_ext:(fun x -> ())
     ?bddindex0 ?bddsize ?relational cudd ()
+
+let make_string ?bddindex0 ?bddsize ?relational cudd = 
+  make ~symbol:string_symbol ?bddindex0 ?bddsize ?relational cudd
 
 let copy env =
   { env with

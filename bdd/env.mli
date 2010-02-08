@@ -137,13 +137,13 @@ val make :
   symbol:'a symbol ->
   ?bddindex0:int ->
   ?bddsize:int -> ?relational:bool -> 'd Cudd.Man.t -> ('a,'d) t
-      (** Create a new database.
+      (** Create a new environment.
 
 	  - [symbol] is the manager for manipulating symbols;
 	  - [bddindex0]: starting index in BDDs for finite-type variables;
 	  - [bddsize]: number of indices booked for finite-type
-          variables.  If at some point, there is no such
-          available index, a [Failure] exception is raised.
+	  variables.  If at some point, there is no such
+	  available index, a [Failure] exception is raised.
 	  - [relational]: if true, primed indices (unprimed
 	  indices plus one) are booked together with unprimed
 	  indices. [bddincr] is initialized to 1 if
@@ -151,6 +151,10 @@ val make :
 
 	  Default values for [bddindex0,bddsize,relational] are
 	  [0,100,false]. *)
+
+val make_string :
+  ?bddindex0:int -> ?bddsize:int -> ?relational:bool -> 'd Cudd.Man.t -> (string,'d) t
+      (** [make_string XXX = make ~symbol:string_symbol XXX] *)
 
 val copy : ('a,'b,'c,'d,'e) O.t -> ('a,'b,'c,'d,'e) O.t
       (** Copy *)
