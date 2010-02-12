@@ -55,3 +55,7 @@ type ('a,'b) value = ('a,'b) Bdd.Cond.value = {
 }
 
 let make_value = Bdd.Cond.make_value
+let get_cond = Bdd.Cond.get_cond
+let get_val1 = Bdd.Cond.get_val1
+let get_env = Bdd.Cond.get_env
+let get_val0 = Bdd.Cond.get_val0

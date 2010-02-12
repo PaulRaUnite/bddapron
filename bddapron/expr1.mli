@@ -26,12 +26,22 @@ type 'a expr = 'a t
 (*  ====================================================================== *)
 
 module Bool : sig
-  type 'a t = ('a Env.t, 'a Expr0.Bool.t) Env.value
+  type 'a t = ('a Env.t, Cudd.Man.v Expr0.Bool.t) Env.value
+
+  val of_expr0 : 'a Env.t -> 'a Expr0.Bool.t -> 'a t
+    (** Creation from an expression of level 0 (without environment) *)
+  val get_env : 'a t -> 'a Env.t
+  val to_expr0 : 'a t -> 'a Expr0.Bool.t
+    (** Extract resp. the environment and the underlying
+	expression of level 0 *)
 
   val of_expr : 'a expr -> 'a t
   val to_expr : 'a t -> 'a expr
+    (** Conversion from/to general expression *)
 
   val extend_environment : 'a t -> 'a Env.t -> 'a t
+    (** Extend the underlying environment to a superenvironment,
+	and adapt accordingly the underlying representation *)
 
   val dtrue : 'a Env.t -> 'a Cond.t -> 'a t
   val dfalse : 'a Env.t -> 'a Cond.t -> 'a t
@@ -87,9 +97,20 @@ end
 module Bint : sig
   type 'a t = ('a Env.t, Cudd.Man.v Bdd.Int.t) Env.value
 
+  val of_expr0 : 'a Env.t -> 'a Expr0.Bint.t -> 'a t
+    (** Creation from an expression of level 0 (without environment) *)
+  val get_env : 'a t -> 'a Env.t
+  val to_expr0 : 'a t -> 'a Expr0.Bint.t
+    (** Extract resp. the environment and the underlying
+	expression of level 0 *)
+
   val of_expr : 'a expr -> 'a t
   val to_expr : 'a t -> 'a expr
+    (** Conversion from/to general expression *)
+
   val extend_environment : 'a t -> 'a Env.t -> 'a t
+    (** Extend the underlying environment to a superenvironment,
+	and adapt accordingly the underlying representation *)
 
   val of_int : 'a Env.t -> 'a Cond.t -> [`Bint of bool * int ] -> int -> 'a t
   val var : 'a Env.t -> 'a Cond.t -> 'a -> 'a t
@@ -133,9 +154,20 @@ end
 
 module Benum : sig
   type 'a t = ('a Env.t, Cudd.Man.v Bdd.Enum.t) Env.value
+  val of_expr0 : 'a Env.t -> 'a Expr0.Benum.t -> 'a t
+    (** Creation from an expression of level 0 (without environment) *)
+  val get_env : 'a t -> 'a Env.t
+  val to_expr0 : 'a t -> 'a Expr0.Benum.t
+    (** Extract resp. the environment and the underlying
+	expression of level 0 *)
+
   val of_expr : 'a expr -> 'a t
   val to_expr : 'a t -> 'a expr
+    (** Conversion from/to general expression *)
+
   val extend_environment : 'a t -> 'a Env.t -> 'a t
+    (** Extend the underlying environment to a superenvironment,
+	and adapt accordingly the underlying representation *)
 
   val var : 'a Env.t -> 'a Cond.t -> 'a -> 'a t
   val ite : 'a Cond.t -> 'a Bool.t -> 'a t -> 'a t -> 'a t
@@ -170,10 +202,20 @@ type apron_cons_typ = Apron.Tcons1.typ
 module Apron : sig
   type 'a t = ('a Env.t, 'a Expr0.Apron.t) Env.value
 
+  val of_expr0 : 'a Env.t -> 'a Expr0.Apron.t -> 'a t
+    (** Creation from an expression of level 0 (without environment) *)
+  val get_env : 'a t -> 'a Env.t
+  val to_expr0 : 'a t -> 'a Expr0.Apron.t
+    (** Extract resp. the environment and the underlying
+	expression of level 0 *)
+
   val of_expr : 'a expr -> 'a t
   val to_expr : 'a t -> 'a expr
+    (** Conversion from/to general expression *)
 
   val extend_environment : 'a t -> 'a Env.t -> 'a t
+    (** Extend the underlying environment to a superenvironment,
+	and adapt accordingly the underlying representation *)
 
   val var : 'a Env.t -> 'a Cond.t -> 'a -> 'a t
   val cst : 'a Env.t -> 'a Cond.t -> Apron.Coeff.t -> 'a t
@@ -220,11 +262,19 @@ end
 val typ_of_expr : 'a t -> 'a Env.typ
   (** Type of an expression *)
 
-
 val make : 'a Env.t -> 'a Expr0.t -> 'a t
-  (** Creation from an expression without environment *)
+val of_expr0 : 'a Env.t -> 'a Expr0.t -> 'a t
+  (** Creation from an expression of level 0 (without
+      environment) *)
+val get_env : 'a t -> 'a Env.t
+val to_expr0 : 'a t -> 'a Expr0.t
+  (** Extract resp. the environment and the underlying expression
+      of level 0 *)
 
 val extend_environment : 'a t -> 'a Env.t -> 'a t
+  (** Extend the underlying environment to a superenvironment, and
+      adapt accordingly the underlying representation *)
+
 val var : 'a Env.t -> 'a Cond.t -> 'a -> 'a t
   (** Expression representing the litteral var *)
 val ite : 'a Cond.t -> 'a Bool.t -> 'a t -> 'a t -> 'a t
@@ -265,7 +315,17 @@ module List : sig
   type 'a t = ('a Env.t, 'a Expr0.t list) Env.value
 
   val of_lexpr0 : 'a Env.t -> 'a Expr0.t list -> 'a t
-  val of_lexpr1 : 'a Env.t -> 'a expr list -> 'a t
+    (** Creation from a list of expressions of level 0 (without
+	environment) *)
+  val get_env : 'a t -> 'a Env.t
+  val to_lexpr0 : 'a t -> 'a Expr0.t list
+   (** Extract resp. the environment and the underlying list of
+       expressions of level 0 *)
+
+  val of_lexpr : 'a Env.t -> 'a expr list -> 'a t
+  val to_lexpr : 'a t -> 'a expr list
+    (** Conversion from/to lists of general expression *)
+
   val extend_environment : 'a t -> 'a Env.t -> 'a t
   val normalize :
     ?reduce:bool -> ?careset:bool ->
@@ -519,7 +579,10 @@ module O : sig
     constraint 'b = ('a,'c,'d,'e) Env.O.t
 
     val of_lexpr0 : 'b -> 'a Expr0.t list -> ('a,'b) t
-    val of_lexpr1 : 'b -> ('a,'b) expr list -> ('a,'b) t
+    val get_env : ('a,'b) t -> 'b
+    val to_lexpr0 : ('a,'b) t -> 'a Expr0.t list
+    val of_lexpr : 'b -> ('a,'b) expr list -> ('a,'b) t
+    val to_lexpr : ('a,'b) t -> ('a,'b) expr list
     val extend_environment : ('a,'b) t -> 'b -> ('a,'b) t
     val normalize :
       ?reduce:bool -> ?careset:bool ->

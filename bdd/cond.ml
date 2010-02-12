@@ -394,3 +394,7 @@ type ('a,'b) value = {
 
 let make_value cond val1 =
   { cond=cond; val1=val1 }
+let get_cond v = v.cond
+let get_val1 v = v.val1
+let get_env v = v.val1.Env.env
+let get_val0 v = v.val1.Env.val0

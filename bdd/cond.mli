@@ -99,3 +99,7 @@ type ('a,'b) value = {
   val1 : 'b
 }
 val make_value : 'a -> 'b -> ('a,'b) value
+val get_cond : ('a,'b) value -> 'a
+val get_val1 : ('a,'b) value -> 'b
+val get_env : ('a, ('b, 'c) Env.value) value -> 'b
+val get_val0 : ('a, ('b, 'c) Env.value) value -> 'c

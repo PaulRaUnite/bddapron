@@ -53,6 +53,11 @@ module O = struct
     else
       Bdd.Cond.make_value cond expr1
 
+  let get_env = Cond.get_env
+  let get_cond = Cond.get_cond
+  let to_expr0 = Cond.get_val0
+  let to_expr1 = Cond.get_val1
+
   let extend_environment e nenv =
     Bdd.Cond.make_value
       e.cond
@@ -94,6 +99,11 @@ module O = struct
       let expr1 = ((Expr1.O.Bool.to_expr bexpr1):> ('a,'b) Expr1.O.t) in
       let expr = of_expr1 ?normalize ?reduce ?careset cond expr1 in
       of_expr expr
+    let get_env = Cond.get_env
+    let get_cond = Cond.get_cond
+    let to_expr0 = Cond.get_val0
+    let to_expr1 = Cond.get_val1
+
     let extend_environment e nenv =
       Bdd.Cond.make_value
 	e.cond
@@ -144,7 +154,7 @@ module O = struct
 	:
 	('a,'b) t
 	=
-      let listexpr1 = Expr1.O.List.of_lexpr1 env lexpr1 in
+      let listexpr1 = Expr1.O.List.of_lexpr env lexpr1 in
       of_listexpr1 ?normalize ?reduce ?careset cond listexpr1
 
     let extend_environment e nenv =
@@ -152,6 +162,11 @@ module O = struct
 	e.cond
 	(Expr1.O.List.extend_environment e.val1 nenv)
 
+    let get_env = Cond.get_env
+    let get_cond = Cond.get_cond
+    let to_lexpr0 = Cond.get_val0
+    let to_listexpr1 = Cond.get_val1
+    let to_lexpr1 e = Expr1.O.List.to_lexpr e.Cond.val1
   end
 end
 
@@ -164,16 +179,24 @@ type 'a expr = 'a t
 
 let of_expr0 = O.of_expr0
 let of_expr1 = O.of_expr1
+let get_env = O.get_env
+let get_cond = O.get_cond
+let to_expr0 = O.to_expr0
+let to_expr1 = O.to_expr1
 let extend_environment = O.extend_environment
 let print = O.print
 
 module Bool = struct
 
   type 'a t = ('a Cond.t, 'a Expr1.Bool.t) Bdd.Cond.value
-  let of_expr = O.Bool.of_expr
-  let to_expr = O.Bool.to_expr
   let of_expr0 = O.Bool.of_expr0
   let of_expr1 = O.Bool.of_expr1
+  let get_env = O.Bool.get_env
+  let get_cond = O.Bool.get_cond
+  let to_expr0 = O.Bool.to_expr0
+  let to_expr1 = O.Bool.to_expr1
+  let of_expr = O.Bool.of_expr
+  let to_expr = O.Bool.to_expr
   let extend_environment = O.Bool.extend_environment
   let is_false = O.Bool.is_false
   let is_true = O.Bool.is_true
@@ -185,6 +208,11 @@ module List = struct
   let of_lexpr0 = O.List.of_lexpr0
   let of_lexpr1 = O.List.of_lexpr1
   let of_listexpr1 = O.List.of_listexpr1
+  let get_env = O.List.get_env
+  let get_cond = O.List.get_cond
+  let to_lexpr0 = O.List.to_lexpr0
+  let to_lexpr1 = O.List.to_lexpr1
+  let to_listexpr1 = O.List.to_listexpr1
   let extend_environment = O.List.extend_environment
   let print = O.List.print
 end
