@@ -162,13 +162,13 @@ let string_add_null ns =
     s
   end
 
-let marshal_symbol s = string_remove_null (Marshal.to_string s [Marshal.No_sharing])
-let unmarshal_symbol s = Marshal.from_string (string_add_null s) 0
+let marshal s = string_remove_null (Marshal.to_string s [Marshal.No_sharing])
+let unmarshal s = Marshal.from_string (string_add_null s) 0
 
 let make_symbol
     ?(compare=Pervasives.compare)
-    ?(marshal=marshal_symbol)
-    ?(unmarshal=unmarshal_symbol)
+    ?(marshal=marshal)
+    ?(unmarshal=unmarshal)
     print
     =
   {
@@ -924,6 +924,9 @@ let make_value env val0 =
     end
   );
   { env=env; val0=val0 }
+
+let get_env val1 = val1.env
+let get_val0 val1 = val1.val0
 
 let extend_environment
     (permute:'a -> int array -> 'a)
