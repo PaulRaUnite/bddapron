@@ -1,4 +1,4 @@
-(** Parsing BDDAPRON expressions from AST or strings *)
+(** Parsing BDDAPRON expressions from strings (or lexing buffers) *)
 
 (* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
