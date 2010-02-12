@@ -31,6 +31,11 @@ module O = struct
 
   let typ_of_expr e = Expr0.O.typ_of_expr e.env e.val0
 
+  let make = Env.make_value
+  let of_expr0 = Env.make_value
+  let get_env = Env.get_env
+  let to_expr0 = Env.get_val0
+
   let extend_environment e nenv =
     Env.extend_environment Expr0.O.permute e nenv
 
@@ -66,6 +71,10 @@ module O = struct
     type ('a,'b) dt = ('a,'b,Cudd.Man.d) t
     type ('a,'b) vt = ('a,'b,Cudd.Man.v) t
 
+    let of_expr0 = Env.make_value
+    let get_env = Env.get_env
+    let to_expr0 = Env.get_val0
+
     let of_expr e : ('a,'b,'c) t =
       match e.val0 with
       | `Bool x -> make_value e.env x
@@ -99,18 +108,18 @@ module O = struct
     let is_true e = Cudd.Bdd.is_true e.val0
     let is_false e = Cudd.Bdd.is_false e.val0
     let is_cst e = Cudd.Bdd.is_cst e.val0
-    let is_eq e1 e2 = 
+    let is_eq e1 e2 =
       Env.check_value2 e1 e2;
       Cudd.Bdd.is_equal e1.val0 e2.val0
 
     let is_leq e1 e2 =
       Env.check_value2 e1 e2;
       Cudd.Bdd.is_leq e1.val0 e2.val0
-	
+
     let is_inter_false e1 e2 =
       Env.check_value2 e1 e2;
       Cudd.Bdd.is_inter_empty e1.val0 e2.val0
-	
+
     let exist (lvar:'a list) e =
       Env.check_lvar e.env lvar;
       make_value
@@ -149,6 +158,10 @@ module O = struct
     type ('a,'b,'c) dt = ('a,'b,Cudd.Man.d) t
     type ('a,'b,'c) vt = ('a,'b,Cudd.Man.v) t
 
+    let of_expr0 = Env.make_value
+    let get_env = Env.get_env
+    let to_expr0 = Env.get_val0
+
     let of_expr e : ('a,'b,'c) t =
       match e.val0 with
       | `Bint x -> make_value e.env x
@@ -185,7 +198,7 @@ module O = struct
     let supeq e1 e2 = Env.mapbinop (Int.greatereq e1.env.cudd) e1 e2
     let sup e1 e2 = Env.mapbinop (Int.greater e1.env.cudd) e1 e2
     let eq_int e n = make_value e.env (Int.equal_int e.env.cudd e.val0 n)
-    let supeq_int e n = make_value e.env (Int.greatereq_int e.env.cudd e.val0 n)    
+    let supeq_int e n = make_value e.env (Int.greatereq_int e.env.cudd e.val0 n)
     let sup_int e n = make_value e.env (Int.greater_int e.env.cudd e.val0 n)
 
     let cofactor e1 e2 = Env.mapbinop Int.cofactor e1 e2
@@ -220,6 +233,10 @@ module O = struct
 
     type ('a,'b) dt = ('a,'b,Cudd.Man.d) t
     type ('a,'b) vt = ('a,'b,Cudd.Man.v) t
+
+    let of_expr0 = Env.make_value
+    let get_env = Env.get_env
+    let to_expr0 = Env.get_val0
 
     let of_expr e : ('a,'b,'c) t =
       match e.val0 with
@@ -271,7 +288,10 @@ module O = struct
       =
     make_value env (Expr0.O.var env var)
 
-  let make = make_value
+  let make = Env.make_value
+  let of_expr0 = Env.make_value
+  let get_env = Env.get_env
+  let to_expr0 = Env.get_val0
 
   (*  ====================================================================== *)
   (** {3 List of expressions} *)
@@ -284,11 +304,19 @@ module O = struct
     type ('a,'b) dt = ('a,'b,Cudd.Man.d) t
     type ('a,'b) vt = ('a,'b,Cudd.Man.v) t
 
-    let of_lexpr0 : 'b -> 'c Expr0.t list -> ('a,'b,'c) t
+(*    let of_lexpr0 : 'b -> 'c Expr0.t list -> ('a,'b,'c) t
  = make_value
+*)
+    let of_lexpr0 = Env.make_value
+    let get_env = Env.get_env
+    let to_lexpr0 = Env.get_val0
+
     let of_lexpr env lexpr1 =
       let lexpr0 = Env.check_lvalue env lexpr1 in
       of_lexpr0 env lexpr0
+    let to_lexpr e =
+      List.map (fun expr0 -> Env.make_value e.env expr0) e.val0
+
     let extend_environment e nenv =
       Env.extend_environment
 	(fun lexpr0 perm ->
@@ -297,9 +325,9 @@ module O = struct
 
     let print ?first ?sep ?last fmt x =
       Print.list ?first ?sep ?last
-	(Expr0.O.print x.env) fmt x.val0 
+	(Expr0.O.print x.env) fmt x.val0
   end
-    
+
 end
 
 (*  ********************************************************************** *)
@@ -319,6 +347,9 @@ type 'a vt = ('a,Cudd.Man.v) t
 
 let typ_of_expr = O.typ_of_expr
 let make = O.make
+let of_expr0 = O.of_expr0
+let get_env = O.get_env
+let to_expr0 = O.to_expr0
 let extend_environment = O.extend_environment
 let var = O.var
 let ite = O.ite
@@ -338,6 +369,9 @@ module Bool = struct
   type 'a dt = ('a,Cudd.Man.d) t
   type 'a vt = ('a,Cudd.Man.v) t
 
+  let of_expr0 = O.Bool.of_expr0
+  let get_env = O.Bool.get_env
+  let to_expr0 = O.Bool.to_expr0
   let of_expr = O.Bool.of_expr
   let to_expr = O.Bool.to_expr
   let extend_environment = O.Bool.extend_environment
@@ -376,6 +410,9 @@ module Bint = struct
   type 'a dt = ('a,Cudd.Man.d) t
   type 'a vt = ('a,Cudd.Man.v) t
 
+  let of_expr0 = O.Bint.of_expr0
+  let get_env = O.Bint.get_env
+  let to_expr0 = O.Bint.to_expr0
   let of_expr = O.Bint.of_expr
   let to_expr = O.Bint.to_expr
   let extend_environment = O.Bint.extend_environment
@@ -413,6 +450,9 @@ module Benum = struct
   type 'a dt = ('a,Cudd.Man.d) t
   type 'a vt = ('a,Cudd.Man.v) t
 
+  let of_expr0 = O.Benum.of_expr0
+  let get_env = O.Benum.get_env
+  let to_expr0 = O.Benum.to_expr0
   let of_expr = O.Benum.of_expr
   let to_expr = O.Benum.to_expr
   let extend_environment = O.Benum.extend_environment
@@ -432,10 +472,13 @@ end
 module List = struct
   type ('a,'b) t = (('a,'b) Env.t, 'b Expr0.t list) Env.value
   type 'a dt = ('a,Cudd.Man.d) t
-  type 'a vt = ('a,Cudd.Man.v) t    
+  type 'a vt = ('a,Cudd.Man.v) t
 
   let of_lexpr0 = O.List.of_lexpr0
+  let get_env = O.List.get_env
+  let to_lexpr0 = O.List.to_lexpr0
   let of_lexpr = O.List.of_lexpr
+  let to_lexpr = O.List.to_lexpr
   let extend_environment = O.List.extend_environment
   let print = O.List.print
 end

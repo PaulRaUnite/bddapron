@@ -13,6 +13,15 @@ type ('a,'b) t = ('a,'b) Expr1.Bool.t
 type 'a dt = ('a,Cudd.Man.d) t
 type 'a vt = ('a,Cudd.Man.v) t
 
+val of_domain0 : ('a,'b) Env.t -> 'b Domain0.t -> ('a,'b) t
+val get_env : ('a,'b) t -> ('a,'b) Env.t
+val to_domain0 : ('a,'b) t -> 'b Domain0.t
+  (** Conversion operations *)
+
+val of_expr1 : ('a,'b) Expr1.Bool.t -> ('a,'b) t
+val to_expr1 : ('a,'b) t -> ('a,'b) Expr1.Bool.t
+  (** Conversion operations *)
+
 val size : ('a,'b) t -> int
   (** Size of an abstract value (number of nodes) *)
 val print : Format.formatter -> ('a,'b) t -> unit
@@ -80,6 +89,13 @@ module O : sig
 
   type ('a,'b) dt = ('a,'b,Cudd.Man.d) t
   type ('a,'b) vt = ('a,'b,Cudd.Man.v) t
+
+  val of_domain0 : 'b -> 'c Domain0.t -> ('a,'b,'c) t
+  val get_env : ('a,'b,'c) t -> 'b
+  val to_domain0 : ('a,'b,'c) t -> 'c Domain0.t
+
+  val of_expr1 : ('a,'b,'c) Expr1.O.Bool.t -> ('a,'b,'c) t
+  val to_expr1 : ('a,'b,'c) t -> ('a,'b,'c) Expr1.O.Bool.t
 
   val size : ('a,'b,'c) t -> int
   val print : Format.formatter -> ('a,'b,'c) t -> unit

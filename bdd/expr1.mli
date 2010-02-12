@@ -27,10 +27,20 @@ module Bool : sig
   type 'a dt = ('a,Cudd.Man.d) t
   type 'a vt = ('a,Cudd.Man.v) t
 
+  val of_expr0 : ('a,'b) Env.t -> 'b Expr0.Bool.t -> ('a,'b) t
+    (** Creation from an expression of level 0 (without environment) *)
+  val get_env : ('a,'b) t -> ('a,'b) Env.t
+  val to_expr0 : ('a,'b) t -> 'b Expr0.Bool.t
+    (** Extract resp. the environment and the underlying
+	expression of level 0 *)
+
   val of_expr : ('a,'b) expr -> ('a,'b) t
   val to_expr : ('a,'b) t -> ('a,'b) expr
+    (** Conversion from/to general expression *)
 
   val extend_environment : ('a,'b) t -> ('a,'b) Env.t -> ('a,'b) t
+    (** Extend the underlying environment to a superenvironment,
+	and adapt accordingly the underlying representation *)
 
   val dtrue : ('a,'b) Env.t -> ('a,'b) t
   val dfalse : ('a,'b) Env.t -> ('a,'b) t
@@ -89,9 +99,20 @@ module Bint : sig
   type 'a dt = ('a,Cudd.Man.d) t
   type 'a vt = ('a,Cudd.Man.v) t
 
+  val of_expr0 : ('a,'b) Env.t -> 'b Expr0.Bint.t -> ('a,'b) t
+    (** Creation from an expression of level 0 (without environment) *)
+  val get_env : ('a,'b) t -> ('a,'b) Env.t
+  val to_expr0 : ('a,'b) t -> 'b Expr0.Bint.t
+    (** Extract resp. the environment and the underlying
+	expression of level 0 *)
+
   val of_expr : ('a,'b) expr -> ('a,'b) t
   val to_expr : ('a,'b) t -> ('a,'b) expr
+    (** Conversion from/to general expression *)
+
   val extend_environment : ('a,'b) t -> ('a,'b) Env.t -> ('a,'b) t
+    (** Extend the underlying environment to a superenvironment,
+	and adapt accordingly the underlying representation *)
 
   val of_int :
     ('a,'b) Env.t -> [`Bint of bool * int ] -> int -> ('a,'b) t
@@ -140,9 +161,20 @@ module Benum : sig
   type 'a dt = ('a,Cudd.Man.d) t
   type 'a vt = ('a,Cudd.Man.v) t
 
+  val of_expr0 : ('a,'b) Env.t -> 'b Expr0.Benum.t -> ('a,'b) t
+    (** Creation from an expression of level 0 (without environment) *)
+  val get_env : ('a,'b) t -> ('a,'b) Env.t
+  val to_expr0 : ('a,'b) t -> 'b Expr0.Benum.t
+    (** Extract resp. the environment and the underlying
+	expression of level 0 *)
+
   val of_expr : ('a,'b) expr -> ('a,'b) t
   val to_expr : ('a,'b) t -> ('a,'b) expr
+    (** Conversion from/to general expression *)
+
   val extend_environment : ('a,'b) t -> ('a,'b) Env.t -> ('a,'b) t
+    (** Extend the underlying environment to a superenvironment,
+	and adapt accordingly the underlying representation *)
 
   val var : ('a,'b) Env.t -> 'a -> ('a,'b) t
   val ite : ('a,'b) Bool.t -> ('a,'b) t -> ('a,'b) t -> ('a,'b) t
@@ -173,9 +205,18 @@ val typ_of_expr : ('a,'b) t -> 'a Env.typ
   (** Type of an expression *)
 
 val make : ('a,'b) Env.t -> 'b Expr0.t -> ('a,'b) t
-  (** Creation from an expression without environment *)
+val of_expr0 : ('a,'b) Env.t -> 'b Expr0.t -> ('a,'b) t
+  (** Creation from an expression of level 0 (without environment)
+      (make should be considered as obsolete) *)
+
+val get_env : ('a,'b) t -> ('a,'b) Env.t
+val to_expr0 : ('a,'b) t -> 'b Expr0.t
+  (** Extract resp. the environment and the underlying expression
+      of level 0 *)
 
 val extend_environment : ('a,'b) t -> ('a,'b) Env.t -> ('a,'b) t
+  (** Extend the underlying environment to a superenvironment, and
+      adapt accordingly the underlying representation *)
 
 val var : ('a,'b) Env.t -> 'a -> ('a,'b) t
   (** Expression representing the litteral var *)
@@ -217,7 +258,11 @@ module List : sig
   type 'a vt = ('a,Cudd.Man.v) t
 
   val of_lexpr0 : ('a,'b) Env.t -> 'b Expr0.t list -> ('a,'b) t
+  val get_env : ('a,'b) t -> ('a,'b) Env.t
+  val to_lexpr0 : ('a,'b) t -> 'b Expr0.t list
+
   val of_lexpr : ('a,'b) Env.t -> ('a,'b) expr list -> ('a,'b) t
+  val to_lexpr : ('a,'b) t -> ('a,'b) expr list
   val extend_environment : ('a,'b) t -> ('a,'b) Env.t -> ('a,'b) t
 
   val print :
@@ -262,6 +307,10 @@ module O : sig
 
     type ('a,'b) dt = ('a,'b,Cudd.Man.d) t
     type ('a,'b) vt = ('a,'b,Cudd.Man.v) t
+
+    val of_expr0 : 'b -> 'c Expr0.Bool.t -> ('a,'b,'c) t
+    val get_env : ('a,'b,'c) t -> 'b
+    val to_expr0 : ('a,'b,'c) t -> 'c Expr0.Bool.t
 
     val of_expr : ('b, [> `Bool of 'c Cudd.Bdd.t ]) Env.value -> ('a,'b,'c) t
     val to_expr : ('a,'b,'c) t -> ('b, [> `Bool of 'c Cudd.Bdd.t ]) Env.value
@@ -326,6 +375,10 @@ module O : sig
     type ('a,'b,'c) dt = ('a,'b,Cudd.Man.d) t
     type ('a,'b,'c) vt = ('a,'b,Cudd.Man.v) t
 
+    val of_expr0 : 'b -> 'c Expr0.Bint.t -> ('a,'b,'c) t
+    val get_env : ('a,'b,'c) t -> 'b
+    val to_expr0 : ('a,'b,'c) t -> 'c Expr0.Bint.t
+
     val of_expr : ('b, [> `Bint of 'c Int.t ]) Env.value -> ('a,'b,'c) t
     val to_expr : ('a,'b,'c) t -> ('b, [> `Bint of 'c Int.t ]) Env.value
     val extend_environment : ('a,'b,'c) t -> 'b -> ('a,'b,'c) t
@@ -378,6 +431,10 @@ module O : sig
     type ('a,'b) dt = ('a,'b,Cudd.Man.d) t
     type ('a,'b) vt = ('a,'b,Cudd.Man.v) t
 
+    val of_expr0 : 'b -> 'c Expr0.Benum.t -> ('a,'b,'c) t
+    val get_env : ('a,'b,'c) t -> 'b
+    val to_expr0 : ('a,'b,'c) t -> 'c Expr0.Benum.t
+
     val of_expr : ('b, [> `Benum of 'c Enum.t ]) Env.value -> ('a,'b,'c) t
     val to_expr : ('a,'b,'c) t -> ('b, [> `Benum of 'c Enum.t ]) Env.value
     val extend_environment : ('a,'b,'c) t -> 'b -> ('a,'b,'c) t
@@ -411,7 +468,11 @@ module O : sig
     (** Type of an expression *)
 
   val make : 'b -> 'c Expr0.t -> ('a,'b,'c) expr
-  (** Creation from an expression without environment *)
+  val of_expr0 : 'b -> 'c Expr0.t -> ('a,'b,'c) expr
+    (** Creation from an expression without environment *)
+
+  val get_env : ('a,'b,'c) t -> 'b
+  val to_expr0 : ('a,'b,'c) t -> 'c Expr0.t
 
   val extend_environment : ('a,'b,'c) t -> 'b -> ('a,'b,'c) t
 
@@ -457,7 +518,11 @@ module O : sig
     type ('a,'b) vt = ('a,'b,Cudd.Man.v) t
 
     val of_lexpr0 : 'b -> 'c Expr0.t list -> ('a,'b,'c) t
+    val get_env : ('a,'b,'c) t -> 'b
+    val to_lexpr0 : ('a,'b,'c) t -> 'c Expr0.t list
+
     val of_lexpr : 'b -> ('a,'b,'c) expr list -> ('a,'b,'c) t
+    val to_lexpr : ('a,'b,'c) t -> ('a,'b,'c) expr list
     val extend_environment : ('a,'b,'c) t -> 'b -> ('a,'b,'c) t
     val print :
       ?first:(unit,Format.formatter,unit) format ->

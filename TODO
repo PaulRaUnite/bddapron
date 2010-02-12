@@ -1,4 +1,8 @@
 
+- conversion de niveau partout (0 -> 1 -> 2)
+- exporter des BDDs
+
+
 - dans bdddomain0 et mtbdddomain0: repérer les contraintes non linéaires, et refaire une passe dans meet_condition (déjà fait dans bdddomain0).
 
 - idem pour les affectations ?

@@ -13,9 +13,17 @@ open Env
 module O = struct
 
   type ('a,'b,'c) t = ('a,'b,'c) Expr1.O.Bool.t
-    
+
   type ('a,'b) dt = ('a,'b,Cudd.Man.d) t
   type ('a,'b) vt = ('a,'b,Cudd.Man.v) t
+
+  let of_domain0 = Env.make_value
+  let get_env = Env.get_env
+  let to_domain0 = Env.get_val0
+
+  let id = fun x -> x
+  let of_expr1 = id
+  let to_expr1 = id
 
   let size t = Domain0.size t.val0
   let print fmt t = Domain0.O.print t.env fmt t.val0
@@ -43,7 +51,7 @@ module O = struct
 	permute t.val0 (Env.permutation12 t.env nenv)
     else
       failwith (Print.sprintf "Bdd.Domain1: the environment of the argument is not a subenvironment of the expected environment@. t.env=%a@.nenv=%a@." Env.print t.env Env.print nenv)
-	
+
   let check_lvalue permute lt nenv =
     List.map (fun t -> check_value permute t nenv) lt
 
@@ -74,7 +82,7 @@ module O = struct
       let lexpr0 = check_lvalue Expr0.O.permute lexpr t.env in
       make_value t.env (Domain0.O.substitute_lexpr t.env t.val0 lvar lexpr0)
     end
-      
+
   let substitute_listexpr (t:('a,'b,'c) t) lvar lexpr =
     let lexpr0 = check_value Expr0.O.permute_list lexpr t.env in
     if lvar=[] && lexpr.val0=[] then t
@@ -108,9 +116,15 @@ end
 
 type ('a,'b) t = ('a,'b) Expr1.Bool.t
   (** Abstract value *)
-  
+
 type 'a dt = ('a,Cudd.Man.d) t
 type 'a vt = ('a,Cudd.Man.v) t
+
+let of_domain0 = O.of_domain0
+let get_env = O.get_env
+let to_domain0 = O.to_domain0
+let of_expr1 = O.of_expr1
+let to_expr1 = O.to_expr1
 
 let size = O.size
 let print = O.print
