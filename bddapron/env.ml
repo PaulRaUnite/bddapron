@@ -19,7 +19,9 @@ type 'a typ = [
 
     DO NOT USE [Marshal.to_string] and [Marshal.from_string], as they
     generate strings with NULL character, which is not handled
-    properly when converted to C strings.  *)
+    properly when converted to C strings. 
+
+    You may use instead {!marshal} and {!unmarshal}. *)
 type 'a symbol = 'a Bdd.Env.symbol = {
   compare : 'a -> 'a -> int; (** Total order *)
   marshal : 'a -> string;    (** Conversion to string.  The
@@ -104,6 +106,8 @@ let print_order = Bdd.Env.print_order
 (** {2 Constructors} *)
 (*  ********************************************************************** *)
 
+let marshal = Bdd.Env.marshal
+let unmarshal = Bdd.Env.unmarshal
 let make_symbol = Bdd.Env.make_symbol
 let string_symbol = Bdd.Env.string_symbol
 
@@ -267,6 +271,8 @@ type ('a,'b) value = ('a,'b) Bdd.Env.value = {
 }
 
 let make_value = Bdd.Env.make_value
+let get_env = Bdd.Env.get_env
+let get_val0 = Bdd.Env.get_val0
 let check_var = Bdd.Env.check_var
 let check_lvar = Bdd.Env.check_lvar
 let check_value = Bdd.Env.check_value

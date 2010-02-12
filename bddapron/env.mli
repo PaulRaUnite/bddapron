@@ -20,7 +20,9 @@ type 'a typ = [
 
     DO NOT USE [Marshal.to_string] and [Marshal.from_string], as they
     generate strings with NULL character, which is not handled
-    properly when converted to C strings.  *)
+    properly when converted to C strings.
+
+    You may use instead {!marshal} and {!unmarshal}. *)
 type 'a symbol = 'a Bdd.Env.symbol = {
   compare : 'a -> 'a -> int; (** Total order *)
   marshal : 'a -> string;    (** Conversion to string.  The
@@ -99,6 +101,14 @@ val print : Format.formatter -> ('a,'b,'c,'d) O.t -> unit
 (** {2 Constructors} *)
 (*  ********************************************************************** *)
 
+val marshal : 'a -> string
+    (** Safe marshalling function, generating strings without NULL
+	characters.
+
+        (Based on [Marshal.to_string] with [Marshal.No_sharing] option.) *)
+val unmarshal : string -> 'a 
+    (** Companion unmarshalling function *)
+
 val make_symbol :
   ?compare:('a -> 'a -> int) ->
   ?marshal:('a -> string) ->
@@ -106,6 +116,7 @@ val make_symbol :
   (Format.formatter -> 'a -> unit) ->
   'a symbol
       (** Generic function for creating a manager for symbols 
+	  Default values are [Pervasives.compare], {!marshal} and {!umarshal}.
 
 	  DO NOT USE [Marshal.to_string] and [Marshal.from_string], as they
 	  generate strings with NULL character, which is not handled
@@ -230,6 +241,9 @@ val make_value :
   ('a,'b,'c,'d) O.t ->
   'e -> (('a,'b,'c,'d) O.t, 'e) value
   (** Constructor *)
+val get_env : ('a,'b) value -> 'a
+val get_val0 : ('a,'b) value -> 'b
+
 
 val check_var : ('a,'b,'c,'d) O.t -> 'a -> unit
 val check_lvar : ('a,'b,'c,'d) O.t -> 'a list -> unit
