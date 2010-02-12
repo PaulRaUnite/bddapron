@@ -147,7 +147,7 @@ bdd.dvi: $(BDDMOD:%=%.mli)
 
 html_bdd: $(BDDMOD:%=%.mli)
 	mkdir -p html_bdd
-	$(OCAMLDOC) -html -d html_bdd -colorize-code $(OCAMLINC) -I bdd $(BDDMOD:%=%.mli)
+	$(OCAMLDOC) -html -d html_bdd -colorize-code $(OCAMLINC) -I bdd -intro bdd/bdd.odoc $(BDDMOD:%=%.mli)
 
 html_bddapron: $(BDDAPRONMOD:%=%.mli)
 	mkdir -p html_bddapron
