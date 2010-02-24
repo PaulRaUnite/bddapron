@@ -139,7 +139,7 @@ val make_symbol :
   (Format.formatter -> 'a -> unit) ->
   'a symbol
       (** Generic function for creating a manager for symbols.
-	  Default values are [Pervasives.compare], {!marshal} and {!umarshal}.
+	  Default values are [Pervasives.compare], {!marshal} and {!unmarshal}.
 
 	  DO NOT USE [Marshal.to_string] and [Marshal.from_string], as they
 	  generate strings with NULL character, which is not handled
