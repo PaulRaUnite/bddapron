@@ -75,9 +75,9 @@ val substitute_texpr_array :
   'a man -> Apron.Environment.t ->
   'a t -> Apron.Dim.t array -> 'b ApronexprDD.t array -> 'a t option -> 'a t
 
-val make_fun :
+val make_funjoin :
   'a man -> ('a leaf_u, Cudd.User.global) Cudd.User.mexist
-val make_funop :
+val make_funjoin2 :
   'a man -> 'a t -> ('a leaf_u, Cudd.User.global) Cudd.User.mexist
 val exist : 'a man -> supp:Cudd.Man.v Cudd.Bdd.t -> 'a t -> 'a t
 val existand :

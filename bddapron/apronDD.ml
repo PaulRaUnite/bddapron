@@ -454,7 +454,7 @@ let assign_texpr_array man org tdim texpr odest =
 let substitute_texpr_array man org tdim texpr odest =
   asssub_texpr_array ?asssub_bdd:None Substitute man org tdim texpr odest
 
-let make_fun (man:'a man)
+let make_funjoin (man:'a man)
     =
   let special = Some(special_join man.apron) in
   let op = (fun x y -> myunique man.table (Apron.Abstract0.join man.apron (myget x) (myget y))) in
@@ -463,11 +463,11 @@ let make_fun (man:'a man)
 let exist man ~(supp:Cudd.Man.v Cudd.Bdd.t) (t:'a t) : 'a t =
   match man.oglobal with
   | None ->
-      Cudd.User.map_exist (make_fun man) ~supp t
+      Cudd.User.map_exist (make_funjoin man) ~supp t
   | Some global ->
       Cudd.User.apply_exist global.op_exist ~supp t
 
-let make_funop man bottomdd : ('a,'b) Cudd.User.mexist
+let make_funjoin2 man bottomdd : ('a,'b) Cudd.User.mexist
     =
   let special =
     Some (fun dd1 dd2 ->
@@ -486,7 +486,7 @@ let existand (man:'a man)
   match man.oglobal with
   | None ->
       let bottomdd = Cudd.Mtbddc.cst_u (Cudd.Bdd.manager supp) bottom in
-      Cudd.User.map_existand ~bottom (make_funop man bottomdd) ~supp guard t
+      Cudd.User.map_existand ~bottom (make_funjoin2 man bottomdd) ~supp guard t
   | Some global ->
       let (mexist:('a leaf_u, Cudd.User.global) Cudd.User.mexist) =
 	(`Op global.op_join)
