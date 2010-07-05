@@ -26,7 +26,7 @@ type 'a typ = [
 
     DO NOT USE [Marshal.to_string] and [Marshal.from_string], as
     they generate strings with NULL character, which is not
-    handled properly when converted to C strings. 
+    handled properly when converted to C strings.
 
     You may use instead {!marshal} and {!unmarshal}. *)
 type 'a symbol = {
@@ -128,8 +128,8 @@ val marshal : 'a -> string
     (** Safe marshalling function, generating strings without NULL
 	characters.
 
-        (Based on [Marshal.to_string] with [Marshal.No_sharing] option.) *)
-val unmarshal : string -> 'a 
+	(Based on [Marshal.to_string] with [Marshal.No_sharing] option.) *)
+val unmarshal : string -> 'a
     (** Companion unmarshalling function *)
 
 val make_symbol :
