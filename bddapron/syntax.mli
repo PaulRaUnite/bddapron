@@ -22,13 +22,13 @@ type unop = [
 
 (** Boolean/finite-type binary operators *)
 type bbinop = [
-  | `Or 
-  | `And 
-  | `EQ  
-  | `NEQ 
-  | `GT 
-  | `GEQ 
-  | `LEQ 
+  | `Or
+  | `And
+  | `EQ
+  | `NEQ
+  | `GT
+  | `GEQ
+  | `LEQ
   | `LT
 ]
 (** Binary operators *)
