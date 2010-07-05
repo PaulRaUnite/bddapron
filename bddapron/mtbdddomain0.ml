@@ -208,13 +208,17 @@ module O = struct
 	let supp = Bdd.Expr0.O.bddsupport env lbvar in
 	if tadim=[||] then
 	  ApronDD.exist man ~supp t
-	else
-	  let mop1 = `Fun (fun tu ->
-	    Cudd.Mtbddc.unique man.ApronDD.table
-	      (Apron.Abstract0.forget_array man.apron (Cudd.Mtbddc.get tu) tadim false))
+	else begin
+	  let mop1 = `Fun (begin fun tu ->
+	    let t = Cudd.Mtbddc.get tu in
+	    let res = Apron.Abstract0.forget_array man.apron t tadim false in
+@<	    let resu = Cudd.Mtbddc.unique man.ApronDD.table res in
+	    resu
+	  end)
 	  in
-	  Cudd.User.map_existop1 mop1 (ApronDD.make_fun man)
-	    ~supp t
+	  let joinop = ApronDD.make_funjoin man in
+	  Cudd.User.map_existop1 mop1 joinop ~supp t
+	end
       end
     end
 
