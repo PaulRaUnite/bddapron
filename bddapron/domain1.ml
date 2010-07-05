@@ -22,6 +22,20 @@ type ('a,'b,'c,'d) man = ('a,'b,'c,'d) Domain0.man
     - ['c]: type of the underlying manager;
     - ['d]: type of the underlying abstract values of level 0.
 *)
+type ('a,'b) mtbdd =
+  (
+    'a,
+    'b,
+    ('a,'b) Mtbdddomain0.man,
+    'b Mtbdddomain0.t
+  ) man
+type ('a,'b) bdd =
+  (
+    'a,
+    'b,
+    ('a,'b) Bdddomain0.man,
+    'b Bdddomain0.t
+  ) man
 
 type ('a,'d) t = ('a Env.t, 'd) Env.value
 (** Type of generic abstract values *)

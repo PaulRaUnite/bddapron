@@ -20,6 +20,20 @@ type ('a,'b,'c,'d) man = ('a,'b,'c,'d) Domain0.man
     - ['c]: type of the underlying manager;
     - ['d]: type of the underlying abstract values of level 0.
 *)
+type ('a,'b) mtbdd =
+  (
+    'a,
+    'b,
+    ('a,'b) Mtbdddomain0.man,
+    'b Mtbdddomain0.t
+  ) man
+type ('a,'b) bdd =
+  (
+    'a,
+    'b,
+    ('a,'b) Bdddomain0.man,
+    'b Bdddomain0.t
+  ) man
 
 type ('a,'d) t = ('a Env.t, 'd) Env.value
 (** Type of generic abstract values *)
@@ -79,19 +93,19 @@ val make_mtbdd : ?global:bool -> 'b Apron.Manager.t -> ('a,'b) Domain0.mtbdd
 
 val man_is_mtbdd : ('a,'b,'c,'d) man -> bool
   (** Return [true] iff the argument manager is a mtbdd manager *)
-val man_of_mtbdd : ('a,'b) Domain0.mtbdd -> ('a,'b,'c,'d) man
+val man_of_mtbdd : ('a,'b) mtbdd -> ('a,'b,'c,'d) man
   (** Makes a mtbdd manager generic *)
-val man_to_mtbdd : ('a,'b,'c,'d) man -> ('a,'b) Domain0.mtbdd
+val man_to_mtbdd : ('a,'b,'c,'d) man -> ('a,'b) mtbdd
   (** Instanciate the type of a mtbdd manager.
       Raises [Failure] if the argument manager is not a mtbdd manager *)
 
 val of_mtbdd :
-  ('a,'b) Domain0.mtbdd * ('a,'b Mtbdddomain0.t) t ->
+  ('a,'b) mtbdd * ('a,'b Mtbdddomain0.t) t ->
   ('a,'b,'c,'d) man * ('a,'d) t
   (** Makes a pair (mtbdd manager,mtbdd abstract value) generic *)
 val to_mtbdd :
   ('a,'b,'c,'d) man * ('a,'d) t ->
-  ('a,'b) Domain0.mtbdd * ('a, 'b Mtbdddomain0.t) t
+  ('a,'b) mtbdd * ('a, 'b Mtbdddomain0.t) t
   (** Instanciate the type of a pair (mtbdd manager,mtbdd abstract value).
       Raises [Failure] if the argument manager is not a mtbdd manager *)
 
@@ -99,7 +113,7 @@ val to_mtbdd :
 (** {2 Implementation based on {!Bdddomain0}} *)
 (*  ********************************************************************** *)
 
-val make_bdd : 'b Apron.Manager.t -> ('a,'b) Domain0.bdd
+val make_bdd : 'b Apron.Manager.t -> ('a,'b) bdd
 
 (*  ====================================================================== *)
 (** {3 Type conversion functions} *)
@@ -107,18 +121,18 @@ val make_bdd : 'b Apron.Manager.t -> ('a,'b) Domain0.bdd
 
 val man_is_bdd : ('a,'b,'c,'d) man -> bool
   (** Return [true] iff the argument manager is a bdd manager *)
-val man_of_bdd : ('a,'b) Domain0.bdd -> ('a,'b,'c,'d) man
+val man_of_bdd : ('a,'b) bdd -> ('a,'b,'c,'d) man
   (** Makes a bdd manager generic *)
-val man_to_bdd : ('a,'b,'c,'d) man -> ('a,'b) Domain0.bdd
+val man_to_bdd : ('a,'b,'c,'d) man -> ('a,'b) bdd
   (** Instanciate the type of a bdd manager.
       Raises [Failure] if the argument manager is not a bdd manager *)
 
 val of_bdd :
-  ('a,'b) Domain0.bdd * ('a,'b Bdddomain0.t) t ->
+  ('a,'b) bdd * ('a,'b Bdddomain0.t) t ->
   ('a,'b,'c,'d) man * ('a,'d) t
   (** Makes a pair (bdd manager,bdd abstract value) generic *)
 val to_bdd :
   ('a,'b,'c,'d) man * ('a,'d) t ->
-  ('a,'b) Domain0.bdd * ('a,'b Bdddomain0.t) t
+  ('a,'b) bdd * ('a,'b Bdddomain0.t) t
   (** Instanciate the type of a pair (bdd manager,bdd abstract value).
       Raises [Failure] if the argument manager is not a bdd manager *)

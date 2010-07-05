@@ -16,7 +16,7 @@ let gmp_random_state = ref (Gmp_random.init_default ())
 let ratio_bool_nbool = ref 10
 let mpz_size = ref 2
 let nblinvar = ref 2
-let depthcond = ref 2
+let depthcond = ref 5
 
 let nbasssub = ref 3
 let depthexpr = ref 3
@@ -276,7 +276,7 @@ module Expr = struct
       end
     end
 
-  let expr ?(lin=true) env cond (typ:Bddapron.Env.typ) depth : Expr1.t =
+  let expr ?(lin=true) env cond (typ:'a Bddapron.Env.typ) depth : 'a Expr1.t =
     match typ with
     | `Bool -> Expr1.Bool.to_expr (bool ~lin env cond depth)
     | `Bint _ -> Expr1.Bint.to_expr (bint ~lin env cond typ depth)
@@ -296,7 +296,7 @@ module D = struct
     | Some x -> Some (snd x)
 
   type t = {
-    f : 'a 'b. ('a -> Env.t -> 'b);
+    f : 'a 'b 'c. ('a -> 'c Env.t -> 'b);
   }
 
   let print man fmt abs =
@@ -398,10 +398,14 @@ module D = struct
 
 end
 
-let check man abs =
-  let mbdd = Domain1.to_bdd (fst man) in
-  let mmtbdd = Domain1.to_mtbdd (snd man) in
-  let (bdd,mtbdd) = abs in
+let check
+    man
+    abs
+    =
+  let (mbdd,bdd) = Domain1.to_bdd ((fst man),(fst abs)) in
+  let (mmtbdd,mtbdd) = Domain1.to_mtbdd ((snd man),(snd abs)) in
+  let mbdd = mbdd.Domain0.man in
+  let mmtbdd = mmtbdd.Domain0.man in
   let env = bdd.env in
   Bdddomain1.canonicalize ~apron:true mbdd bdd;
 
@@ -430,7 +434,7 @@ let check man abs =
   abs
 
 let condition man env =
-  let cond = Cond.make env.cudd in
+  let cond = Cond.make ~symbol:Env.string_symbol env.cudd in
   let condition = Expr.bool env cond !depthcond in
   let res =
     Expr2.Bool.of_expr1 ~normalize:true ~reduce:true ~careset:true
@@ -563,7 +567,7 @@ let test_asssub asssub man env =
   while !i < !nbiterations do
     printf "%2i " !i;
     let absorg = abs_rand man env in
-    let cond = Bddapron.Cond.make env.cudd in
+    let cond = Bddapron.Cond.make ~symbol:string_symbol env.cudd in
     let lvar = multipick_set !nbasssub (fun _ -> true) vars in
     let ltyp = List.map (Env.typ_of_var env) lvar in
     let lexpr = List.map (fun typ -> Expr.expr ~lin:true env cond typ !depthexpr) ltyp in
@@ -610,7 +614,7 @@ let test_asssub asssub man env =
 	assert(if oabsdest=None then D.is_leq man absorg abs2 else true);
 	let abs2 = D.substitute_lexpr check man cond abs lvar lexpr (Some absorg) in
 	assert(if oabsdest=None then D.is_eq man absorg abs2 else true);
-    | `Substitute -> 
+    | `Substitute ->
 	let abs2 = D.assign_lexpr check man cond abs lvar lexpr (Some absorg) in
 	if true then printf "@.lvar = %a@.lexpr=%a@.absorg = %a;@.absdest = %a;@.abs = %a@.abs2=%a@."
 	  (Print.list pp_print_string) lvar
@@ -628,6 +632,39 @@ let test_asssub asssub man env =
 let test_assign man env = test_asssub `Assign man env
 let test_substitute man env = test_asssub `Substitute man env
 
+let test_forget man env =
+  let vars = Env.vars env in
+  let i = ref 0 in
+  while !i < !nbiterations do
+    printf "%2i " !i;
+    let absorg = abs_rand man env in
+    let lvar = multipick_set !nbasssub (fun _ -> true) vars in
+    let abs =
+      try D.forget_list check man absorg lvar
+      with _ as exn ->
+	printf "@.absorg = %a@.lvar=%a@."
+	  (D.print man) absorg
+	  (Print.list pp_print_string) lvar
+	;
+	raise exn
+    in
+    assert(D.is_leq man absorg abs);
+    if not (
+      D.is_cst man absorg ||
+	D.is_cst man abs
+    )
+    then begin
+      printf "@.absorg = %a;@.lvar=%a@.abs = %a;@."
+	(D.print man) absorg
+	(Print.list pp_print_string) lvar	
+	(D.print man) abs
+      ;
+      incr i
+    end
+  done;
+  printf "  @ done@.";
+  ()
+
 let make_man apron =
   let bdd = Domain1.make_bdd apron in
   let mtbdd = Domain1.make_mtbdd ~global:true apron  in
@@ -635,17 +672,18 @@ let make_man apron =
 
 let test apron env =
   let man = make_man apron in
+  test_forget man env;
 (*
   test_meet man env;
   test_join man env;
   test_widening man env;
-*)
   test_assign man env;
   test_substitute man env;
+*)
   ()
 
 let make_env ~bool ~bint ~real cudd =
-  let env = Env.make ~relational:!assign_relational cudd in
+  let env = Env.make ~relational:!assign_relational ~symbol:string_symbol cudd in
   Env.add_typ_with env "e0" (`Benum [| "e0_0" |]);
   Env.add_typ_with env "e1" (`Benum [| "e1_0"; "e1_1"; "e1_2" |]);
 (*
@@ -666,7 +704,7 @@ let make_env ~bool ~bint ~real cudd =
 
 let case_loop cudd apron =
   let man = make_man apron in
-  let env = Env.make ~relational:!assign_relational cudd in
+  let env = Env.make ~relational:!assign_relational ~symbol:string_symbol cudd in
   Env.add_vars_with env
     [
       ("mode",`Bool);
@@ -679,7 +717,7 @@ let case_loop cudd apron =
       ("ITERMAX",`Int);
     ]
   ;
-  let cond = Cond.make env.cudd in
+  let cond = Cond.make ~symbol:string_symbol env.cudd in
   let condition =
     Expr1.Bool.of_expr
       (Parser.expr1_of_string env cond
@@ -715,10 +753,10 @@ let main () =
   Cudd.Man.print_limit := 50;
   let env = make_env ~bool:5 ~bint:1 ~real:4 cudd in
   let apron = Polka.manager_alloc_loose () in
+(*
   case_loop cudd apron;
-(* 
-  test apron env;
 *)
+  test apron env;
   ()
 
 
