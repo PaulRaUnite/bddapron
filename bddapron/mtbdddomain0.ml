@@ -212,7 +212,7 @@ module O = struct
 	  let mop1 = `Fun (begin fun tu ->
 	    let t = Cudd.Mtbddc.get tu in
 	    let res = Apron.Abstract0.forget_array man.apron t tadim false in
-@<	    let resu = Cudd.Mtbddc.unique man.ApronDD.table res in
+	    let resu = Cudd.Mtbddc.unique man.ApronDD.table res in
 	    resu
 	  end)
 	  in

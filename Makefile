@@ -157,7 +157,7 @@ html: html_bdd html_bddapron
 
 homepage: html bdd.pdf bddapron.pdf
 	hyperlatex index
-	cp -r index.html html_bdd html_bddapron bdd.pdf bddapron.pdf Changes \
+	cp -r index.html html_bdd html_bddapron bdd.pdf bddapron.pdf presentation-bddapron.pdf Changes \
 		$(HOME)/web/bjeannet-forge/bddapron
 	chmod -R ugoa+rx $(HOME)/web/bjeannet-forge/bddapron
 	scp -r $(HOME)/web/bjeannet-forge/bddapron johns:/home/wwwpop-art/people/bjeannet/bjeannet-forge
@@ -192,7 +192,7 @@ example2.opt: bddapron/example2.ml bddapron.cmxa
 	$(OCAMLOPT) -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ cudd.cmxa camllib.cmxa bigarray.cmxa gmp.cmxa apron.cmxa boxMPQ.cmxa polkaMPQ.cmxa bddapron.cmxa $<
 
 test_random.opt: bddapron/test_random.ml bddapron.cmxa
-	$(OCAMLOPT) -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ cudd.cmxa camllib.cmxa bigarray.cmxa gmp.cmxa apron.cmxa box.cmxa polka.cmxa bddapron.cmxa -noautolink -ccopt "$(LCFLAGS)" -cclib "-lpolkaGrid_caml -lap_pkgrid -lap_ppl_caml -lap_ppl -lppl -lgmpxx -lpolka_caml_debug -lpolkaMPQ_debug -loct_caml -loctMPQ -lbox_caml -lboxMPQ -lapron_caml_debug -lapron_debug -lgmp_caml -lmpfr -lgmp -lcamlidl_debug -lcudd_caml_debug -lcudd_debug -lmtr -lst -lutil -lepd -lbigarray -lunix" $<
+	$(OCAMLOPT) -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ cudd.cmxa camllib.cmxa bigarray.cmxa gmp.cmxa apron.cmxa boxMPQ.cmxa polkaMPQ.cmxa bddapron.cmxa -noautolink -ccopt "$(LCFLAGS)" -cclib "-lpolkaGrid_caml -lap_pkgrid -lap_ppl_caml -lap_ppl -lppl -lgmpxx -lpolkaMPQ_caml_debug -lpolkaMPQ_debug -loctMPQ_caml -loctMPQ -lboxMPQ_caml -lboxMPQ -lapron_caml_debug -lapron_debug -lgmp_caml -lmpfr -lgmp -lcamlidl -lcudd_caml_debug -lcudd_debug -lmtr -lst -lcuddutil -lepd -lbigarray -lunix" $<
 
 LCFLAGS = \
 -L$(GMP_PREFIX)/lib \
