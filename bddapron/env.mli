@@ -48,7 +48,7 @@ type ('a,'b) ext = {
     - ['c] is the type of type definitions;
     - ['d] is the type of further extension
 
-    See {!Bdd.Env.t0} for more (internal) details. 
+    See {!Bdd.Env.t0} for more (internal) details.
  *)
 type ('a,'b,'c,'d) t0 = ('a,'b,'c,Cudd.Man.v,('a,'d) ext) Bdd.Env.t0
 
@@ -105,8 +105,8 @@ val marshal : 'a -> string
     (** Safe marshalling function, generating strings without NULL
 	characters.
 
-        (Based on [Marshal.to_string] with [Marshal.No_sharing] option.) *)
-val unmarshal : string -> 'a 
+	(Based on [Marshal.to_string] with [Marshal.No_sharing] option.) *)
+val unmarshal : string -> 'a
     (** Companion unmarshalling function *)
 
 val make_symbol :
@@ -115,7 +115,7 @@ val make_symbol :
   ?unmarshal:(string -> 'a) ->
   (Format.formatter -> 'a -> unit) ->
   'a symbol
-      (** Generic function for creating a manager for symbols 
+      (** Generic function for creating a manager for symbols
 	  Default values are [Pervasives.compare], {!marshal} and {!unmarshal}.
 
 	  DO NOT USE [Marshal.to_string] and [Marshal.from_string], as they
@@ -144,7 +144,7 @@ val make :
 	  [0,100,false]. *)
 
 
-val make_string : 
+val make_string :
   ?bddindex0:int -> ?bddsize:int -> ?relational:bool -> Cudd.Man.vt -> string t
       (** [make_string XXX = make ~symbol:string_symbol XXX] *)
 
@@ -288,3 +288,11 @@ val mapterop :
   (('a,'b,'c,'d) O.t, 'f) value ->
   (('a,'b,'c,'d) O.t, 'g) value ->
   (('a,'b,'c,'d) O.t, 'h) value
+
+val var_of_aprondim :
+  ('a, 'b, 'c, 'd, ('e, 'f) ext) Bdd.Env.t0 -> Apron.Dim.t -> 'a
+val aprondim_of_var :
+  ('a, 'b, 'c, 'd, ('e, 'f) ext) Bdd.Env.t0 -> 'a -> Apron.Dim.t
+
+val string_of_aprondim :
+  ('a, 'b, 'c, 'd, ('e, 'f) ext) Bdd.Env.t0 -> Apron.Dim.t -> string

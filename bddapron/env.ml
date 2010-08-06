@@ -19,7 +19,7 @@ type 'a typ = [
 
     DO NOT USE [Marshal.to_string] and [Marshal.from_string], as they
     generate strings with NULL character, which is not handled
-    properly when converted to C strings. 
+    properly when converted to C strings.
 
     You may use instead {!marshal} and {!unmarshal}. *)
 type 'a symbol = 'a Bdd.Env.symbol = {
@@ -119,7 +119,7 @@ let make
     ~copy_aext:(fun () -> ())
     ?bddindex0 ?bddsize ?relational cudd ()
 
-let make_string ?bddindex0 ?bddsize ?relational cudd = 
+let make_string ?bddindex0 ?bddsize ?relational cudd =
   make ~symbol:string_symbol ?bddindex0 ?bddsize ?relational cudd
 
 let copy = Bdd.Env.copy
@@ -141,6 +141,7 @@ let vars env =
   let vars = Array.fold_right add qvar vars in
   vars
 let labels = Bdd.Env.labels
+
 
 (*  ********************************************************************** *)
 (** {2 Adding types and variables} *)
@@ -285,3 +286,20 @@ let mapunop = Bdd.Env.mapunop
 let mapbinop = Bdd.Env.mapbinop
 let mapbinope = Bdd.Env.mapbinope
 let mapterop = Bdd.Env.mapterop
+
+let var_of_aprondim env dim =
+  let avar = Apron.Environment.var_of_dim env.ext.eapron dim in
+  let strvar = Apron.Var.to_string avar in
+  let var = env.symbol.unmarshal strvar in
+  var
+
+let aprondim_of_var env var =
+  let varstr = env.symbol.marshal var in
+  let avar = Apron.Var.of_string varstr in
+  let dim = Apron.Environment.dim_of_var env.ext.eapron avar in
+  dim
+
+let string_of_aprondim env =
+  Print.string_of_print
+    (fun fmt dim ->
+      env.symbol.print fmt (var_of_aprondim env dim))
