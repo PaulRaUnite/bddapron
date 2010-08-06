@@ -32,19 +32,6 @@ let make_table (apron:'a Apron.Manager.t) : 'a table =
 	let dimy = Apron.Abstract0.dimension apron y in
 	dimx=dimy && Apron.Abstract0.is_eq apron x y)
     )
-(*
-let myunique table abs0 =
-  Apron.Abstract0.canonicalize (Apron.Abstract0.manager abs0) abs0;
-  Cudd.Mtbddc.unique table abs0
-
-let myget x =
-  let res = Cudd.Mtbddc.get x in
-  Apron.Abstract0.copy (Apron.Abstract0.manager res) res
-
-let mydval x =
-  let res = Cudd.Mtbddc.dval x in
-  Apron.Abstract0.copy (Apron.Abstract0.manager res) res
-*)
 
 let myunique = Cudd.Mtbddc.unique
 let myget = Cudd.Mtbddc.get
@@ -131,10 +118,13 @@ let bottom_of_abs man (mtbdd:'a t) : 'a Apron.Abstract0.t =
   let dim = Apron.Abstract0.dimension man.apron abs in
   Apron.Abstract0.bottom man.apron dim.Apron.Dim.intd dim.Apron.Dim.reald
 
-let print print_bdd string_of_dim fmt (t:'a t) =
+let print
+    ?(print_apron=Apron.Abstract0.print)
+    print_bdd string_of_dim fmt (t:'a t)
+    =
   if Cudd.Mtbddc.is_cst t then
     fprintf fmt "{ %a }"
-      (Apron.Abstract0.print string_of_dim) (mydval t)
+      (print_apron string_of_dim) (mydval t)
   else
     let nb = Cudd.Mtbddc.nbpaths t in
     if nb > (float_of_int !Cudd.Man.print_limit) then
@@ -152,12 +142,11 @@ let print print_bdd string_of_dim fmt (t:'a t) =
 	  if !first then first := false else fprintf fmt " or@,";
 	  let bdd = Cudd.Mtbddc.guard_of_leaf_u t leaf_u in
 	  fprintf fmt "@[<hv>(%a) and@ %a@]"
-	    print_bdd bdd (Apron.Abstract0.print string_of_dim) leaf;
+	    print_bdd bdd (print_apron string_of_dim) leaf;
 	end
       done;
       fprintf fmt "@] }"
     end
-
 
 let cst ~cudd man abs : 'a t =
   Cudd.Mtbddc.cst cudd man.table abs
@@ -331,7 +320,6 @@ let asssub_texpr
 	  fun_of_asssub asssub symbol man env org [|dim|] [|expr|] (Some dest)
 	)
 	org dest expr
-
 
 let asssub_texpr_array
     ?(asssub_bdd : (Cudd.Bdd.vt -> Cudd.Bdd.vt) option)

@@ -25,15 +25,12 @@ module O = struct
   (*  ==================================================================== *)
 
   let size man = Cudd.Mtbddc.size
-  let print env =
-    let eapron = env.ext.eapron in
-    let string_of_dim dim =
-      let avar = Apron.Environment.var_of_dim eapron dim in
-      let var = env.symbol.unmarshal (Apron.Var.to_string avar) in
-      env.symbol.print Format.str_formatter var;
-      Format.flush_str_formatter ()
-    in
-    ApronDD.print (Bdd.Expr0.O.print_bdd env) string_of_dim
+  let print ?print_apron env fmt t =
+    ApronDD.print 
+      ?print_apron
+      (Bdd.Expr0.O.print_bdd env)
+      (Env.string_of_aprondim env) 
+      fmt t
 
   let bottom man env =
     ApronDD.bottom

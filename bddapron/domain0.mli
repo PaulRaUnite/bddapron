@@ -16,7 +16,12 @@ type ('a,'b,'c,'d) man = {
   man : 'c;
   canonicalize : ?apron:bool -> 'c -> 'd -> unit;
   size : 'c -> 'd -> int;
-  print : 'a Env.t -> Format.formatter -> 'd -> unit;
+  print :
+    ?print_apron:(
+      (int -> string) ->
+	Format.formatter -> 'b Apron.Abstract0.t -> unit
+    ) ->
+    'a Env.t -> Format.formatter -> 'd -> unit;
   bottom : 'c -> 'a Env.t -> 'd;
   top : 'c -> 'a Env.t -> 'd;
   of_apron : 'c -> 'a Env.t -> 'b Apron.Abstract0.t -> 'd;
@@ -53,7 +58,12 @@ type 'd t = 'd
 
 val canonicalize : ?apron:bool -> ('a,'b,'c,'d) man -> 'd t -> unit
 val size : ('a,'b,'c,'d) man -> 'd t -> int
-val print : ('a,'b,'c,'d) man -> 'a Env.t -> Format.formatter -> 'd t -> unit
+val print :
+  ?print_apron:(
+    (int -> string) ->
+      Format.formatter -> 'b Apron.Abstract0.t -> unit
+  ) ->  
+  ('a,'b,'c,'d) man -> 'a Env.t -> Format.formatter -> 'd t -> unit
 val bottom : ('a,'b,'c,'d) man -> 'a Env.t -> 'd t
 val top : ('a,'b,'c,'d) man -> 'a Env.t -> 'd t
 val of_apron : ('a,'b,'c,'d) man -> 'a Env.t -> 'b Apron.Abstract0.t -> 'd t

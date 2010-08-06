@@ -15,7 +15,12 @@ module type Level0 = sig
   type 'b t
 
   val size : ('a,'b) man -> 'b t -> int
-  val print : 'a Env.t -> Format.formatter -> 'c t -> unit
+  val print :
+    ?print_apron:(
+      (int -> string) ->
+	Format.formatter -> 'b Apron.Abstract0.t -> unit
+    ) ->
+    'a Env.t -> Format.formatter -> 'b t -> unit
 
   val bottom : ('a,'b) man -> 'a Env.t -> 'b t
   val top : ('a,'b) man -> 'a Env.t -> 'b t
@@ -52,7 +57,12 @@ module type Level1 = sig
   type ('a,'b) t = ('a Env.t, 'b t0) Env.value
 
   val size : ('a,'b) man -> ('a,'b) t -> int
-  val print : Format.formatter -> ('a,'b) t -> unit
+  val print :
+    ?print_apron:(
+      (int -> string) ->
+	Format.formatter -> 'b Apron.Abstract0.t -> unit
+    ) ->
+    Format.formatter -> ('a,'b) t -> unit
   val bottom : ('a,'b) man -> 'a Env.t -> ('a,'b) t
   val top : ('a,'b) man -> 'a Env.t -> ('a,'b) t
   val of_apron : ('a,'b) man -> 'a Env.t -> 'b Apron.Abstract1.t -> ('a,'b) t
@@ -98,7 +108,7 @@ struct
   type 'b t0 = 'b Level0.t
   type ('a,'b) t = ('a Env.t, 'b t0) Env.value
 
-  let print fmt t = Level0.print t.env fmt t.val0
+  let print ?print_apron fmt t = Level0.print ?print_apron t.env fmt t.val0
   let size man t = Level0.size man t.val0
   let bottom man env = make_value env (Level0.bottom man env)
   let top man env = make_value env (Level0.top man env)

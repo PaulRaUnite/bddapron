@@ -41,7 +41,7 @@ type ('a,'d) t = ('a Env.t, 'd) Env.value
 (** Type of generic abstract values *)
 
 let canonicalize ?apron man t = Domain0.canonicalize ?apron man t.val0
-let print man fmt t = Domain0.print man t.env fmt t.val0
+let print ?print_apron man fmt t = Domain0.print ?print_apron man t.env fmt t.val0
 let size man t = Domain0.size man t.val0
 let bottom man env = make_value env (Domain0.bottom man env)
 let top man env = make_value env (Domain0.top man env)

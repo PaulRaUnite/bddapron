@@ -39,7 +39,12 @@ type ('a,'d) t = ('a Env.t, 'd) Env.value
 (** Type of generic abstract values *)
 
 val canonicalize : ?apron:bool -> ('a,'b,'c,'d) man -> ('a,'d) t -> unit
-val print : ('a,'b,'c,'d) man -> Format.formatter -> ('a,'d) t -> unit
+val print :
+  ?print_apron:(
+    (int -> string) ->
+      Format.formatter -> 'b Apron.Abstract0.t -> unit
+  ) ->
+  ('a,'b,'c,'d) man -> Format.formatter -> ('a,'d) t -> unit
 
 val size : ('a,'b,'c,'d) man -> ('a,'d) t -> int
 val bottom : ('a,'b,'c,'d) man -> 'a Env.t -> ('a,'d) t

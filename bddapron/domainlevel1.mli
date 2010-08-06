@@ -15,7 +15,12 @@ module type Level0 = sig
 	Apron.Abstract0.t}, and ['a] the type of symbols. *)
 
   val size : ('a,'b) man -> 'b t -> int
-  val print : 'a Env.t -> Format.formatter -> 'c t -> unit
+  val print :
+    ?print_apron:(
+      (int -> string) ->
+	Format.formatter -> 'b Apron.Abstract0.t -> unit
+    ) ->  
+    'a Env.t -> Format.formatter -> 'b t -> unit
 
   val bottom : ('a,'b) man -> 'a Env.t -> 'b t
   val top : ('a,'b) man -> 'a Env.t -> 'b t
@@ -62,7 +67,12 @@ module type Level1 = sig
 
   val size : ('a,'b) man -> ('a,'b) t -> int
     (** Size of an abstract value. *)
-  val print : Format.formatter -> ('a,'b) t -> unit
+  val print :
+    ?print_apron:(
+      (int -> string) ->
+	Format.formatter -> 'b Apron.Abstract0.t -> unit
+    ) ->
+    Format.formatter -> ('a,'b) t -> unit
     (** Printing function *)
 
   (** {3 Basic constructor} *)

@@ -40,6 +40,7 @@ type ('a,'b) man = {
 
 module O = struct
 
+(*
   let myprint_elt fmt elt =
     fprintf fmt "@[<hv>(%a) and@ %a@]"
       (Cudd.Bdd.print_minterm pp_print_int)
@@ -53,6 +54,7 @@ module O = struct
   let myprint_oglist fmt = function
     | None -> pp_print_string fmt "None"
     | Some glist -> myprint_glist fmt glist
+*)
 
   (*  ******************************************************************** *)
   (** {2 Functions on lists of elements} *)
@@ -188,21 +190,15 @@ module O = struct
       (Cudd.Bdd.size t.bottom.guard)
       t.list
 
-  let print env fmt t =
+  let print ?(print_apron=Apron.Abstract0.print) env fmt t =
     if t.list=[] then
       pp_print_string fmt "bottom"
     else begin
-      let eapron = env.ext.eapron in
-      let string_of_dim dim =       
-	let avar = Apron.Environment.var_of_dim eapron dim in
-	let var = env.symbol.unmarshal (Apron.Var.to_string avar) in
-	env.symbol.print Format.str_formatter var;
-	Format.flush_str_formatter ()
-      in
-      let print_elt fmt elt =    
+      let string_of_dim dim = Env.string_of_aprondim env dim in
+      let print_elt fmt elt =
 	fprintf fmt "@[<hv>(%a) and@ %a@]"
 	  (Bdd.Expr0.O.print_bdd env) elt.guard
-	  (Apron.Abstract0.print string_of_dim) elt.leaf
+	  (print_apron string_of_dim) elt.leaf
       in
       Print.list
 	~first:"{ @[<v>" ~sep:" or@," ~last:"@] }"

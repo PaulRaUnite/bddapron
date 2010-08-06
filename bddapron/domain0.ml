@@ -12,7 +12,12 @@ type ('a,'b,'c,'d) man = {
   man : 'c;
   canonicalize : ?apron:bool -> 'c -> 'd -> unit;
   size : 'c -> 'd -> int;
-  print : 'a Env.t -> Format.formatter -> 'd -> unit;
+  print :
+    ?print_apron:(
+      (int -> string) ->
+	Format.formatter -> 'b Apron.Abstract0.t -> unit
+    ) ->
+    'a Env.t -> Format.formatter -> 'd -> unit;
   bottom : 'c -> 'a Env.t -> 'd;
   top : 'c -> 'a Env.t -> 'd;
   of_apron : 'c -> 'a Env.t -> 'b Apron.Abstract0.t -> 'd;
@@ -45,7 +50,7 @@ type 'd t = 'd
 
 let canonicalize ?apron man = man.canonicalize ?apron man.man
 let size man = man.size man.man
-let print man = man.print
+let print ?print_apron man = man.print ?print_apron
 let bottom man = man.bottom man.man
 let top man = man.top man.man
 let of_apron man = man.of_apron man.man

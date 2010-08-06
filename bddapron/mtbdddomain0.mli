@@ -20,7 +20,12 @@ val make_man : ?global:bool -> 'b Apron.Manager.t -> ('a,'b) man
 
 val size : ('a,'b) man -> 'b t -> int
   (** Size of an abstract value in terms of number of nodes of the MTBDD. *)
-val print : 'a Env.t -> Format.formatter -> 'b t -> unit
+val print :
+  ?print_apron:(
+    (int -> string) ->
+      Format.formatter -> 'b Apron.Abstract0.t -> unit
+  ) ->
+  'a Env.t -> Format.formatter -> 'b t -> unit
   (** Printing function *)
 
 (*  ********************************************************************** *)
@@ -104,7 +109,12 @@ module O : sig
     ('a,'b) man -> 'c -> ('a,'c) Cond.O.t -> 'b t -> int * bool -> 'b t
 
   val size : ('a,'b) man -> 'b t -> int
-  val print : ('a,'c,'d,'e) Env.O.t -> Format.formatter -> 'b t -> unit
+  val print :
+    ?print_apron:(
+      (int -> string) ->
+	Format.formatter -> 'b Apron.Abstract0.t -> unit
+    ) ->
+    ('a,'c,'d,'e) Env.O.t -> Format.formatter -> 'b t -> unit
   val bottom : ('a,'b) man -> ('a,'c,'d,'e) Env.O.t -> 'b t
   val top : ('a,'b) man -> ('a,'c,'d,'e) Env.O.t -> 'b t
   val of_apron : ('a,'b) man -> ('a,'c,'d,'e) Env.O.t -> 'b Apron.Abstract0.t -> 'b t

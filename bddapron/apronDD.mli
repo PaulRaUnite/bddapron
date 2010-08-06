@@ -35,12 +35,16 @@ val make_global :
 val make_man : ?global:bool -> 'a Apron.Manager.t -> 'a man
 
 val print :
-  (Format.formatter -> Cudd.Man.v Cudd.Bdd.t -> unit) ->
+  ?print_apron:(
+    (int -> string) -> 
+      Format.formatter -> 'a Apron.Abstract0.t -> unit
+  ) ->
+  (Format.formatter -> Cudd.Bdd.vt -> unit) ->
   (int -> string) ->
   Format.formatter -> 'a t -> unit
-val cst : cudd:Cudd.Man.v Cudd.Man.t -> 'a man -> 'a Apron.Abstract0.t -> 'a t
-val bottom : cudd:Cudd.Man.v Cudd.Man.t -> 'a man -> Apron.Dim.dimension -> 'a t
-val top : cudd:Cudd.Man.v Cudd.Man.t -> 'a man -> Apron.Dim.dimension -> 'a t
+val cst : cudd:Cudd.Man.vt -> 'a man -> 'a Apron.Abstract0.t -> 'a t
+val bottom : cudd:Cudd.Man.vt -> 'a man -> Apron.Dim.dimension -> 'a t
+val top : cudd:Cudd.Man.vt -> 'a man -> Apron.Dim.dimension -> 'a t
 val is_bottom : 'a man -> 'a t -> bool
 val is_top : 'a man -> 'a t -> bool
 val is_eq : 'a man -> 'a t -> 'a t -> bool
@@ -58,14 +62,14 @@ val apply_dimchange2 : 'a man -> 'a t -> Apron.Dim.change2 -> bool -> 'a t
 type asssub = Assign | Substitute
 
 val asssub_texpr_array :
-  ?asssub_bdd:(Cudd.Bdd.vt -> Cudd.Man.v Cudd.Bdd.t) ->
+  ?asssub_bdd:(Cudd.Bdd.vt -> Cudd.Bdd.vt) ->
   asssub ->
   'b Bdd.Env.symbol ->
   'a man ->
   Apron.Environment.t ->
   'a t ->
   Apron.Dim.t array -> 'b ApronexprDD.t array -> 'a t option -> 'a t
-  
+
 val assign_texpr_array :
   'b Bdd.Env.symbol ->
   'a man -> Apron.Environment.t ->
@@ -79,8 +83,8 @@ val make_funjoin :
   'a man -> ('a leaf_u, Cudd.User.global) Cudd.User.mexist
 val make_funjoin2 :
   'a man -> 'a t -> ('a leaf_u, Cudd.User.global) Cudd.User.mexist
-val exist : 'a man -> supp:Cudd.Man.v Cudd.Bdd.t -> 'a t -> 'a t
+val exist : 'a man -> supp:Cudd.Bdd.vt -> 'a t -> 'a t
 val existand :
   'a man ->
   bottom:'a Apron.Abstract0.t Cudd.Mtbddc.unique ->
-  supp:Cudd.Man.v Cudd.Bdd.t -> Cudd.Man.v Cudd.Bdd.t -> 'a t -> 'a t
+  supp:Cudd.Bdd.vt -> Cudd.Bdd.vt -> 'a t -> 'a t
