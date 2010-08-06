@@ -42,7 +42,7 @@ module O = struct
     let tid = PMappe.find var env.vartid in
     let cudd = env.cudd in
     let reg = Array.map (fun id -> Cudd.Bdd.ithvar cudd id) tid in
-    reg  
+    reg
 
   let bddvar (env:('a,'b,'c,'d,'e) Env.O.t) (var:'a) : 'd expr
       =
@@ -126,7 +126,7 @@ module O = struct
       | Disjunction of 'a conjunction list
       (** Disjunction of conjunctions. Empty list means false *)
       | Dtrue
-    
+
     let map_atom f = function
       | Tbool(n,b) -> Tbool(f n,b)
       | Tint(n,l) -> Tint(f n,l)
@@ -136,7 +136,7 @@ module O = struct
       | Tatom atom -> Tatom (map_atom f atom)
       | Texternal _ as x -> x
       | Tcst _ as x -> x
-	  
+
     let map_conjunction f = function
       | Conjunction lterm -> Conjunction (List.map (map_term f) lterm)
       | Cfalse -> Cfalse
@@ -258,7 +258,7 @@ module O = struct
 	=
       try
 	let res = ref [] in
-        (* We iterate first on the Boolean variables *)
+	(* We iterate first on the Boolean variables *)
 	PMappe.iter
 	  (begin fun var tid ->
 	    match Env.typ_of_var env var with
@@ -273,7 +273,7 @@ module O = struct
 	  end)
 	  env.vartid
 	;
-        (* We print then integers and enumerated variables *)
+	(* We print then integers and enumerated variables *)
 	PMappe.iter
 	  (begin fun var tid ->
 	    match Env.typ_of_var env var with
@@ -291,7 +291,7 @@ module O = struct
 	  end)
 	  env.vartid
 	;
-        (* We iterate on conditions and undeclared variables *)
+	(* We iterate on conditions and undeclared variables *)
 	Array.iteri
 	  (begin fun id (v:Cudd.Man.tbool) ->
 	    if v<>Cudd.Man.Top && not (mem_id env id) then begin
@@ -306,7 +306,8 @@ module O = struct
       with Exit ->
 	Cfalse
 
-    (*  -------------------------------------------------------------------- *)     (** {4 Converts a full BDD} *)
+    (*  -------------------------------------------------------------------- *)     
+    (** {4 Converts a full BDD} *)
     (*  -------------------------------------------------------------------- *)
 
     let disjunction_of_bdd
@@ -350,8 +351,8 @@ module O = struct
 		env.symbol.print var
 	  | Tenum(var,labels) ->
 	      if List.tl labels = [] then
-		fprintf fmt "%a = %a" 
-		  env.symbol.print var 
+		fprintf fmt "%a = %a"
+		  env.symbol.print var
 		  env.symbol.print (List.hd labels)
 	      else
 		fprintf fmt "%a in {%a}"
@@ -372,7 +373,7 @@ module O = struct
 		  codes
 	  end
       | Texternal idb ->
-	  let print = 
+	  let print =
 	    match print_external_idcondb with
 	    | Some p -> p
 	    | None -> env.print_external_idcondb
@@ -404,12 +405,12 @@ module O = struct
 	    disjunction
 
   end
-    
-    
+
+
   (*  ====================================================================== *)
   (** {3 Printing} *)
   (*  ====================================================================== *)
-    
+
   (*  ---------------------------------------------------------------------- *)
   (** {4 Printing a minterm} *)
   (*  ---------------------------------------------------------------------- *)
@@ -417,7 +418,7 @@ module O = struct
   (** Here the full minterm is inspected and taken into account. *)
 
   let print_minterm
-      ?print_external_idcondb 
+      ?print_external_idcondb
       (env:('a,'b,'c,'d,'e) Env.O.t)
       (fmt:Format.formatter) (gminterm:Cudd.Man.tbool array)
       :
@@ -465,11 +466,11 @@ module O = struct
 	fprintf fmt "@[<hv>";
 	let first = ref true in
 	Cudd.Bdd.iter_cube
-	  (begin fun cube -> 
+	  (begin fun cube ->
 	    let conjunction = Expr.conjunction_of_minterm env cube in
 	    if conjunction<>Expr.Cfalse then begin
 	      if !first then first := false else fprintf fmt "@ or ";
-	      Expr.print_conjunction 
+	      Expr.print_conjunction
 		?print_external_idcondb env fmt conjunction
 	    end;
 	  end)
@@ -486,8 +487,8 @@ module O = struct
     let term = Expr.term_of_idcondb env idcondb in
     Expr.print_term ?print_external_idcondb env fmt term
 
-  let print_idcond 
-      ?print_external_idcondb 
+  let print_idcond
+      ?print_external_idcondb
       (env:('a,'b,'c,'d,'e) Env.O.t) fmt (idcond:int)
       =
     print_idcondb ?print_external_idcondb env fmt (idcond,true)
@@ -498,9 +499,9 @@ module O = struct
 
   let print ?print_external_idcondb (env:('a,'b,'c,'d,'e) Env.O.t) (fmt:Format.formatter) expr : unit =
     match expr with
-    | `Bool x -> 
+    | `Bool x ->
 	print_bdd ?print_external_idcondb env fmt x
-    | `Bint x -> 
+    | `Bint x ->
 	Int.print_minterm (print_bdd ?print_external_idcondb env) fmt x
     | `Benum x ->
 	Enum.print_minterm (print_bdd ?print_external_idcondb env) env fmt x
@@ -716,7 +717,7 @@ module O = struct
   let permute_list (lexpr:'a expr list) (permutation:int array) : 'a expr list
       =
     List.map (fun e -> permute e permutation) lexpr
-      
+
   let varmap (expr:'a expr) : 'a expr
       =
     mapmonop Cudd.Bdd.varmap expr
@@ -748,7 +749,7 @@ module O = struct
   let tdrestrict expr bdd = mapmonop (fun x -> Cudd.Bdd.tdrestrict x bdd) expr
   let permute expr tab = mapmonop (fun x -> Cudd.Bdd.permute x tab) expr
   let varmap expr = mapmonop Cudd.Bdd.varmap expr
-    
+
   (*  ---------------------------------------------------------------------- *)
   (** {4 Boolean expressions} *)
   (*  ---------------------------------------------------------------------- *)
@@ -1018,7 +1019,7 @@ module O = struct
     in
     assert(b=nb);
     tb
- 
+
 
   (** Inverse operation: rebuild an array of expressions from the old array of
   expressions (for the types) and the array of BDDs.
