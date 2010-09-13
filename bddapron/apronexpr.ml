@@ -478,7 +478,7 @@ module Poly = struct
 	if cmp<0 then
 	  (c1,m1)::(sub man r1 l2)
 	else if cmp>0 then
-	  (c2,m2)::(sub man l1 r2)
+	  (Mpqf.neg c2,m2)::(sub man l1 r2)
 	else
 	  let c = Mpqf.sub c1 c2 in
 	  if (Mpqf.sgn c)<> 0
