@@ -19,7 +19,7 @@ module type Level0 = sig
     ?print_apron:(
       (int -> string) ->
 	Format.formatter -> 'b Apron.Abstract0.t -> unit
-    ) ->  
+    ) ->
     'a Env.t -> Format.formatter -> 'b t -> unit
 
   val bottom : ('a,'b) man -> 'a Env.t -> 'b t
@@ -64,6 +64,9 @@ module type Level1 = sig
     (** Level 0 abstract value. *)
   type ('a,'b) t = ('a Env.t, 'b t0) Env.value
      (** Level 1 abstract value *)
+
+  val get_env : ('a,'b) t -> 'a Env.t
+  val to_level0 : ('a,'b) t -> 'b t0
 
   val size : ('a,'b) man -> ('a,'b) t -> int
     (** Size of an abstract value. *)

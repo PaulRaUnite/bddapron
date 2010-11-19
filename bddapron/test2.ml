@@ -1,15 +1,24 @@
 
+(*
+ocaml -I $CAMLLIB_INSTALL/lib -I $MLCUDDIDL_INSTALL/lib -I $BDDAPRON_INSTALL/lib -I $MLGMPIDL_INSTALL/lib -I $APRON_INSTALL/lib
+
+#load "bigarray.cma";;
+#load "gmp.cma";;
+#load "apron.cma";;
+#load "camllib.cma";;
+#load "cudd.cma";;
+#load "bddapron.cma";;
+#load "polkaMPQ.cma";;
+*)
 open Format;;
 open Bddapron;;
 
 let apron = Polka.manager_alloc_loose ();;
-let man = Domain1.make_man ~global:false apron;;
+let man = Domain1.make_bdd apron;;
 let cudd = Cudd.Man.make_v ();;
-let env = Env.make cudd;;
-let cond = Cond.make cudd;;
+let env = Env.make ~symbol:Env.string_symbol cudd;;
+let cond = Cond.make  ~symbol:Env.string_symbol cudd;;
 (*
-bddaprontop -I $CAMLLIB_INSTALL/lib -I $MLCUDDIDL_INSTALL/lib -I $BDDAPRON_INSTALL/lib -I $MLGMPIDL_INSTALL/lib -I $APRON_INSTALL/lib
-
 #install_printer p;;
 #install_printer Apron.Abstract1.print;;
 #install_printer Cudd.Bdd.print__minterm;;
@@ -42,7 +51,7 @@ let p fmt x = Domain0.print env fmt x;;
 let p fmt (x: Polka.loose Polka.t ApronDD.table) = Cudd.Mtbdd.print_table (fun x -> Apron.Abstract0.print string_of_int x) fmt x;;
 #install_printer p;;
 *)
-Env.add_vars_with [
+Env.add_vars_with env [
   ("b0",`Bool);
   ("b1",`Bool);
   ("b2",`Bool);
@@ -85,3 +94,10 @@ printf "table = %a@." print_table man.ApronDD.table;;
 let abs = Domain0.join man abs1 abs2;;
 printf "table = %a@." print_table man.ApronDD.table;;
 Gc.compact();;
+
+
+(* ********************************************************************** *)
+let expr = Parser.expr1_of_string env cond "if (b0==b1) and b2 then x0+2 else if not (b0==b1) then x0+1 else x0";;
+
+let nexpr = Expr1.substitute_by_var cond expr [("b0","b2")];;
+

@@ -56,6 +56,9 @@ module type Level1 = sig
   type 'b t0
   type ('a,'b) t = ('a Env.t, 'b t0) Env.value
 
+  val get_env : ('a,'b) t -> 'a Env.t
+  val to_level0 : ('a,'b) t -> 'b t0
+
   val size : ('a,'b) man -> ('a,'b) t -> int
   val print :
     ?print_apron:(
@@ -107,6 +110,9 @@ struct
   type ('a,'b) man = ('a,'b) Level0.man
   type 'b t0 = 'b Level0.t
   type ('a,'b) t = ('a Env.t, 'b t0) Env.value
+
+  let get_env = Env.get_env
+  let to_level0 = Env.get_val0
 
   let print ?print_apron fmt t = Level0.print ?print_apron t.env fmt t.val0
   let size man t = Level0.size man t.val0

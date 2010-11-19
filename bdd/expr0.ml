@@ -639,7 +639,7 @@ module O = struct
       :
       int array
       =
-    let res = Array.init (max env.bddindex (Cudd.Man.get_bddvar_nb env.cudd)) (fun i -> i) in
+    let res = Array.init (Cudd.Man.get_bddvar_nb env.cudd) (fun i -> i) in
     List.iter
       (begin fun (var,nvar) ->
 	assert ((Env.typ_of_var env var) = (Env.typ_of_var env nvar));
@@ -664,7 +664,7 @@ module O = struct
       =
     let manager = env.cudd in
     let res =
-      Array.init env.bddindex
+      Array.init (Cudd.Man.get_bddvar_nb env.cudd)
 	(fun i -> Cudd.Bdd.ithvar manager i)
     in
     List.iter
@@ -691,7 +691,7 @@ module O = struct
       =
     let manager = env.cudd in
     let res =
-      Array.init env.bddindex
+      Array.init (Cudd.Man.get_bddvar_nb env.cudd)
 	(fun i -> Cudd.Bdd.ithvar manager i)
     in
     List.iter2

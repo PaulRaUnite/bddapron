@@ -22,8 +22,8 @@ Cudd.Man.set_gc 10000
 
 let apron = Polka.manager_alloc_loose();;
 
-let env = Env.make cudd;;
-let cond = Cond.make cudd;;
+let env = Env.make ~symbol:Env.string_symbol cudd;;
+let cond = Cond.make ~symbol:Env.string_symbol cudd;;
 
 let env = Env.add_vars env 
   [
@@ -91,16 +91,16 @@ let top1 = Mtbdddomain1.top man1 env;;
 let abs1 = Mtbdddomain1.meet_condition man1 cond top1 expr0;;
 let abs1 = Mtbdddomain1.meet_condition man1 cond abs1 cons1;;
 
-printf "abs1 = %a@." Mtbdddomain1.print abs1;;
+printf "abs1 = %a@." (fun fmt x -> Mtbdddomain1.print fmt x) abs1;;
 
 let man2 = Bdddomain1.make_man apron;;
 let top2 = Bdddomain1.top man2 env;;
 let abs2 = Bdddomain1.meet_condition man2 cond top2 expr0;;
 let abs2 = Bdddomain1.meet_condition man2 cond abs2 cons1;;
 
-printf "abs2 = %a@." Bdddomain1.print abs2;;
+printf "abs2 = %a@." (fun fmt x -> Bdddomain1.print fmt x) abs2;;
 Bdddomain1.canonicalize man2 abs2;;
-printf "abs2 = %a@." Bdddomain1.print abs2;;
+printf "abs2 = %a@." (fun fmt x -> Bdddomain1.print fmt x) abs2;;
 
 let manbdd = Domain1.make_bdd apron;;
 let topbdd = Domain1.top manbdd env;;

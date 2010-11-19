@@ -46,6 +46,9 @@ val print :
   ) ->
   ('a,'b,'c,'d) man -> Format.formatter -> ('a,'d) t -> unit
 
+val get_env : ('a,'d) t -> 'a Env.t
+val to_level0 :  ('a,'d) t -> 'd
+
 val size : ('a,'b,'c,'d) man -> ('a,'d) t -> int
 val bottom : ('a,'b,'c,'d) man -> 'a Env.t -> ('a,'d) t
 val top : ('a,'b,'c,'d) man -> 'a Env.t -> ('a,'d) t

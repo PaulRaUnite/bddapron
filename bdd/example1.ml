@@ -17,7 +17,7 @@ Cudd.Man.set_gc 10000
   (begin fun () -> printf "@.CUDD GC@." end)
   (begin fun () -> printf "@.CUDD REORDER@." end)
 ;;
-let env = Env.make cudd;;
+let env = Env.make ~symbol:Env.string_symbol cudd;;
 Env.add_typ_with env "enum2" (`Benum [|"l1"; "l2"; "l3"|]);;
 env;;
 Env.add_vars_with env [

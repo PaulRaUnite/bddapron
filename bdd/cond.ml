@@ -69,6 +69,9 @@ let make
     :
     ('a,'b,'c,'d) t
     =
+  for i=(Cudd.Man.get_bddvar_nb cudd) to bddindex0 + bddsize - 1 do
+    ignore (Cudd.Bdd.ithvar cudd i)
+  done;
   {
     symbol = symbol;
     compare_cond = compare_cond;
@@ -346,7 +349,7 @@ let lce (cond1:('a,'b,'c,'d) t) (cond2:('a,'b,'c,'d) t) : ('a,'b,'c,'d) t =
 let permutation12 (cond1:('a,'b,'c,'d) t) (cond2:('a,'b,'c,'d) t) : int array
   =
   assert(is_leq cond1 cond2);
-  let perm = Array.init cond1.bddindex (fun i -> i) in
+  let perm = Array.init (Cudd.Man.get_bddvar_nb cond1.cudd) (fun i -> i) in
   let offset = ref (cond2.bddindex0 - cond1.bddindex0) in
   PMappe.iter
     (begin fun cons2 (id2,b2) ->
@@ -366,7 +369,7 @@ let permutation12 (cond1:('a,'b,'c,'d) t) (cond2:('a,'b,'c,'d) t) : int array
 let permutation21 (cond2:('a,'b,'c,'d) t) (cond1:('a,'b,'c,'d) t) : int array
     =
   assert(is_leq cond1 cond2);
-  let perm = Array.init cond2.bddindex (fun i -> i) in
+  let perm = Array.init (Cudd.Man.get_bddvar_nb cond2.cudd) (fun i -> i) in
   let offset = ref (cond2.bddindex0 - cond1.bddindex0) in
   PMappe.iter
     (begin fun cons2 (id2,b2) ->
