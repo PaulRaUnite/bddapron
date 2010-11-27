@@ -117,23 +117,22 @@ module O = struct
     let tab = Bdd.Expr0.O.composition_of_lvarexpr env bsub in
     if not (PMappe.is_empty osub) then begin
       (* we now take care of other conditions *)
-      for id=0 to pred(Array.length tab) do
-	begin try
-	  let condition = Bdd.Cond.cond_of_idb cond (id,true) in
-	  let supp = Cond.support_cond env condition in
-	  let substitution = PMappe.interset osub supp in
-	  if not (PMappe.is_empty substitution) then begin
-	    change := true;
-	    let bdd = match condition with
-	      | `Apron x ->
-		  ApronexprDD.Condition.substitute env cond x substitution
-	    in
-	    tab.(id) <- bdd
+      PDMappe.iter
+	(begin fun condition (id,b) ->
+	  if b then begin
+	    let supp = Cond.support_cond env condition in
+	    let substitution = PMappe.interset osub supp in
+	    if not (PMappe.is_empty substitution) then begin
+	      change := true;
+	      let bdd = match condition with
+		| `Apron x ->
+		    ApronexprDD.Condition.substitute env cond x substitution
+	      in
+	      tab.(id) <- bdd
+	    end
 	  end
-	with Not_found ->
-	  ()
-	end
-      done;
+	end)
+	cond.Bdd.Cond.condidb
     end;
     ((if !change then Some tab else None), osub)
 
