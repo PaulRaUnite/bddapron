@@ -91,12 +91,29 @@ module O = struct
     | #Bdd.Expr0.t as x -> ((Bdd.Expr0.O.varmap x):>'a t)
     | `Apron x -> `Apron (Cudd.Mtbdd.varmap x)
 
+  let print
+      env cond
+      (fmt:Format.formatter) (expr:[<'a t])
+      =
+    match expr with
+    | `Bool x -> print_bdd env cond fmt x
+    | `Bint x -> Bdd.Int.print_minterm (print_bdd env cond) fmt x
+    | `Benum x -> Bdd.Enum.print_minterm (print_bdd env cond) env fmt x
+    | `Apron x -> ApronexprDD.print (print_bdd env cond) env.symbol fmt x
+
   let compose_of_lvarexpr
       env cond
       (substitution:('a * 'a t) list)
       :
       Cudd.Bdd.vt array option * ('a, 'a t) PMappe.t
       =
+    if true then printf "compose_of_lvarexpr@   %a@."
+      (Print.list
+	(fun fmt (var,expr) ->
+	  fprintf fmt "%a <- %a@ "
+	    env.Bdd.Env.symbol.Bdd.Env.print var
+	    (print env cond) expr))
+      substitution;
     let change = ref false in
     (* we first look at Boolean variables/conditions *)
     let (bsub,osub) =
@@ -265,7 +282,7 @@ module O = struct
     type 'a t = Cudd.Man.v Bdd.Expr0.O.Bint.t
     let of_expr = Bdd.Expr0.O.Bint.of_expr
     let to_expr = Bdd.Expr0.O.Bint.to_expr
-
+ 
     let of_int env cond = Bdd.Expr0.O.Bint.of_int env
     let var env cond = Bdd.Expr0.O.Bint.var env
     let ite env cond = Bdd.Expr0.O.Bint.ite env

@@ -212,9 +212,6 @@ module O = struct
       :
       ('a,'b,'c,'d,'e) t
       =
-    for i=(Cudd.Man.get_bddvar_nb cudd) to bddindex0 + bddsize - 1 do
-      ignore (Cudd.Bdd.ithvar cudd i)
-    done;
     {
       cudd = cudd;
       typdef = PMappe.empty symbol.compare;
@@ -441,7 +438,7 @@ let compose_opermutation (operm1:int array option) (operm2:int array option)
 	  Some (compose_permutation perm1 perm2)
 
 let permutation_of_offset (length:int) (offset:int) : int array =
-  let perm = Array.make length 0 in
+  let perm = Array.create length 0 in
   for i=0 to pred length do
     perm.(i) <- i+offset
   done;
