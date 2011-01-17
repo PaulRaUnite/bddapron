@@ -107,7 +107,7 @@ module O = struct
       :
       Cudd.Bdd.vt array option * ('a, 'a t) PMappe.t
       =
-    if true then printf "compose_of_lvarexpr@   %a@."
+    if false then printf "compose_of_lvarexpr@   %a@."
       (Print.list
 	(fun fmt (var,expr) ->
 	  fprintf fmt "%a <- %a@ "
@@ -282,7 +282,7 @@ module O = struct
     type 'a t = Cudd.Man.v Bdd.Expr0.O.Bint.t
     let of_expr = Bdd.Expr0.O.Bint.of_expr
     let to_expr = Bdd.Expr0.O.Bint.to_expr
- 
+
     let of_int env cond = Bdd.Expr0.O.Bint.of_int env
     let var env cond = Bdd.Expr0.O.Bint.var env
     let ite env cond = Bdd.Expr0.O.Bint.ite env
