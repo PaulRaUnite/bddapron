@@ -13,7 +13,7 @@ type 'a symbol = 'a Bdd.Env.symbol = {
 }
 
 type typ = [
-  | `Int 
+  | `Int
   | `Real
 ]
 
@@ -22,7 +22,7 @@ type ('a,'b) typ_of_var = 'a -> 'b constraint 'b = [> typ]
 exception Constant of int
 
 (*  ********************************************************************** *)
-(** {2 Expressions} *)
+(** {3 Expressions} *)
 (*  ********************************************************************** *)
 
 (* Scale the list such that the minimum rational it contains is with gcd equal
@@ -79,7 +79,7 @@ let reduce_list (list:(Mpqf.t * 'a) list) : (Mpqf.t * (Mpqf.t * 'a) list)
   (factor,nlist)
 
 (*  ==================================================================== *)
-(** {3 Linear expressions} *)
+(** {4 Linear expressions} *)
 (*  ==================================================================== *)
 
 module Lin = struct
@@ -270,15 +270,15 @@ module Lin = struct
   let to_linexpr1 man (env:Apron.Environment.t) e : Apron.Linexpr1.t =
     let res = Apron.Linexpr1.make ~sparse:true env in
     let list = List.map
-      (fun (mpqf,name) -> 
+      (fun (mpqf,name) ->
 	(Apron.Coeff.s_of_mpqf mpqf,
 	 Apron.Var.of_string (man.marshal name))
       )
       e.lterm
     in
     Apron.Linexpr1.set_list res list
-      (if (Mpqf.sgn e.cst)=0 
-      then None else 
+      (if (Mpqf.sgn e.cst)=0
+      then None else
 	Some(Apron.Coeff.s_of_mpqf e.cst))
     ;
     res
@@ -286,7 +286,7 @@ module Lin = struct
 end
 
 (*  ==================================================================== *)
-(** {3 Polynomial expressions} *)
+(** {4 Polynomial expressions} *)
 (*  ==================================================================== *)
 
 module Poly = struct
@@ -295,7 +295,7 @@ module Poly = struct
   type 'a monomial = 'a varexp list
   type 'a term = Mpqf.t * 'a monomial
   type 'a t = 'a term list
-    
+
   let is_dependent_on_integer_only typ_of_var (e:'a t) =
     List.for_all
       (begin fun (c,mon) ->
@@ -540,7 +540,7 @@ module Poly = struct
 end
 
 (*  ==================================================================== *)
-(** {3 Tree expressions} *)
+(** {4 Tree expressions} *)
 (*  ==================================================================== *)
 
 module Tree = struct
@@ -574,7 +574,7 @@ module Tree = struct
 
   type 'a t =
     | Cst of Apron.Coeff.t
-    | Var of 'a 
+    | Var of 'a
     | Unop of unop * 'a t * typ * round
     | Binop of binop * 'a t * 'a t * typ * round
 
@@ -585,7 +585,7 @@ module Tree = struct
   let equal_int t b = match t with
     | Cst(coeff) when Apron.Coeff.equal_int coeff b -> true
     | _ -> false
-	
+
   let is_exact = function
     | Cst _ | Var _ -> true
     | Unop(Neg,_,_,_) -> true
@@ -597,22 +597,22 @@ module Tree = struct
     | _ -> false
 
   let negate = function
-    | Unop(Neg,e,_,_) -> e 
+    | Unop(Neg,e,_,_) -> e
     | _ as e -> Unop(Neg,e,Real,Rnd)
 
   let add ?(typ=Real) ?(round=Rnd) e1 e2 =
-    if is_zero e1 then e2 
-    else if is_zero e2 then e1 
+    if is_zero e1 then e2
+    else if is_zero e2 then e1
     else Binop(Add,e1,e2,typ,round)
 
   let sub ?(typ=Real) ?(round=Rnd) e1 e2 =
-    if is_zero e1 then negate e2 
-    else if is_zero e2 then e1 
+    if is_zero e1 then negate e2
+    else if is_zero e2 then e1
     else Binop(Sub,e1,e2,typ,round)
 
   let mul ?(typ=Real) ?(round=Rnd) e1 e2 =
     if is_zero e1 then e1
-    else if is_zero e2 then e2 
+    else if is_zero e2 then e2
     else if equal_int e1 1 then e2
     else if equal_int e2 1 then e1
     else if equal_int e1 (-1) then negate e2
@@ -645,9 +645,9 @@ module Tree = struct
 
   let rec to_expr man = function
     | Cst x -> Apron.Texpr1.Cst x
-    | Var(var) -> 
+    | Var(var) ->
 	Apron.Texpr1.Var(Apron.Var.of_string (man.marshal var))
-    | Unop(op,e,t,r) -> 
+    | Unop(op,e,t,r) ->
 	Apron.Texpr1.Unop(op,(to_expr man e), t,r)
     | Binop(op,e1,e2,t,r) ->
 	Apron.Texpr1.Binop(op,(to_expr man e1),(to_expr man e2), t,r)
@@ -686,7 +686,7 @@ module Tree = struct
 	(print man) e2
 	(if par2 then ")" else "")
 
-  let rec compare man x y = 
+  let rec compare man x y =
     let rec compare x y =
       match (x,y) with
       | (Cst x), (Cst y) -> Apron.Coeff.cmp x y
@@ -696,19 +696,19 @@ module Tree = struct
 	let cmp = man.compare x y in
 	if cmp<0 then -2 else if cmp>0 then 2 else 0
       | (Var _), _ -> -1
-      | (Unop _), (Cst _) 
+      | (Unop _), (Cst _)
       | (Unop _), (Var _) -> 1
       | (Unop(op1,e1,t1,r1),Unop(op2,e2,t2,r2)) ->
 	  let res = Pervasives.compare (op1,t1,r1) (op2,t2,r2) in
-	  if res<>0 then 
+	  if res<>0 then
 	    res
-	  else 
-	    compare e1 e2 
+	  else
+	    compare e1 e2
       | (Unop _), (Binop _) -> -1
       | (Binop(op1,ea1,eb1,t1,r1),Binop(op2,ea2,eb2,t2,r2)) ->
 	  let res = Pervasives.compare (op1,t1,r1) (op2,t2,r2) in
 	  if res<>0 then res
-	  else 
+	  else
 	    let res = compare ea1 ea2 in
 	    if res<>0 then res
 	    else
@@ -721,7 +721,7 @@ module Tree = struct
 end
 
 (*  ==================================================================== *)
-(** {3 Conversions} *)
+(** {4 Conversions} *)
 (*  ==================================================================== *)
 
 let rec lin_of_poly man (p:'a Poly.t) : 'a Lin.t = match p with
@@ -738,7 +738,7 @@ let rec lin_of_poly man (p:'a Poly.t) : 'a Lin.t = match p with
 let rec lin_of_tree man (x:'a Tree.t) : 'a Lin.t =
   if not (Tree.is_exact x) then raise Exit;
   match x with
-  | Tree.Cst x -> 
+  | Tree.Cst x ->
       begin match x with
       | Apron.Coeff.Scalar (Apron.Scalar.Mpqf x) ->
 	  Lin.cst x
@@ -768,7 +768,7 @@ let rec lin_of_tree man (x:'a Tree.t) : 'a Lin.t =
 	    (Mpzf.cmp_int (Mpqf.get_den l1.Lin.cst) 1) = 0 &&
 	    (Mpzf.cmp_int (Mpqf.get_den l2.Lin.cst) 1) = 0 then
 	      Lin.cst
-		(Mpqf.of_mpzf
+		(Mpqf.of_mpz
 		  (Mpzf.gmod
 		    (Mpqf.get_num l1.Lin.cst)
 		    (Mpqf.get_num l1.Lin.cst)))
@@ -780,7 +780,7 @@ let rec lin_of_tree man (x:'a Tree.t) : 'a Lin.t =
 let rec poly_of_tree man (x:'a Tree.t) : 'a Poly.t =
   if not (Tree.is_exact x) then raise Exit;
   match x with
-  | Tree.Cst x -> 
+  | Tree.Cst x ->
       begin match x with
       | Apron.Coeff.Scalar (Apron.Scalar.Mpqf x) ->
 	  Poly.cst x
@@ -802,9 +802,9 @@ let rec poly_of_tree man (x:'a Tree.t) : 'a Poly.t =
 let tree_of_lin (lin:'a Lin.t) : 'a Tree.t =
   List.fold_left
     (begin fun res (c,v) ->
-      Tree.add 
+      Tree.add
 	res
-	(Tree.mul 
+	(Tree.mul
 	  (Tree.Cst (Apron.Coeff.s_of_mpqf c))
 	  (Tree.Var v))
     end)
@@ -828,7 +828,7 @@ let tree_of_poly (poly:'a Poly.t) : 'a Tree.t =
   List.fold_left
     (begin fun res (c,mon) ->
       Tree.add res
-	(Tree.mul 
+	(Tree.mul
 	  (Tree.Cst(Apron.Coeff.s_of_mpqf c))
 	  (tree_of_monomial mon))
     end)
@@ -836,7 +836,7 @@ let tree_of_poly (poly:'a Poly.t) : 'a Tree.t =
     poly
 
 (*  ********************************************************************** *)
-(** {2 General expressions and operations} *)
+(** {3 General expressions and operations} *)
 (*  ********************************************************************** *)
 
 type 'a t =
@@ -896,7 +896,7 @@ let var man typ_of_var x =
 let zero = Lin(Lin.zero)
 let one = Lin(Lin.one)
 
-let cst (x:Apron.Coeff.t) = 
+let cst (x:Apron.Coeff.t) =
   match x with
   | Apron.Coeff.Scalar (Apron.Scalar.Mpqf x) ->
       Lin(Lin.cst x)
@@ -996,7 +996,7 @@ let compare man e1 e2 =  match (e1,e2) with
   | (Poly _, Lin _) -> 2
   | (Poly e1, Poly e2) -> Poly.compare man e1 e2
   | (Poly _, Tree _) -> -2
-  | (Tree e1, Tree e2) -> Tree.compare man e1 e2 
+  | (Tree e1, Tree e2) -> Tree.compare man e1 e2
   | (Tree _, _) -> 2
 
 (* Assume normalized expressions *)
@@ -1035,18 +1035,18 @@ let extract_cst expr =
       end
   | _ -> raise (Invalid_argument "")
 
-let extract_fstcoeff expr = 
+let extract_fstcoeff expr =
   match expr with
-  | Lin e ->  
+  | Lin e ->
       if e.Lin.lterm <> [] then
 	fst (List.hd e.Lin.lterm)
       else if Mpqf.sgn e.Lin.cst<>0 then
 	e.Lin.cst
-      else 
+      else
 	Mpqf.of_int 0
   | Poly lterm ->
       begin match lterm with
-      | (_,[])::term::_ 
+      | (_,[])::term::_
       | term::_ ->
 	  fst term
       | [] ->
@@ -1060,9 +1060,9 @@ let extract_fstcoeff expr =
 	      let sgn =
 		match coeff with
 		| Apron.Coeff.Scalar scalar -> Apron.Scalar.sgn scalar
-		| Apron.Coeff.Interval itv -> 
+		| Apron.Coeff.Interval itv ->
 		    let sgn = Apron.Scalar.sgn itv.Apron.Interval.inf in
-		    if sgn<>0 
+		    if sgn<>0
 		    then sgn
 		    else Apron.Scalar.sgn itv.Apron.Interval.sup
 	      in
@@ -1074,7 +1074,7 @@ let extract_fstcoeff expr =
 	| Tree.Binop(_,e1,e2,_,_) ->
 	    match parcours e1 with
 	    | None -> parcours e2
-	    | _ as res -> res 
+	    | _ as res -> res
       in
       match parcours expr with
       | Some coeff -> coeff
@@ -1095,12 +1095,12 @@ let modify_cst expr cst = match expr with
   | _ -> raise (Invalid_argument "")
 
 module Condition = struct
-  type typ = Apron.Tcons1.typ = 
+  type typ = Apron.Tcons1.typ =
     EQ | SUPEQ | SUP | DISEQ | EQMOD of Apron.Scalar.t
 
   type 'a t = typ * 'a expr
 
-  let print_typ fmt typ = 
+  let print_typ fmt typ =
     pp_print_string fmt (Apron.Lincons0.string_of_typ typ)
 
   let print man fmt (cons:'a t) =
@@ -1135,7 +1135,7 @@ module Condition = struct
 	      let
 		  ncst = Mpzf.fdiv_q (Mpqf.get_num cst) (Mpqf.get_den cst)
 	      in
-	      let ncst = Mpqf.of_mpzf ncst in
+	      let ncst = Mpqf.of_mpz ncst in
 	      `Cond(SUPEQ,modify_cst expr ncst)
 	  | (SUP,true) ->
 	      let ncst = Mpqf.sub cst (Mpqf.of_int 1) in
@@ -1146,7 +1146,7 @@ module Condition = struct
 	end
 	else
 	  `Cond(cons)
-	    
+
   let make typ_of_var typ expr =
     begin try
       let nexpr = normalize_as_constraint expr in
@@ -1185,7 +1185,7 @@ module Condition = struct
     let sgn = compare man e1 e2 in
     let asgn = abs sgn in
     match (t1,t2) with
-    | (EQMOD m1, EQMOD m2) -> 
+    | (EQMOD m1, EQMOD m2) ->
 	if asgn=0 then
 	  let cmp = Apron.Scalar.cmp m1 m2 in
 	  if cmp > 0 then 2 else (-2)
@@ -1195,12 +1195,12 @@ module Condition = struct
 	3
     | (_, EQMOD _) ->
 	-3
-    | (_,_) -> 
+    | (_,_) ->
 	if asgn >= 2 then
 	  (if sgn>0 then 3 else -3)
-	else if asgn = 1 then begin 
+	else if asgn = 1 then begin
 	  match (t1,t2) with
-	  | (EQMOD _, _) 
+	  | (EQMOD _, _)
 	  | (_, EQMOD _) -> failwith ""
 	  | (DISEQ,_) -> 2*sgn
 	  | (EQ,DISEQ) -> sgn
@@ -1213,7 +1213,7 @@ module Condition = struct
 	  else
 	    (* order SUP,EQ,DISEQ,SUPEQ *)
 	    begin match (t1,t2) with
-	    | (EQMOD _, _) 
+	    | (EQMOD _, _)
 	    | (_, EQMOD _) -> failwith ""
 
 	    | (SUP,SUPEQ) -> -1
@@ -1233,7 +1233,7 @@ module Condition = struct
 	    | _ -> assert(t1=t2); 0
 	    end
 	end
-	  
+
   let to_tcons1 man env (typ,expr) =
     Apron.Tcons1.make (to_texpr1 man env expr) typ
 

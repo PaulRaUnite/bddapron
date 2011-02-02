@@ -1,4 +1,4 @@
-(** *)
+(** Boolean (abstract) domain with normalized environment *)
 
 (* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
@@ -7,7 +7,7 @@ open Format
 open Env
 
 (*  ********************************************************************** *)
-(** {2 Opened signature and Internal functions} *)
+(** {3 Opened signature and Internal functions} *)
 (*  ********************************************************************** *)
 
 module O = struct
@@ -111,7 +111,7 @@ module O = struct
 end
 
 (*  ********************************************************************** *)
-(** {2 Closed signature} *)
+(** {3 Closed signature} *)
 (*  ********************************************************************** *)
 
 type ('a,'b) t = ('a,'b) Expr1.Bool.t

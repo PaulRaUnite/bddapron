@@ -33,7 +33,7 @@ let error str = raise (Typing str)
 
 
 (*  ********************************************************************** *)
-(** {2 Operations} *)
+(** {3 Operations} *)
 (*  ********************************************************************** *)
 
 (** Test whether the register holds a constant value *)
@@ -42,7 +42,7 @@ let is_cst a = Reg.is_cst a.reg
 
 (** This function extends the size of a signed or unsigned integer. *)
 
-let extend man (n:int) (a:'a t) :'a t 
+let extend man (n:int) (a:'a t) :'a t
   =
   { signed = a.signed;
     reg = Reg.extend man ~signed:a.signed n a.reg
@@ -52,19 +52,19 @@ let extend man (n:int) (a:'a t) :'a t
 (** [normalize] sets to the same size a pair of integers. [adjust1] does the
   same, but add one more bit. *)
 
-let adjust1 (a:'a t) (b:'a t) : 'a t * 'a t 
+let adjust1 (a:'a t) (b:'a t) : 'a t * 'a t
   =
   let la = Array.length a.reg and
-      lb = Array.length b.reg 
+      lb = Array.length b.reg
   in
   let (ea,eb) =
     if la > lb then (1, 1+la-lb)
     else if la < lb then (1+lb-la,1)
-    else (1,1)  
+    else (1,1)
   in
   (extend ea a, extend eb b)
 
-let normalize (a:'a t) (b:'a t) : 'a t * 'a t 
+let normalize (a:'a t) (b:'a t) : 'a t * 'a t
   =
   if a.signed = b.signed && (Array.length a.reg)=(Array.length b.reg) then
     (a,b)
@@ -85,22 +85,22 @@ let check (a:'a t) (b:'a t) : unit
   if not (a.signed = b.signed && (Array.length a.reg)=(Array.length b.reg)) then
     error "bounded integer of different types"
 
-let rec neg (a:'a t) : 'a t = 
+let rec neg (a:'a t) : 'a t =
   if a.signed then
     { signed = true;
       reg = Reg.neg a.reg }
   else
     error "Bddint.neg: negation of an unsigned integer"
-      
+
 let succ a =
   if a.reg=[||] then a
   else
-    let man = Cudd.Bdd.manager a.reg.(0) in 
+    let man = Cudd.Bdd.manager a.reg.(0) in
     { signed = a.signed; reg = fst (Reg.succ man a.reg) }
 let pred a =
   if a.reg=[||] then a
   else
-    let man = Cudd.Bdd.manager a.reg.(0) in 
+    let man = Cudd.Bdd.manager a.reg.(0) in
     { signed = a.signed; reg = fst (Reg.pred man a.reg) }
 
 let add a b =
@@ -117,7 +117,7 @@ let sub a b =
     let man = Cudd.Bdd.manager a.reg.(0) in
     let (z,_,_) = Reg.sub man a.reg b.reg in
     { signed = a.signed; reg = z }
-      
+
 let mul a b =
   check a b;
   if a.reg=[||] then
@@ -126,7 +126,7 @@ let mul a b =
     let man = Cudd.Bdd.manager a.reg.(0) in
     let size = Array.length a.reg in
     let dfalse = Cudd.Bdd.dfalse man in
-    let (signa,rega) = 
+    let (signa,rega) =
       if a.signed then
 	let reg = Array.copy a.reg in
 	reg.(size-1) <- dfalse;
@@ -134,7 +134,7 @@ let mul a b =
       else
 	(dfalse,a.reg)
     in
-    let (signb,regb) = 
+    let (signb,regb) =
       if b.signed then
 	let reg = Array.copy b.reg in
 	reg.(size-1) <- dfalse;
@@ -156,7 +156,7 @@ let shift_left n a =
   if a.reg=[||] then a
   else
     let man = Cudd.Bdd.manager a.reg.(0) in
-    { 
+    {
       signed = a.signed;
       reg = fst (Reg.shift_left man n a.reg)
     }
@@ -166,7 +166,7 @@ let shift_right n a =
     let man = Cudd.Bdd.manager a.reg.(0) in
     {
       signed = a.signed;
-      reg = fst ((if a.signed then Reg.shift_right else Reg.shift_right_logical) man n a.reg) 
+      reg = fst ((if a.signed then Reg.shift_right else Reg.shift_right_logical) man n a.reg)
     }
 
 let scale n a =
@@ -179,7 +179,7 @@ let ite bdd a b =
     reg = Reg.ite bdd a.reg b.reg }
 
 (*  ********************************************************************** *)
-(** {2 Predicates} *)
+(** {3 Predicates} *)
 (*  ********************************************************************** *)
 
 let zero man a = Reg.zero man a.reg
@@ -191,7 +191,7 @@ let equal man a b =
 let greatereq man a b =
   check a b;
   (if a.signed then Reg.greatereq else Reg.highereq) man a.reg b.reg
-    
+
 let greater man a b =
   check a b;
   (if a.signed then Reg.greater else Reg.higher) man a.reg b.reg
@@ -200,7 +200,7 @@ let of_int man sign size cst =
   { signed = sign;
     reg = Reg.of_int man size cst }
 
-let to_int a = 
+let to_int a =
   Reg.to_int a.signed a.reg
 
 let equal_int man a cst =
@@ -216,7 +216,7 @@ let greater_int man a cst =
   greater man a b
 
 (*  *********************************************************************** *)
-(** {2 Decomposition in guarded form} *)
+(** {3 Decomposition in guarded form} *)
 (*  *********************************************************************** *)
 
 module Minterm = struct
@@ -240,14 +240,14 @@ module Minterm = struct
     in
     parcours (Array.copy minterm) 0
 
-  let map ~(signed:bool) (f:int -> 'a) (minterm:Reg.Minterm.t) : 'a list 
+  let map ~(signed:bool) (f:int -> 'a) (minterm:Reg.Minterm.t) : 'a list
     =
     let res = ref [] in
     let nf minterm = begin res := (f minterm) :: !res end in
     iter ~signed nf minterm;
     List.rev !res
 
-end 
+end
 
 let guard_of_int man (x:'a t) (code:int) : 'a Cudd.Bdd.t
   =
@@ -258,7 +258,7 @@ let guardints man (x:'a t) : ('a Cudd.Bdd.t * int) list
   Reg.guardints man ~signed:x.signed x.reg
 
 (*  ********************************************************************** *)
-(** {2 Evaluation} *)
+(** {3 Evaluation} *)
 (*  ********************************************************************** *)
 
 let cofactor x bdd = { x with reg = Reg.cofactor x.reg bdd }
@@ -266,7 +266,7 @@ let restrict x bdd = { x with reg = Reg.restrict x.reg bdd }
 let tdrestrict x bdd = { x with reg = Reg.tdrestrict x.reg bdd }
 
 (*  ********************************************************************** *)
-(** {2 Printing} *)
+(** {3 Printing} *)
 (*  ********************************************************************** *)
 
 open Format
@@ -278,6 +278,7 @@ let print f fmt t =
 let print_minterm print_bdd fmt t =
   Reg.print_minterm ~signed:t.signed print_bdd fmt t.reg
 
-let permute x tab = { x with reg = Reg.permute x.reg tab }
+let permute ?memo x tab = { x with reg = Reg.permute ?memo x.reg tab }
 let varmap x = { x with reg = Reg.varmap x.reg }
-let vectorcompose tab x =  { x with reg = Reg.vectorcompose tab x.reg }
+let vectorcompose ?memo tab x =
+  { x with reg = Reg.vectorcompose ?memo tab x.reg }

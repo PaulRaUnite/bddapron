@@ -1,10 +1,10 @@
-(** Finite-type expressions linked to normalized environments *)
+(** Finite-type expressions with normalized environments *)
 
 (* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 (*  ********************************************************************** *)
-(** {2 Expressions} *)
+(** {3 Expressions} *)
 (*  ********************************************************************** *)
 
 type ('a,'b) t = (('a,'b) Env.t, 'b Expr0.t) Env.value
@@ -18,7 +18,7 @@ type 'a vt = ('a,Cudd.Man.v) t
     integer and enumerated types expressions *)
 
 (*  ====================================================================== *)
-(** {3 Boolean expressions} *)
+(** {4 Boolean expressions} *)
 (*  ====================================================================== *)
 
 module Bool : sig
@@ -90,7 +90,7 @@ module Bool : sig
 end
 
 (*  ====================================================================== *)
-(** {3 Bounded integer expressions} *)
+(** {4 Bounded integer expressions} *)
 (*  ====================================================================== *)
 
 module Bint : sig
@@ -152,7 +152,7 @@ module Bint : sig
 end
 
 (*  ====================================================================== *)
-(** {3 Enumerated expressions} *)
+(** {4 Enumerated expressions} *)
 (*  ====================================================================== *)
 
 module Benum : sig
@@ -198,7 +198,7 @@ module Benum : sig
 end
 
 (*  ====================================================================== *)
-(** {3 General expressions} *)
+(** {4 General expressions} *)
 (*  ====================================================================== *)
 
 val typ_of_expr : ('a,'b) t -> 'a Env.typ
@@ -249,7 +249,7 @@ val tdrestrict : ('a,'b) t -> ('a,'b) Bool.t -> ('a,'b) t
 val print : Format.formatter -> ('a,'b) t -> unit
 
 (*  ====================================================================== *)
-(** {3 List of expressions} *)
+(** {4 List of expressions} *)
 (*  ====================================================================== *)
 
 module List : sig
@@ -274,7 +274,7 @@ module List : sig
 end
 
 (*  ********************************************************************** *)
-(** {2 Opened signature and Internal functions} *)
+(** {3 Opened signature and Internal functions} *)
 (*  ********************************************************************** *)
 
 (** We provide here the same functions and modules as before, but with opened
@@ -285,7 +285,7 @@ end
 module O : sig
 
   (*  ==================================================================== *)
-  (** {3 Expressions} *)
+  (** {4 Expressions} *)
   (*  ==================================================================== *)
 
   type ('a,'b,'c) t = ('b, 'c Expr0.t) Env.value
@@ -298,7 +298,7 @@ module O : sig
   type ('a,'b) vt = ('a,'b,Cudd.Man.v) t
 
   (*  -------------------------------------------------------------------- *)
-  (** {4 Boolean expressions} *)
+  (** {5 Boolean expressions} *)
   (*  -------------------------------------------------------------------- *)
 
   module Bool : sig
@@ -365,7 +365,7 @@ module O : sig
   end
 
   (*  -------------------------------------------------------------------- *)
-  (** {4 Bounded integer expressions} *)
+  (** {5 Bounded integer expressions} *)
   (*  -------------------------------------------------------------------- *)
 
   module Bint : sig
@@ -421,7 +421,7 @@ module O : sig
   end
 
   (*  -------------------------------------------------------------------- *)
-  (** {4 Enumerated expressions} *)
+  (** {5 Enumerated expressions} *)
   (*  -------------------------------------------------------------------- *)
 
   module Benum : sig
@@ -461,7 +461,7 @@ module O : sig
   end
 
   (*  -------------------------------------------------------------------- *)
-  (** {4 General expressions} *)
+  (** {5 General expressions} *)
   (*  -------------------------------------------------------------------- *)
 
   val typ_of_expr : ('a,'b,'c) t -> 'a Env.typ
@@ -507,7 +507,7 @@ module O : sig
   val print : Format.formatter -> ('a,'b,'c) t -> unit
 
   (*  -------------------------------------------------------------------- *)
-  (** {4 List of expressions} *)
+  (** {5 List of expressions} *)
   (*  -------------------------------------------------------------------- *)
 
   module List : sig

@@ -47,11 +47,11 @@ resized to the size of the larger one, possibly with one more bit if they are
 not of the same type (signed or unsigned).
 *)
 
-(** {2 Conversion of integers} *)
+(** {3 Conversion of integers} *)
 
 val extend: 'a Cudd.Man.t -> int -> 'a t -> 'a t
 
-(** {2 Operations on integers} *)
+(** {3 Operations on integers} *)
 
 val neg: 'a t -> 'a t
 val succ: 'a t -> 'a t
@@ -64,7 +64,7 @@ val shift_right: int -> 'a t -> 'a t
 val scale: int -> 'a t -> 'a t
 val ite: 'a Cudd.Bdd.t -> 'a t -> 'a t -> 'a t
 
-(** {2 Predicates on integers} *)
+(** {3 Predicates on integers} *)
 
 val is_cst: 'a t -> bool
 val zero: 'a Cudd.Man.t -> 'a t -> 'a Cudd.Bdd.t
@@ -72,7 +72,7 @@ val equal: 'a Cudd.Man.t -> 'a t -> 'a t -> 'a Cudd.Bdd.t
 val greatereq: 'a Cudd.Man.t -> 'a t -> 'a t -> 'a Cudd.Bdd.t
 val greater: 'a Cudd.Man.t -> 'a t -> 'a t -> 'a Cudd.Bdd.t
 
-(** {2 Predicates involving constant integers} *)
+(** {3 Predicates involving constant integers} *)
 
 val of_int: 'a Cudd.Man.t -> bool -> int -> int -> 'a t
 val to_int: 'a t -> int
@@ -80,15 +80,15 @@ val equal_int: 'a Cudd.Man.t -> 'a t -> int -> 'a Cudd.Bdd.t
 val greatereq_int: 'a Cudd.Man.t -> 'a t -> int -> 'a Cudd.Bdd.t
 val greater_int: 'a Cudd.Man.t -> 'a t -> int -> 'a Cudd.Bdd.t
 
-(** {2 Decomposition in guarded form} *)
+(** {3 Decomposition in guarded form} *)
 
 module Minterm : sig
   val iter: signed:bool -> (int -> unit) -> Reg.Minterm.t -> unit
     (** Iterate the function on all the integer values represented by the
-        argument minterm. *)
+	argument minterm. *)
   val map: signed:bool -> (int -> 'a) -> Reg.Minterm.t -> 'a list
     (** Apply the function to all integer values represented by the
-        argument minterm and return the list of the results. *)
+	argument minterm and return the list of the results. *)
 end
 
 val guard_of_int: 'a Cudd.Man.t -> 'a t -> int -> 'a Cudd.Bdd.t
@@ -96,28 +96,29 @@ val guard_of_int: 'a Cudd.Man.t -> 'a t -> int -> 'a Cudd.Bdd.t
 val guardints: 'a Cudd.Man.t -> 'a t -> ('a Cudd.Bdd.t * int) list
   (** Return the list [g -> n] represented by the BDD register. *)
 
-(** {2 Evaluation} *)
+(** {3 Evaluation} *)
 val cofactor : 'a t -> 'a Cudd.Bdd.t -> 'a t
 val restrict : 'a t -> 'a Cudd.Bdd.t -> 'a t
 val tdrestrict : 'a t -> 'a Cudd.Bdd.t -> 'a t
 
-(** {2 Printing} *)
+(** {3 Printing} *)
 
-val print: 
-  (Format.formatter -> int -> unit) -> 
+val print:
+  (Format.formatter -> int -> unit) ->
   Format.formatter -> 'a t -> unit
   (** [print f fmt t] prints the register [t] using the formatter
     [fmt] and the function [f] to print BDDs indices. *)
-val print_minterm: 
-  (Format.formatter -> 'a Cudd.Bdd.t -> unit) -> 
+val print_minterm:
+  (Format.formatter -> 'a Cudd.Bdd.t -> unit) ->
   Format.formatter -> 'a t -> unit
   (** [print_minterm f fmt t] prints the register [t] using the formatter
     [fmt] and the function [f] to convert BDDs indices to
     names. *)
 
-val permute : 'a t -> int array -> 'a t
-  (** Permutation (scale [Cudd.Bdd.permute]) *)
+val permute : ?memo:Cudd.Memo.t -> 'a t -> int array -> 'a t
+  (** Permutation (scale [Cudd.Bdd.permute] and [Cudd.Bdd.permute_memo]) *)
 val varmap : 'a t -> 'a t
   (** Permutation (scale [Cudd.Bdd.varmap]) *)
-val vectorcompose : 'a Cudd.Bdd.t array -> 'a t -> 'a t
-  (** Composition (scale [Cudd.Bdd.vectorcompose]) *)
+val vectorcompose : ?memo:Cudd.Memo.t -> 'a Cudd.Bdd.t array -> 'a t -> 'a t
+  (** Composition (scale [Cudd.Bdd.vectorcompose] and
+      [Cudd.Bdd.vectorcompose_memo]) *)

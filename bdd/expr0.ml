@@ -28,13 +28,13 @@ type vt = Cudd.Man.v t
 
 
 (*  ********************************************************************** *)
-(** {2 Opened signatures and Internal functions} *)
+(** {3 Opened signatures and Internal functions} *)
 (*  ********************************************************************** *)
 
 module O = struct
 
   (*  ====================================================================== *)
-  (** {3 Internal functions} *)
+  (** {4 Internal functions} *)
   (*  ====================================================================== *)
 
   let register_of_var (env:('a,'b,'c,'d,'e) Env.O.t) (var:'a) : 'd Cudd.Bdd.t array
@@ -69,7 +69,7 @@ module O = struct
     end
 
   (*  ---------------------------------------------------------------------- *)
-  (** {4 Accessors} *)
+  (** {5 Accessors} *)
   (*  ---------------------------------------------------------------------- *)
 
   let mem_id (env:('a,'b,'c,'d,'e) Env.O.t) (id:int) : bool =
@@ -91,7 +91,7 @@ module O = struct
     | `Benum(x) -> x.Enum.reg
 
   (*  ====================================================================== *)
-  (** {3 Conversion to expressions} *)
+  (** {4 Conversion to expressions} *)
   (*  ====================================================================== *)
 
   module Expr = struct
@@ -146,7 +146,7 @@ module O = struct
       | Dtrue -> Dtrue
 
     (*  -------------------------------------------------------------------- *)
-    (** {4 Internal conversion functions} *)
+    (** {5 Internal conversion functions} *)
     (*  -------------------------------------------------------------------- *)
 
     (** In the following functions, the argument minterm is the slice of a global
@@ -197,7 +197,7 @@ module O = struct
       end
 
     (*  -------------------------------------------------------------------- *)
-    (** {4 Converts a BDD condition} *)
+    (** {5 Converts a BDD condition} *)
     (*  -------------------------------------------------------------------- *)
 
     let term_of_idcondb (env:('a,'b,'c,'d,'e) Env.O.t) (idcondb:int*bool) : 'a term
@@ -234,7 +234,7 @@ module O = struct
 	Texternal(idcondb)
 
     (*  -------------------------------------------------------------------- *)
-    (** {4 Converts a cube to a conjunction} *)
+    (** {5 Converts a cube to a conjunction} *)
     (*  -------------------------------------------------------------------- *)
 
     let bool_of_tbool = function
@@ -306,8 +306,8 @@ module O = struct
       with Exit ->
 	Cfalse
 
-    (*  -------------------------------------------------------------------- *)     
-    (** {4 Converts a full BDD} *)
+    (*  -------------------------------------------------------------------- *)
+    (** {5 Converts a full BDD} *)
     (*  -------------------------------------------------------------------- *)
 
     let disjunction_of_bdd
@@ -338,7 +338,7 @@ module O = struct
       end
 
     (*  -------------------------------------------------------------------- *)
-    (** {4 Printing} *)
+    (** {5 Printing} *)
     (*  -------------------------------------------------------------------- *)
 
     let print_term ?print_external_idcondb (env:('a,'b,'c,'d,'e) Env.O.t) fmt (term:'a term) =
@@ -408,11 +408,11 @@ module O = struct
 
 
   (*  ====================================================================== *)
-  (** {3 Printing} *)
+  (** {4 Printing} *)
   (*  ====================================================================== *)
 
   (*  ---------------------------------------------------------------------- *)
-  (** {4 Printing a minterm} *)
+  (** {5 Printing a minterm} *)
   (*  ---------------------------------------------------------------------- *)
 
   (** Here the full minterm is inspected and taken into account. *)
@@ -428,7 +428,7 @@ module O = struct
     Expr.print_conjunction ?print_external_idcondb env fmt conjunction
 
   (*  ---------------------------------------------------------------------- *)
-  (** {4 Printing a full BDD or IDD} *)
+  (** {5 Printing a full BDD or IDD} *)
   (*  ---------------------------------------------------------------------- *)
 
   let simplify env (bdd:'a Cudd.Bdd.t) =
@@ -479,7 +479,7 @@ module O = struct
       end
 
   (*  ---------------------------------------------------------------------- *)
-  (** {4 Conditions} *)
+  (** {5 Conditions} *)
   (*  ---------------------------------------------------------------------- *)
 
   let print_idcondb ?print_external_idcondb (env:('a,'b,'c,'d,'e) Env.O.t) fmt (idcondb:int*bool)
@@ -494,7 +494,7 @@ module O = struct
     print_idcondb ?print_external_idcondb env fmt (idcond,true)
 
   (*  ---------------------------------------------------------------------- *)
-  (** {4 Expressions} *)
+  (** {5 Expressions} *)
   (*  ---------------------------------------------------------------------- *)
 
   let print ?print_external_idcondb (env:('a,'b,'c,'d,'e) Env.O.t) (fmt:Format.formatter) expr : unit =
@@ -507,7 +507,7 @@ module O = struct
 	Enum.print_minterm (print_bdd ?print_external_idcondb env) env fmt x
 
   (*  ---------------------------------------------------------------------- *)
-  (** {4 Miscellaneous} *)
+  (** {5 Miscellaneous} *)
   (*  ---------------------------------------------------------------------- *)
 
   (** Same as [Cudd.Bdd.cube_of_bdd], but keep only the the values of
@@ -589,7 +589,7 @@ module O = struct
     !res
 
   (* ********************************************************************** *)
-  (** {3 Expressions} *)
+  (** {4 Expressions} *)
   (*  ====================================================================== *)
 
   let bddsupport (env:('a,'b,'c,'d,'e) Env.O.t) (set:'a list)  : 'd Cudd.Bdd.t
@@ -710,21 +710,34 @@ module O = struct
     ;
     res
 
-  let permute (expr:'a expr) (permutation:int array) : 'a expr
-      =
-    mapmonop (fun bdd -> Cudd.Bdd.permute bdd permutation) expr
-
-  let permute_list (lexpr:'a expr list) (permutation:int array) : 'a expr list
-      =
-    List.map (fun e -> permute e permutation) lexpr
-
   let varmap (expr:'a expr) : 'a expr
       =
     mapmonop Cudd.Bdd.varmap expr
 
-  let compose (expr:'a expr) (composition:'a Cudd.Bdd.t array) : 'a expr
+  let permute ?memo (expr:'a expr) (permutation:int array) : 'a expr
       =
-    mapmonop (Cudd.Bdd.vectorcompose composition) expr
+    match expr with
+    | `Bool x -> `Bool(Cudd.Bdd.permute ?memo x permutation)
+    | `Bint x -> `Bint(Int.permute ?memo x permutation)
+    | `Benum x -> `Benum(Enum.permute ?memo x permutation)
+
+  let permute_list ?memo lexpr (permutation:int array) =
+    match memo with
+    | Some memo -> 
+        List.map (fun x -> permute ~memo x permutation) lexpr
+    | None ->
+	let hash = Cudd.Hash.create 1 in
+	let memo = Cudd.Memo.Hash hash in
+	let res = List.map (fun x -> permute ~memo x permutation) lexpr in
+	Cudd.Hash.clear hash;
+	res
+
+  let compose ?memo (expr:'a expr) (composition:'a Cudd.Bdd.t array) : 'a expr
+      =
+    match expr with
+    | `Bool x -> `Bool(Cudd.Bdd.vectorcompose ?memo composition x)
+    | `Bint x -> `Bint(Int.vectorcompose ?memo composition x)
+    | `Benum x -> `Benum(Enum.vectorcompose ?memo composition x)
 
   let substitute_by_var
       (env:('a,'b,'c,'d,'e) Env.O.t)
@@ -747,11 +760,9 @@ module O = struct
   let cofactor expr bdd = mapmonop (fun x -> Cudd.Bdd.cofactor x bdd) expr
   let restrict expr bdd = mapmonop (fun x -> Cudd.Bdd.restrict x bdd) expr
   let tdrestrict expr bdd = mapmonop (fun x -> Cudd.Bdd.tdrestrict x bdd) expr
-  let permute expr tab = mapmonop (fun x -> Cudd.Bdd.permute x tab) expr
-  let varmap expr = mapmonop Cudd.Bdd.varmap expr
 
   (*  ---------------------------------------------------------------------- *)
-  (** {4 Boolean expressions} *)
+  (** {5 Boolean expressions} *)
   (*  ---------------------------------------------------------------------- *)
 
   module Bool = struct
@@ -824,7 +835,7 @@ module O = struct
   end
 
   (*  ---------------------------------------------------------------------- *)
-  (** {4 Bounded integer expressions} *)
+  (** {5 Bounded integer expressions} *)
   (*  ---------------------------------------------------------------------- *)
 
   module Bint = struct
@@ -894,7 +905,7 @@ module O = struct
   end
 
   (*  ---------------------------------------------------------------------- *)
-  (** {4 Enumerated expressions} *)
+  (** {5 Enumerated expressions} *)
   (*  ---------------------------------------------------------------------- *)
 
   module Benum = struct
@@ -944,7 +955,7 @@ module O = struct
   end
 
   (*  ---------------------------------------------------------------------- *)
-  (** {4 General (typed) expressions} *)
+  (** {5 General (typed) expressions} *)
   (*  ---------------------------------------------------------------------- *)
 
   let var = bddvar
@@ -995,7 +1006,7 @@ module O = struct
 	end)
 	0 texpr
     in
-    let tb = Array.make nb (Obj.magic Cudd.Bdd.dummy) in
+    let tb = Array.make nb (Obj.magic ()) in
     let b =
       Array.fold_left
 	(begin fun b expr ->
@@ -1079,11 +1090,11 @@ module O = struct
 end
 
 (*  ********************************************************************** *)
-(** {2 Closed signatures} *)
+(** {3 Closed signatures} *)
 (*  ********************************************************************** *)
 
 (*  ====================================================================== *)
-(** {3 Expressions} *)
+(** {4 Expressions} *)
 (*  ====================================================================== *)
 
 let typ_of_expr = O.typ_of_expr

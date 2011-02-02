@@ -4,11 +4,11 @@
    Please read the COPYING file packaged in the distribution  *)
 
 (*  ********************************************************************** *)
-(** {2 Generic interface} *)
+(** {3 Generic interface} *)
 (*  ********************************************************************** *)
 
 (*  ====================================================================== *)
-(** {3 Types} *)
+(** {4 Types} *)
 (*  ====================================================================== *)
 
 type ('a,'b,'c,'d) man = {
@@ -53,7 +53,7 @@ type 'd t = 'd
 (** Type of generic abstract values *)
 
 (*  ====================================================================== *)
-(** {3 Functions} *)
+(** {4 Functions} *)
 (*  ====================================================================== *)
 
 val canonicalize : ?apron:bool -> ('a,'b,'c,'d) man -> 'd t -> unit
@@ -62,7 +62,7 @@ val print :
   ?print_apron:(
     (int -> string) ->
       Format.formatter -> 'b Apron.Abstract0.t -> unit
-  ) ->  
+  ) ->
   ('a,'b,'c,'d) man -> 'a Env.t -> Format.formatter -> 'd t -> unit
 val bottom : ('a,'b,'c,'d) man -> 'a Env.t -> 'd t
 val top : ('a,'b,'c,'d) man -> 'a Env.t -> 'd t
@@ -90,7 +90,7 @@ val apply_change : bottom:'d t -> ('a,'b,'c,'d) man -> 'd t -> Env.change -> 'd 
 val apply_permutation : ('a,'b,'c,'d) man -> 'd t -> int array option * Apron.Dim.perm option -> 'd t
 
 (*  ********************************************************************** *)
-(** {2 Implementation based on {!Mtbdddomain0}} *)
+(** {3 Implementation based on {!Mtbdddomain0}} *)
 (*  ********************************************************************** *)
 
 type ('a,'b) mtbdd =
@@ -105,7 +105,7 @@ val make_mtbdd : ?global:bool -> 'b Apron.Manager.t -> ('a,'b) mtbdd
   (** Make a mtbdd manager *)
 
 (*  ====================================================================== *)
-(** {3 Type conversion functions} *)
+(** {4 Type conversion functions} *)
 (*  ====================================================================== *)
 
 val man_is_mtbdd : ('a,'b,'c,'d) man -> bool
@@ -123,7 +123,7 @@ val to_mtbdd : ('a,'b,'c,'d) man * 'd t -> ('a,'b) mtbdd * 'b Mtbdddomain0.t t
       Raises [Failure] if the argument manager is not a mtbdd manager *)
 
 (*  ********************************************************************** *)
-(** {2 Implementation based on {!Bdddomain0}} *)
+(** {3 Implementation based on {!Bdddomain0}} *)
 (*  ********************************************************************** *)
 
 type ('a,'b) bdd =
@@ -138,7 +138,7 @@ val make_bdd : 'b Apron.Manager.t -> ('a,'b) bdd
   (** Make a bdd manager *)
 
 (*  ====================================================================== *)
-(** {3 Type conversion functions} *)
+(** {4 Type conversion functions} *)
 (*  ====================================================================== *)
 
 val man_is_bdd : ('a,'b,'c,'d) man -> bool

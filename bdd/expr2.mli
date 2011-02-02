@@ -4,7 +4,7 @@
    Please read the COPYING file packaged in the distribution  *)
 
 (*  ********************************************************************** *)
-(** {2 General expressions} *)
+(** {3 General expressions} *)
 (*  ********************************************************************** *)
 
 type 'a t = ('a Env.t, 'a Expr0.t) Env.value
@@ -12,7 +12,7 @@ type 'a expr = 'a t
   (** Type of general expressions *)
 
 (*  ********************************************************************** *)
-(** {2 Boolean expressions} *)
+(** {3 Boolean expressions} *)
 (*  ********************************************************************** *)
 
 module Bool : sig
@@ -71,7 +71,7 @@ module Bool : sig
 end
 
 (*  ********************************************************************** *)
-(** {2 Bounded integer expressions} *)
+(** {3 Bounded integer expressions} *)
 (*  ********************************************************************** *)
 
 module Bint : sig
@@ -118,7 +118,7 @@ module Bint : sig
 end
 
 (*  ********************************************************************** *)
-(** {2 Enumerated expressions} *)
+(** {3 Enumerated expressions} *)
 (*  ********************************************************************** *)
 
 module Benum : sig
@@ -193,7 +193,7 @@ val tdrestrict : 'a expr -> 'a Bool.t -> 'a expr
 val print : Format.formatter -> 'a expr -> unit
 
 (*  ********************************************************************** *)
-(** {2 Opened signature and Internal functions} *)
+(** {3 Opened signature and Internal functions} *)
 (*  ********************************************************************** *)
 
 (** We provide here the same functions and modules as before, but with opened
@@ -204,7 +204,7 @@ val print : Format.formatter -> 'a expr -> unit
 module O : sig
 
   (*  ==================================================================== *)
-  (** {3 Expressions} *)
+  (** {4 Expressions} *)
   (*  ==================================================================== *)
 
   type ('a,'b) t = ('a, 'b Expr0.t) Env.value
@@ -213,7 +213,7 @@ module O : sig
 (** Type of general expressions *)
 
   (*  -------------------------------------------------------------------- *)
-  (** {4 Boolean expressions} *)
+  (** {5 Boolean expressions} *)
   (*  -------------------------------------------------------------------- *)
 
   module Bool : sig
@@ -273,7 +273,7 @@ module O : sig
   end
 
   (*  -------------------------------------------------------------------- *)
-  (** {4 Bounded integer expressions} *)
+  (** {5 Bounded integer expressions} *)
   (*  -------------------------------------------------------------------- *)
 
   module Bint : sig
@@ -321,7 +321,7 @@ module O : sig
   end
 
   (*  -------------------------------------------------------------------- *)
-  (** {4 Enumerated expressions} *)
+  (** {5 Enumerated expressions} *)
   (*  -------------------------------------------------------------------- *)
 
   module Benum : sig
@@ -396,7 +396,7 @@ module O : sig
   val print : Format.formatter -> ('a,'b) t -> unit
 
   (*  ==================================================================== *)
-  (** {3 Internal} *)
+  (** {4 Internal} *)
   (*  ==================================================================== *)
 
   val mapunop : ('a -> 'b) -> ('c, 'a) Env.value -> ('c, 'b) Env.value

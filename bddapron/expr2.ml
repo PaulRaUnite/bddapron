@@ -1,5 +1,4 @@
-(** Finite-type and arithmetical expressions linked to variable
-    and condition environments *)
+(** Finite-type and arithmetical expressions with variable and condition environments *)
 
 (* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
@@ -10,13 +9,13 @@ open Cond
 open Env
 
 (*  ********************************************************************** *)
-(** {2 Opened signature} *)
+(** {3 Opened signature} *)
 (*  ********************************************************************** *)
 
 module O = struct
 
   (*  ==================================================================== *)
-  (** {3 General expressions} *)
+  (** {4 General expressions} *)
   (*  ==================================================================== *)
 
   type ('a,'b) t = (('a,'b) Cond.O.t, ('a,'b) Expr1.O.t) Bdd.Cond.value
@@ -64,7 +63,7 @@ module O = struct
       (Expr1.O.extend_environment e.val1 nenv)
 
   (*  ==================================================================== *)
-  (** {3 Boolean expressions} *)
+  (** {4 Boolean expressions} *)
   (*  ==================================================================== *)
 
   module Bool = struct
@@ -115,7 +114,7 @@ module O = struct
   end
 
   (*  ==================================================================== *)
-  (** {3 List of expressions} *)
+  (** {4 List of expressions} *)
   (*  ==================================================================== *)
 
   module List = struct
@@ -171,7 +170,7 @@ module O = struct
 end
 
 (*  ********************************************************************** *)
-(** {2 Closed signature} *)
+(** {3 Closed signature} *)
 (*  ********************************************************************** *)
 
 type 'a t = ('a Cond.t, 'a Expr1.t) Bdd.Cond.value

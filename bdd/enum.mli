@@ -4,7 +4,7 @@
    Please read the COPYING file packaged in the distribution  *)
 
 (*  ********************************************************************** *)
-(** {2 Types} *)
+(** {3 Types} *)
 (*  ********************************************************************** *)
 
 type 'a typ = [
@@ -17,7 +17,7 @@ type 'a typdef = [
 ]
   (** An enumerated type is defined by its (ordered) set of labels *)
 
-(** {3 Datatype representing a BDD register of enumerated type} *)
+(** {4 Datatype representing a BDD register of enumerated type} *)
 
 type 'a t = {
   typ: string;
@@ -30,7 +30,7 @@ type dt = Cudd.Man.d t
 type vt = Cudd.Man.v t
 
 (*  *********************************************************************** *)
-(** {2 Constants and Operation(s)} *)
+(** {3 Constants and Operation(s)} *)
 (*  *********************************************************************** *)
 
 val of_label : ('a,'b,'c,'d,'e) Env.O.t -> 'a -> 'd t
@@ -49,7 +49,7 @@ val ite : 'd Cudd.Bdd.t -> 'd t -> 'd t -> 'd t
   (** If-then-else operator. The types of the 2 branches should be the same. *)
 
 (*  *********************************************************************** *)
-(** {2 Decomposition in guarded form} *)
+(** {3 Decomposition in guarded form} *)
 (*  *********************************************************************** *)
 
 val guard_of_label : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'a -> 'd Cudd.Bdd.t
@@ -59,7 +59,7 @@ val guardlabels : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('d Cudd.Bdd.t * 'a) list
   (** Return the list [g -> label] represented by the BDD register. *)
 
 (*  *********************************************************************** *)
-(** {2 Evaluation} *)
+(** {3 Evaluation} *)
 (*  *********************************************************************** *)
 
 val cofactor : 'd t -> 'd Cudd.Bdd.t -> 'd t
@@ -67,10 +67,10 @@ val restrict : 'd t -> 'd Cudd.Bdd.t -> 'd t
 val tdrestrict : 'd t -> 'd Cudd.Bdd.t -> 'd t
 
 (*  ********************************************************************** *)
-(** {2 Printing} *)
+(** {3 Printing} *)
 (*  ********************************************************************** *)
 
-val print : 
+val print :
   (Format.formatter -> int -> unit) ->
   Format.formatter -> 'd t -> unit
   (** [print f fmt t] prints the register [t] using the formatter
@@ -83,7 +83,7 @@ val print_minterm :
     names. *)
 
 (*  ********************************************************************** *)
-(** {2 Internal functions} *)
+(** {3 Internal functions} *)
 (*  ********************************************************************** *)
 
 val size_of_typ : ('a,'b,'c,'d,'e) Env.O.t -> 'a -> int
@@ -110,11 +110,10 @@ module Minterm : sig
       minterm and return the list of the results. *)
 end
 
-val permute : 'd t -> int array -> 'd t
-  (** Permutation (scale [Cudd.Bdd.permute]) *)
+val permute : ?memo:Cudd.Memo.t -> 'a t -> int array -> 'a t
+  (** Permutation (scale [Cudd.Bdd.permute] and [Cudd.Bdd.permute_memo]) *)
 val varmap : 'a t -> 'a t
   (** Permutation (scale [Cudd.Bdd.varmap]) *)
-val vectorcompose : 'd Cudd.Bdd.t array -> 'd t -> 'd t
-  (** Composition (scale [Cudd.Bdd.vectorcompose]) *)
-
-
+val vectorcompose : ?memo:Cudd.Memo.t -> 'a Cudd.Bdd.t array -> 'a t -> 'a t
+  (** Composition (scale [Cudd.Bdd.vectorcompose] and
+      [Cudd.Bdd.vectorcompose_memo]) *)

@@ -1,66 +1,25 @@
-# -*- mode: makefile -*- 
-
-######################################################################
-# HAS Flags
-######################################################################
-
-# assumes that mlgmpidl is compiled with the same value of
-# HAS_MPFR
-HAS_MPFR=1
+# -*- mode: makefile -*-
 
 ######################################################################
 # Directories
 ######################################################################
 
-# Where to INSTALL BDDAPRON ($(BDDAPRON_PREFIX)/lib)
-BDDAPRON_PREFIX = 
-
-# Where to find GMP ($(GMP_PREFIX)/include, ($GMP_PREFIX)/lib)
-#
-GMP_PREFIX = /usr
-
-# Where to find MPFR ($(MPFR_PREFIX)/include, ($MPFR_PREFIX)/lib
-# (needed if HAS_MPFR=1)
-MPFR_PREFIX = /usr
-
-# Where to find CUDD an ($(CUDD_PREFIX)/include, $(CUDD_PREFIX)/lib)
-#
-CUDD_PREFIX = /usr
-
 # Where to find OCAML ($(CAML_PREFIX)/bin, $(CAML_PREFIX)/lib/ocaml, ...)
 #
-CAML_PREFIX = /usr
+CAML_PREFIX = $(dir $(shell which ocamlc))/..
 
-# Where to find CAMLIDL ($(CAMLIDL_PREFIX)/bin, $(CAMLIDL_PREFIX)/lib/, ...)
+# Where to find CAMLIDL ($(CAMLIDL_PREFIX)/bin, $(CAMLIDL_PREFIX)/lib/ocaml, ...)
 #
-CAMLIDL_PREFIX = /usr
-
-# Where to find CAMLLIB ($(CAMLLIB_PREFIX)/lib)
-#
-CAMLLIB_PREFIX = 
-# Where to find MLGMPIDL ($(MLGMPIDL_PREFIX)/lib)
-#
-MLGMPIDL_PREFIX = 
-
-# Where to find MLCUDDIDL ($(MLCUDDIDL_PREFIX)/lib)
-#
-MLCUDDIDL_PREFIX = 
-
-# Where to find APRON ($(APRON_PREFIX)/include, $(APRON_PREFIX)/lib)
-APRON_PREFIX = 
+CAMLIDL_PREFIX = $(dir $(shell which camlidl))/..
 
 ######################################################################
 # Tools and Flags
 ######################################################################
 
-AR = ar
-RANLIB = ranlib
-SED = sed
-M4 = m4
-INSTALL = install
-INSTALLd = install -d
-RM=/bin/rm -f
+##################################################
+# OCaml and related
 
+OCAMLFIND = ocamlfind
 
 OCAMLC = $(CAML_PREFIX)/bin/ocamlc.opt
 OCAMLOPT = $(CAML_PREFIX)/bin/ocamlopt.opt
@@ -77,10 +36,11 @@ OCAMLFLAGS = -annot -g
 # ocamlopt compilation flags
 OCAMLOPTFLAGS = -annot -inline 20
 
+##################################################
+# Other
 
+AR = ar
+RANLIB = ranlib
 LATEX=latex
 DVIPDF=dvipdf
 MAKEINDEX=makeindex
-TEXI2DVI=texi2dvi
-TEXI2HTML=texi2html
-

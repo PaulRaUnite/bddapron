@@ -4,7 +4,7 @@
    Please read the COPYING file packaged in the distribution  *)
 
 (*  ********************************************************************** *)
-(** {2 Types} *)
+(** {3 Types} *)
 (*  ********************************************************************** *)
 
 (** Type definitions. ['a] is the type of symbols (typically, [string]). *)
@@ -52,7 +52,7 @@ type ('a,'b) ext = {
  *)
 type ('a,'b,'c,'d) t0 = ('a,'b,'c,Cudd.Man.v,('a,'d) ext) Bdd.Env.t0
 
-(** {3 Opened signature} *)
+(** {4 Opened signature} *)
 module O : sig
   type ('a,'b,'c,'d) t = ('a,'b,'c,'d) t0
   constraint 'b = [>'a typ]
@@ -78,7 +78,7 @@ end
 type 'a t = ('a, 'a typ,'a typdef,unit) O.t
 
 (*  ********************************************************************** *)
-(** {2 Printing} *)
+(** {3 Printing} *)
 (*  ********************************************************************** *)
 
 val print_typ :
@@ -98,7 +98,7 @@ val print : Format.formatter -> ('a,'b,'c,'d) O.t -> unit
     (** Print an environment *)
 
 (*  ********************************************************************** *)
-(** {2 Constructors} *)
+(** {3 Constructors} *)
 (*  ********************************************************************** *)
 
 val marshal : 'a -> string
@@ -152,7 +152,7 @@ val copy : ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t
       (** Copy *)
 
 (*  ********************************************************************** *)
-(** {2 Accessors} *)
+(** {3 Accessors} *)
 (*  ********************************************************************** *)
 
 val mem_typ : ('a,'b,'c,'d) O.t -> 'a -> bool
@@ -174,7 +174,7 @@ val labels : ('a,'b,'c,'d) O.t -> 'a PSette.t
     (** Return the list of labels (not variables) *)
 
 (*  ********************************************************************** *)
-(** {2 Adding types and variables} *)
+(** {3 Adding types and variables} *)
 (*  ********************************************************************** *)
 
 val add_typ_with : ('a,'b,'c,'d) O.t -> 'a -> 'c -> unit
@@ -207,7 +207,7 @@ val rename_vars : ('a,'b,'c,'d) O.t -> ('a * 'a) list -> ('a,'b,'c,'d) O.t
   (** Functional versions of the previous functions *)
 
 (* ********************************************************************** *)
-(** {2 Operations} *)
+(** {3 Operations} *)
 (* ********************************************************************** *)
 
 val is_leq : ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t -> bool
@@ -220,7 +220,7 @@ val lce : ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t
     (** Least common environment *)
 
 (*  ********************************************************************** *)
-(** {2 Precomputing change of environments} *)
+(** {3 Precomputing change of environments} *)
 (*  ********************************************************************** *)
 
 type change = {
@@ -231,7 +231,7 @@ type change = {
 val compute_change : ('a,'b,'c,'d) O.t -> ('a,'b,'c,'d) O.t -> change
 
 (*  ********************************************************************** *)
-(** {2 Utilities} *)
+(** {3 Utilities} *)
 (*  ********************************************************************** *)
 
 (** Type of pairs [(environment, value)] *)

@@ -13,7 +13,7 @@ type ('a,'b) elt = {
 type ('a,'b) t = ('a,'b) elt list
 
 (*  ********************************************************************** *)
-(** {2 Utilities} *)
+(** {3 Utilities} *)
 (*  ********************************************************************** *)
 
 let bdd_diff a b = Cudd.Bdd.dand a (Cudd.Bdd.dnot b)
@@ -47,7 +47,7 @@ let fold2 f res list1 list2 =
     list1
 
 (*  ********************************************************************** *)
-(** {2 Normalisation} *)
+(** {3 Normalisation} *)
 (*  ********************************************************************** *)
 
 (** Checking function: raises [Failure] if problem, returns [true]
@@ -211,7 +211,7 @@ let make_unique  ~is_equal ~merge ~disjoint list =
   nlist
 
 (*  ********************************************************************** *)
-(** {2 Others} *)
+(** {3 Others} *)
 (*  ********************************************************************** *)
 
 (** Return the union of guards in the list *)

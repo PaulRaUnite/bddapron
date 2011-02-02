@@ -8,114 +8,111 @@ SRCDIR = $(shell pwd)
 #
 # Installation directory prefix
 #
-PREFIX = $(BDDAPRON_PREFIX)
+SITE-LIB = $(shell $(OCAMLFIND) printconf destdir)
+PKG-NAME = bddapron
+SITE-LIB-PKG = $(SITE-LIB)/$(PKG-NAME)
 
 #---------------------------------------
 # CAML part
 #---------------------------------------
 
-DOCLATEX =\
--latextitle 1,chapter\
--latextitle 2,section\
--latextitle 3,subsection\
--latextitle 4,subsubsection\
--latextitle 5,paragraph\
--latextitle 6,subparagraph\
--noheader -notrailer
+BDD_REQ_PKG = "camllib cudd"
+BDDAPRON_REQ_PKG = "camllib cudd gmp apron"
 
-OCAMLINC = -I $(MLCUDDIDL_PREFIX)/lib -I $(CAMLLIB_PREFIX)/lib -I $(MLGMPIDL_PREFIX)/lib -I $(APRON_PREFIX)/lib
+OCAMLINC = 
 
-BDDMOD = \
-	bdd/output \
-	bdd/reg \
-	bdd/env \
-	bdd/int \
-	bdd/enum \
-	bdd/cond \
-	bdd/expr0 bdd/expr1 \
-	bdd/domain0 bdd/domain1
-
+BDDMOD = output reg env int enum cond expr0 expr1 domain0 domain1
+BDDMOD := $(BDDMOD:%=bdd/%)
 BDDAPRONMOD = \
-	bddapron/apronexpr \
-	bddapron/env \
-	bddapron/cond \
-	bddapron/apronexprDD \
-	bddapron/apronDD \
-	bddapron/expr0 bddapron/expr1 bddapron/expr2 \
-	bddapron/descend \
-	bddapron/mtbdddomain0 \
-	bddapron/bddleaf bddapron/bdddomain0 bddapron/domain0 \
-	bddapron/domainlevel1 \
-	bddapron/mtbdddomain1 bddapron/bdddomain1 bddapron/domain1 \
-	bddapron/syntax bddapron/yacc bddapron/lex bddapron/parser
+	apronexpr env cond apronexprDD apronDD \
+	expr0 expr1 expr2 \
+	descend mtbdddomain0 bddleaf bdddomain0 domain0 \
+	domainlevel1 mtbdddomain1 bdddomain1 domain1 \
+	syntax yacc lex parser
+BDDAPRONMOD := $(BDDAPRONMOD:%=bddapron/%)
 
-MLMOD = $(BDDMOD) $(BDDAPRONMOD)
+MLMODULES = $(BDDMOD) $(BDDAPRONMOD)
 
-MLSRC = $(MLMOD:%=%.mli) $(MLMOD:%=%.ml)
-MLINT = $(MLMOD:%=%.cmi)
-MLOBJ = $(MLMOD:%=%.cmo)
-MLOBJx = $(MLMOD:%=%.cmx)
-
-MLLIB_TOINSTALL = bdd.cmi bdd.cma bddapron.cmi bddapron.cma
-MLLIB_TOINSTALLx = bdd.cmx bdd.cmxa bdd.a bddapron.cmx bddapron.cmxa bddapron.a
+FILES_TOINSTALL = META \
+	bdd_ocamldoc.mli bddapron_ocamldoc.mli \
+	bdd.cmi bdd.cma bddapron.cmi bddapron.cma \
+	bdd.cmx bdd.cmxa bdd.a bddapron.cmx bddapron.cmxa bddapron.a
 
 #---------------------------------------
 # Rules
 #---------------------------------------
 
 # Global rules
-all: byte opt
+all: $(FILES_TOINSTALL)
 
 byte: bdd.cma bddapron.cma
 opt: bdd.cmxa bddapron.cmxa
 
-install:
-	$(INSTALLd) $(PREFIX)/lib
-	for i in $(MLLIB_TOINSTALL) $(MLLIB_TOINSTALLx); do \
-		if test -f $$i; then $(INSTALL) $$i $(PREFIX)/lib; fi; \
-	done
+bddapron.cma: bddapron.cmo bdd.cmi
+	$(OCAMLFIND) ocamlc $(OCAMLFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) \
+	-a -o $@ $<
+bddapron.cmxa: bddapron.cmx bdd.cmx
+	$(OCAMLFIND) ocamlopt $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) \
+	-a -o $@ $<
+	$(RANLIB) bddapron.a
+bdd.cma: bdd.cmo
+	$(OCAMLFIND) ocamlc $(OCAMLFLAGS) $(OCAMLINC) -package $(BDD_REQ_PKG) -a -o $@ $^
+bdd.cmxa: bdd.cmx
+	$(OCAMLFIND) ocamlopt $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDD_REQ_PKG) -a -o $@ $^
+	$(RANLIB) bdd.a
 
-distclean:
-	(cd $(PREFIX)/lib; /bin/rm -f $(MLLIB_TOINSTALL) $(MLLIB_TOINSTALLx))
+bddapron.cmo bddapron.cmi: $(BDDAPRONMOD:%=%.cmo) bdd.cmi
+	$(OCAMLFIND) ocamlc $(OCAMLFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) -pack -o bddapron.cmo $(BDDAPRONMOD:%=%.cmo)
+
+bddapron.cmx: $(BDDAPRONMOD:%=%.cmx) bdd.cmx
+	$(OCAMLFIND) ocamlopt $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) -pack -o bddapron.cmx $(BDDAPRONMOD:%=%.cmx)
+
+bdd.cmo bdd.cmi: $(BDDMOD:%=%.cmo)
+	$(OCAMLFIND) ocamlc $(OCAMLFLAGS) $(OCAMLINC) -package $(BDD_REQ_PKG) -pack -o bdd.cmo $^
+
+bdd.cmx: $(BDDMOD:%=%.cmx)
+	$(OCAMLFIND) ocamlopt $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDD_REQ_PKG) -pack -o bdd.cmx $^
+
+
+META: Makefile
+	/bin/rm -f META
+	echo "\n\
+description = \"Logico-numerical domain(s) based on BDDs and APRON\" \n\
+version = \"2.1.0\" \n\
+requires = \"bddapron.bdd\" \n\
+package \"bdd\" ( \n\
+requires = \"camllib cudd\" \n\
+archive(byte) = \"bdd.cma\" \n\
+archive(native) = \"bdd.cmxa\" \n\
+archive(native,gprof) = \"bdd.p.cmxa\" \n\
+) \n\
+package \"bddapron\" ( \n\
+requires = \"bddapron.bdd gmp apron\" \n\
+archive(byte) = \"bddapron.cma\" \n\
+archive(native) = \"bddapron.cmxa\" \n\
+archive(native,gprof) = \"bddapron.p.cmxa\" \n\
+) \n\
+" >META
+
+install: $(FILES_TOINSTALL)
+	$(OCAMLFIND) remove $(PKG-NAME)
+	$(OCAMLFIND) install $(PKG-NAME) $^
+
+uninstall:
+	$(OCAMLFIND) remove $(PKG-NAME)
+
+distclean: clean
+	/bin/rm -f Makefile.depend TAGS
 
 clean:
+	/bin/rm -f *.log *.aux *.bbl *.blg *.toc **.idx *.ilg *.ind ocamldoc*.tex ocamldoc.sty *.dvi *.pdf *.out bddapron.tex
+	/bin/rm -fr tmp html index.html
+	/bin/rm -f bddtop bddaprontop *.byte *.opt bdd_ocamldoc.mli bddapron_ocamldoc.mli
 	for i in . bdd bddapron; do \
 		cd $(SRCDIR)/$$i; \
 		/bin/rm -f *.[aoc] *.cm[ioxa] *.cmxa *.annot; \
-		/bin/rm -f *.log *.aux *.bbl *.blg *.toc **.idx *.ilg *.ind ocamldoc*.tex ocamldoc.sty *.dvi *.pdf *.out; \
-		/bin/rm -fr html_bdd html_bddapron; \
-		/bin/rm -f bddtop bddaprontop *.byte *.opt; \
 	done
 	(cd bddapron; /bin/rm -f yacc.ml yacc.mli lex.ml)
-
-mostlyclean: clean
-	for i in . bdd bddapron; do \
-		/bin/rm -f Makefile.depend *.annot; \
-	done
-
-# CAML rules
-bddapron.cma: bdd.cmo bddapron.cmo
-	$(OCAMLC) -a $(OCAMLFLAGS) $(OCAMLINC) -o $@ $^
-bddapron.cmxa: bdd.cmx bddapron.cmx
-	$(OCAMLOPT) -a $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ $^
-	$(RANLIB) bddapron.a
-bdd.cma: bdd.cmo
-	$(OCAMLC) -a $(OCAMLFLAGS) $(OCAMLINC) -o $@ $^
-bdd.cmxa: bdd.cmx
-	$(OCAMLOPT) -a $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ $^
-	$(RANLIB) bdd.a
-
-bddapron.cmo bddapron.cmi: $(BDDAPRONMOD:%=%.cmo)
-	$(OCAMLC) $(OCAMLFLAGS) $(OCAMLINC) -pack -o bddapron.cmo $^
-
-bddapron.cmx: $(BDDAPRONMOD:%=%.cmx)
-	$(OCAMLOPT) $(OCAMLOPTFLAGS) -pack -o bddapron.cmx $^
-
-bdd.cmo bdd.cmi: $(BDDMOD:%=%.cmo)
-	$(OCAMLC) $(OCAMLFLAGS) $(OCAMLINC) -pack -o bdd.cmo $^
-
-bdd.cmx: $(BDDMOD:%=%.cmx)
-	$(OCAMLOPT) $(OCAMLOPTFLAGS) -pack -o bdd.cmx $^
 
 
 # TEX rules
@@ -125,88 +122,93 @@ bdd.cmx: $(BDDMOD:%=%.cmx)
 .PRECIOUS: bddapron.cma bddapron.cmi bddapron.cmo bddapron.cmx bddapron/%.cmi bddapron/%.cmo bddapron/%.cmx 
 .PRECIOUS: bddapron/yacc.ml bddapron/yacc.mli bddapron/lex.ml
 
+DOCLATEX =\
+-latextitle 1,part\
+-latextitle 2,chapter\
+-latextitle 3,section\
+-latextitle 4,subsection\
+-latextitle 5,subsubsection\
+-latextitle 6,paragraph\
+-latextitle 7,subparagraph\
+-noheader -notrailer
+
+BDDDOCOCAMLINC =\
+-I $(shell $(OCAMLFIND) query camllib) \
+-I $(shell $(OCAMLFIND) query cudd)
+BDDAPRONDOCOCAMLINC = $(BDDDOCOCAMLINC) \
+-I $(shell $(OCAMLFIND) query gmp) \
+-I $(shell $(OCAMLFIND) query apron)
+
+bdd_ocamldoc.mli: bdd/introduction.odoc $(BDDMOD:%=%.mli)
+	(cd bdd; ocamlpack -o ../bdd_ocamldoc -title "Finite-type expressions/properties on top of CUDD" -intro introduction.odoc -intf $(BDDMOD:bdd/%=%))
+bddapron_ocamldoc.mli: bddapron/introduction.odoc $(BDDAPRONMOD:%=%.mli)
+	(cd bddapron; ocamlpack -o ../bddapron_ocamldoc -title "Finite \& numerical expressions/properties on top of CUDD \& APRON" -intro introduction.odoc -intf $(BDDAPRONMOD:bddapron/%=%))
+
 bddapron.pdf: bddapron.dvi
 	$(DVIPDF) bddapron.dvi bddapron.pdf
 
-bddapron.dvi: $(BDDAPRONMOD:%=%.mli) 
-	$(OCAMLDOC) -latextitle 1,chapter -latextitle 2,section -latextitle 3,subsection -latextitle 4,subsubsection -latextitle 5,paragraph -noheader -notrailer -latex -o ocamldoc.tex $(OCAMLINC) -I bddapron $(BDDAPRONMOD:%=%.mli)
-	$(LATEX) bddapron/bddapron
+bddapron.dvi: bdd_ocamldoc.mli bddapron_ocamldoc.mli bdd.cmi bddapron.cmi
+	mkdir -p tmp
+	cp bdd_ocamldoc.mli tmp/bdd.mli
+	cp bddapron_ocamldoc.mli tmp/bddapron.mli
+	$(OCAMLDOC) $(OCAMLINC) \
+-I $(shell $(OCAMLFIND) query gmp) \
+-I $(shell $(OCAMLFIND) query cudd) \
+-I $(shell $(OCAMLFIND) query apron) \
+-I $(shell $(OCAMLFIND) query camllib) \
+-t "BDDAPRON, version 2.1.0, 01/02/11" \
+-latextitle 1,part -latextitle 2,chapter -latextitle 3,section -latextitle 4,subsection -latextitle 5,subsubsection -latextitle 6,paragraph -latextitle 7,subparagraph \
+-latex -o ocamldoc.tex tmp/bdd.mli tmp/bddapron.mli
+	$(SED) -e 's/\\documentclass\[11pt\]{article}/\\documentclass[10pt,twoside,a4paper]{book}\\usepackage{ae,fullpage,makeidx,fancyhdr}\\usepackage[ps2pdf]{hyperref}\\pagestyle{fancy}\\setlength{\\headheight}{2.8ex}\\setlength{\\footskip}{5ex}\\renewcommand{\\chaptermark}[1]{\\markboth{\\MakeUppercase{\\chaptername}\\ \\thechapter.\\ #1}{}}\\renewcommand{\\sectionmark}[1]{}\\setcounter{tocdepth}{2}\\setcounter{secnumdepth}{4}\\setlength{\\parindent}{0em}\\setlength{\\parskip}{0.5ex}\\sloppy\\makeindex\\author{Bertrand Jeannet}/' -e 's/\\end{document}/\\appendix\\printindex\\end{document}/' ocamldoc.tex >bddapron.tex
+	$(LATEX) bddapron
 	$(MAKEINDEX) bddapron
-	$(LATEX) bddapron/bddapron
-	$(LATEX) bddapron/bddapron
+	$(LATEX) bddapron
+	$(LATEX) bddapron
 
-bdd.pdf: bdd.dvi
-	$(DVIPDF) bdd.dvi bdd.pdf
+html: bdd_ocamldoc.mli bddapron_ocamldoc.mli bdd.cmi bddapron.cmi bddapron.odoc
+	mkdir -p html
+	mkdir -p tmp
+	cp bdd_ocamldoc.mli tmp/bdd.mli
+	cp bddapron_ocamldoc.mli tmp/bddapron.mli
+	cp $(shell $(OCAMLFIND) query cudd)/cudd_ocamldoc.mli tmp/cudd.mli
+	cp $(shell $(OCAMLFIND) query apron)/apron_ocamldoc.mli tmp/apron.mli
+	$(OCAMLDOC) -html -d html -colorize-code -intro bddapron.odoc \
+-I $(shell $(OCAMLFIND) query gmp) \
+-I $(shell $(OCAMLFIND) query cudd) \
+-I $(shell $(OCAMLFIND) query apron) \
+-I $(shell $(OCAMLFIND) query camllib) \
+$(shell $(OCAMLFIND) query gmp)/*.mli \
+tmp/cudd.mli tmp/apron.mli \
+$(patsubst %,$(shell $(OCAMLFIND) query apron)/%, box.mli oct.mli polka.mli ppl.mli polkaGrid.mli t1p.mli) \
+$(shell $(OCAMLFIND) query camllib)/*.mli \
+tmp/bdd.mli tmp/bddapron.mli
 
-bdd.dvi: $(BDDMOD:%=%.mli)
-	$(OCAMLDOC) -latextitle 1,chapter -latextitle 2,section -latextitle 3,subsection -latextitle 4,subsubsection -latextitle 5,paragraph -noheader -notrailer -latex -o ocamldoc.tex $(OCAMLINC) -I bdd $(BDDMOD:%=%.mli)
-	$(LATEX) bdd/bdd
-	$(MAKEINDEX) bdd
-	$(LATEX) bdd/bdd
-	$(LATEX) bdd/bdd
-
-html_bdd: $(BDDMOD:%=%.mli)
-	mkdir -p html_bdd
-	$(OCAMLDOC) -html -d html_bdd -colorize-code $(OCAMLINC) -I bdd -intro bdd/bdd.odoc $(BDDMOD:%=%.mli)
-
-html_bddapron: $(BDDAPRONMOD:%=%.mli)
-	mkdir -p html_bddapron
-	$(OCAMLDOC) -html -d html_bddapron -colorize-code $(OCAMLINC) -I bddapron -intro bddapron/bddapron.odoc $(BDDAPRONMOD:%=%.mli)
-
-html: html_bdd html_bddapron
-
-homepage: html bdd.pdf bddapron.pdf
+homepage: html bddapron.pdf
 	hyperlatex index
-	cp -r index.html html_bdd html_bddapron bdd.pdf bddapron.pdf presentation-bddapron.pdf Changes \
-		$(HOME)/web/bjeannet-forge/bddapron
-	chmod -R ugoa+rx $(HOME)/web/bjeannet-forge/bddapron
-	scp -r $(HOME)/web/bjeannet-forge/bddapron johns:/home/wwwpop-art/people/bjeannet/bjeannet-forge
-	ssh johns chmod -R ugoa+rx /home/wwwpop-art/people/bjeannet/bjeannet-forge/bddapron
+	scp -r index.html html bddapron.pdf presentation-bddapron.pdf Changes avedon:/home/wwwpop-art/people/bjeannet/bjeannet-forge/bddapron
+	ssh avedon chmod -R ugoa+rx /home/wwwpop-art/people/bjeannet/bjeannet-forge/bddapron
 
 #---------------------------------------
 # Test
 #---------------------------------------
 
-bddtop: bdd.cma
-	$(OCAMLMKTOP) -g -verbose $(OCAMLFLAGS) $(OCAMLINC) -o $@ \
-	-custom -cc "$(CC)" cudd.cma camllib.cma bdd.cma
-
-bddaprontop: bddapron.cma
-	$(OCAMLMKTOP) -g -verbose $(OCAMLFLAGS) $(OCAMLINC) -o $@ \
-	-custom -cc "$(CC)" cudd.cma camllib.cma \
-	bigarray.cma gmp.cma apron.cma boxMPQ.cma octMPQ.cma polkaMPQ.cma bddapron.cma 
-
-example1.byte: bdd/example1.ml bdd.cma
-	$(OCAMLC) -g $(OCAMLFLAGS) $(OCAMLINC) -o $@ cudd.cma camllib.cma bdd.cma $<
+example1.byte: bdd/example1.ml 
+	$(OCAMLFIND) ocamlc -g $(OCAMLFLAGS) $(OCAMLINC) -o $@ $< -package bddapron.bdd -linkpkg
 
 example2.byte: bddapron/example2.ml bddapron.cma
-	$(OCAMLC) -g $(OCAMLFLAGS) $(OCAMLINC) -o $@ cudd.cma camllib.cma bigarray.cma gmp.cma apron.cma boxMPQ.cma polkaMPQ.cma bddapron.cma $<
+	$(OCAMLFIND) ocamlc -g $(OCAMLFLAGS) $(OCAMLINC) -o $@ $< -package "bddapron.bddapron apron.boxMPQ apron.polkaMPQ" -linkpkg
 
 test_random.byte: bddapron/test_random.ml bddapron.cma
-	$(OCAMLC) -g $(OCAMLFLAGS) $(OCAMLINC) -o $@ cudd.cma camllib.cma bigarray.cma gmp.cma apron.cma boxMPQ.cma polkaMPQ.cma bddapron.cma $<
+	$(OCAMLFIND) ocamlc -g $(OCAMLFLAGS) $(OCAMLINC) -o $@ $< -package "bddapron.bddapron apron.boxMPQ apron.polkaMPQ" -linkpkg
 
 example1.opt: bdd/example1.ml bdd.cmxa
-	$(OCAMLOPT) -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ cudd.cmxa camllib.cmxa bdd.cmxa $<
+	$(OCAMLFIND) ocamlopt -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ $< -package bddapron.bdd -linkpkg 
 
 example2.opt: bddapron/example2.ml bddapron.cmxa
-	$(OCAMLOPT) -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ cudd.cmxa camllib.cmxa bigarray.cmxa gmp.cmxa apron.cmxa boxMPQ.cmxa polkaMPQ.cmxa bddapron.cmxa $<
+	$(OCAMLFIND) ocamlopt -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ $< -package "bddapron.bddapron apron.boxMPQ apron.polkaMPQ" -linkpkg
 
 test_random.opt: bddapron/test_random.ml bddapron.cmxa
-	$(OCAMLOPT) -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ cudd.cmxa camllib.cmxa bigarray.cmxa gmp.cmxa apron.cmxa boxMPQ.cmxa polkaMPQ.cmxa bddapron.cmxa -noautolink -ccopt "$(LCFLAGS)" -cclib "-lpolkaGrid_caml -lap_pkgrid -lap_ppl_caml -lap_ppl -lppl -lgmpxx -lpolkaMPQ_caml_debug -lpolkaMPQ_debug -loctMPQ_caml -loctMPQ -lboxMPQ_caml -lboxMPQ -lapron_caml_debug -lapron_debug -lgmp_caml -lmpfr -lgmp -lcamlidl -lcudd_caml_debug -lcudd_debug -lmtr -lst -lcuddutil -lepd -lbigarray -lunix" $<
-
-LCFLAGS = \
--L$(GMP_PREFIX)/lib \
--L$(MPFR_PREFIX)/lib \
--L$(MLGMPIDL_PREFIX)/lib \
--L$(APRON_PREFIX)/lib \
--L$(PPL_PREFIX)/lib \
--L$(MLCUDDIDL_PREFIX)/lib \
--L$(CUDD_PREFIX)/lib \
--L$(CAML_PREFIX)/lib/ocaml \
--L$(CAMLIDL_PREFIX)/lib/ocaml
-
-test2.opt: bddapron/test2.ml bddapron.cmxa
-	$(OCAMLOPT) -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -g -o $@ cudd.cmxa camllib.cmxa bigarray.cmxa gmp.cmxa apron.cmxa box.cmxa polka.cmxa bddapron.cmxa -ccopt "$(LCFLAGS)" -noautolink -cclib "-lpolkaGrid_caml -lap_pkgrid -lap_ppl_caml -lap_ppl -lppl -lgmpxx -lpolka_caml_debug -lpolkaMPQ_debug -loct_caml -loctMPQ -lbox_caml -lboxMPQ -lapron_caml_debug -lapron_debug -lgmp_caml -lmpfr -lgmp -lcamlidl_debug -lcudd_caml_debug -lcudd_debug -lmtr -lst -lutil -lepd -lbigarray -lunix -lasmrun_debug" $<
+	$(OCAMLFIND) ocamlopt -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ cudd.cmxa camllib.cmxa bigarray.cmxa gmp.cmxa apron.cmxa boxMPQ.cmxa polkaMPQ.cmxa bddapron.cmxa -noautolink -ccopt "$(LCFLAGS)" -cclib "-lpolkaGrid_caml -lap_pkgrid -lap_ppl_caml -lap_ppl -lppl -lgmpxx -lpolkaMPQ_caml_debug -lpolkaMPQ_debug -loctMPQ_caml -loctMPQ -lboxMPQ_caml -lboxMPQ -lapron_caml_debug -lapron_debug -lgmp_caml -lmpfr -lgmp -cuddcaml.d -lcamlidl -lbigarray -lunix" $<
 
 #--------------------------------------------------------------
 # IMPLICIT RULES AND DEPENDENCIES
@@ -220,22 +222,22 @@ test2.opt: bddapron/test2.ml bddapron.cmxa
 #-----------------------------------
 
 bdd/%.cmi: bdd/%.mli
-	$(OCAMLC) $(OCAMLFLAGS) $(OCAMLINC) -I bdd -c $<
+	$(OCAMLFIND) ocamlc $(OCAMLFLAGS) $(OCAMLINC) -package $(BDD_REQ_PKG) -I bdd -c $<
 
 bdd/%.cmo: bdd/%.ml
-	$(OCAMLC) $(OCAMLFLAGS) $(OCAMLINC) -I bdd -c $<
+	$(OCAMLFIND) ocamlc $(OCAMLFLAGS) $(OCAMLINC) -package $(BDD_REQ_PKG) -I bdd -c $<
 
 bdd/%.cmx: bdd/%.ml
-	$(OCAMLOPT) $(OCAMLOPTFLAGS) $(OCAMLINC) -I bdd -for-pack Bdd -c $<
+	$(OCAMLFIND) ocamlopt $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDD_REQ_PKG) -I bdd -for-pack Bdd -c $<
 
 bddapron/%.cmi: bddapron/%.mli bdd.cmi
-	$(OCAMLC) $(OCAMLFLAGS) $(OCAMLINC) -I bddapron -c $<
+	$(OCAMLFIND) ocamlc $(OCAMLFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) -I bddapron -c $<
 
 bddapron/%.cmo: bddapron/%.ml bdd.cmi
-	$(OCAMLC) $(OCAMLFLAGS) $(OCAMLINC) -I bddapron -c $<
+	$(OCAMLFIND) ocamlc $(OCAMLFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) -I bddapron -c $<
 
 bddapron/%.cmx: bddapron/%.ml bdd.cmx
-	$(OCAMLOPT) $(OCAMLOPTFLAGS) $(OCAMLINC) -I bddapron -for-pack Bddapron -c $<
+	$(OCAMLFIND) ocamlopt $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) -I bddapron -for-pack Bddapron -c $<
 
 bddapron/%.ml: bddapron/%.mll
 	$(OCAMLLEX) $^
@@ -243,10 +245,12 @@ bddapron/%.ml: bddapron/%.mll
 bddapron/%.ml bddapron/%.mli: bddapron/%.mly
 	$(OCAMLYACC) $^
 
-depend: Makefile.depend
+depend: bddapron/yacc.ml bddapron/yacc.mli bddapron/lex.ml
+	$(OCAMLFIND) ocamldep -package $(BDD_REQ_PKG) $(OCAMLINC) -I bdd $(BDDMOD:%=%.mli) $(BDDMOD:%=%.ml) >Makefile.depend
+	$(OCAMLFIND) ocamldep -package $(BDDAPRON_REQ_PKG) $(OCAMLINC) -I bddapron $(BDDAPRONMOD:%=%.mli) $(BDDAPRONMOD:%=%.ml) >>Makefile.depend
 
 Makefile.depend: bddapron/yacc.ml bddapron/yacc.mli bddapron/lex.ml
-	$(OCAMLDEP) $(OCAMLINC) -I bdd $(BDDMOD:%=%.mli) $(BDDMOD:%=%.ml) >Makefile.depend
-	$(OCAMLDEP) $(OCAMLINC) -I bddapron $(BDDAPRONMOD:%=%.mli) $(BDDAPRONMOD:%=%.ml) >>Makefile.depend
+	$(OCAMLFIND) ocamldep -package $(BDD_REQ_PKG) $(OCAMLINC) -I bdd $(BDDMOD:%=%.mli) $(BDDMOD:%=%.ml) >Makefile.depend
+	$(OCAMLFIND) ocamldep -package $(BDDAPRON_REQ_PKG) $(OCAMLINC) -I bddapron $(BDDAPRONMOD:%=%.mli) $(BDDAPRONMOD:%=%.ml) >>Makefile.depend
 
 -include Makefile.depend

@@ -4,7 +4,7 @@
    Please read the COPYING file packaged in the distribution  *)
 
 (*  ********************************************************************** *)
-(** {2 Types} *)
+(** {3 Types} *)
 (*  ********************************************************************** *)
 
 type 'a cond = [`Apron of 'a Apronexpr.Condition.t]
@@ -38,7 +38,7 @@ val copy : 'a t -> 'a t
 val print : 'a Env.t -> Format.formatter -> 'a t -> unit
 
 (*  ********************************************************************** *)
-(** {2 Level 2} *)
+(** {3 Level 2} *)
 (*  ********************************************************************** *)
 
 type ('a,'b) value = ('a,'b) Bdd.Cond.value = {

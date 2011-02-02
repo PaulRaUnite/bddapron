@@ -16,7 +16,7 @@ type 'a t = [
 type 'a expr = 'a t
 
 (*  ********************************************************************** *)
-(** {2 Opened signature and Internal functions} *)
+(** {3 Opened signature and Internal functions} *)
 (*  ********************************************************************** *)
 
 module O = struct
@@ -40,7 +40,7 @@ module O = struct
     (typ :> 'a Env.typ)
 
   (*  ==================================================================== *)
-  (** {3 General expressions} *)
+  (** {4 General expressions} *)
   (*  ==================================================================== *)
 
   let check_typ2 env e2 e3 =
@@ -75,15 +75,23 @@ module O = struct
     | #Bdd.Expr0.t as x -> ((Bdd.Expr0.tdrestrict x bdd):>'a t)
     | `Apron x -> `Apron (Cudd.Mtbdd.tdrestrict x bdd)
 
-  let permute (e:'a t) (tab:int array) : 'a t
+  let permute ?memo (e:'a t) (tab:int array) : 'a t
       =
     match e with
-    | #Bdd.Expr0.t as x -> ((Bdd.Expr0.O.permute x tab):>'a t)
-    | `Apron x -> `Apron (Cudd.Mtbdd.permute x tab)
+    | #Bdd.Expr0.t as x -> ((Bdd.Expr0.O.permute ?memo x tab):>'a t)
+    | `Apron x -> `Apron (Cudd.Mtbdd.permute ?memo x tab)
 
-  let permute_list le tab
+  let permute_list ?memo le tab
       =
-    List.map (fun e -> permute e tab) le
+    match memo with
+    | Some memo ->
+	List.map (fun x -> permute ~memo x tab) le
+    | None ->
+	let hash = Cudd.Hash.create 1 in
+	let memo = Cudd.Memo.Hash hash in
+	let res = List.map (fun x -> permute ~memo x tab) le in
+	Cudd.Hash.clear hash;
+	res
 
   let varmap (e:'a t) : 'a t
       =
@@ -225,7 +233,7 @@ module O = struct
   let ddsubstitute_by_var = substitute_by_var
 
   (*  ==================================================================== *)
-  (** {3 Boolean expressions} *)
+  (** {4 Boolean expressions} *)
   (*  ==================================================================== *)
 
   module Bool = struct
@@ -275,7 +283,7 @@ module O = struct
   end
 
   (*  ==================================================================== *)
-  (** {3 Bounded integer expressions} *)
+  (** {4 Bounded integer expressions} *)
   (*  ==================================================================== *)
 
   module Bint = struct
@@ -319,7 +327,7 @@ module O = struct
   end
 
   (*  ==================================================================== *)
-  (** {3 Enumerated type expressions} *)
+  (** {4 Enumerated type expressions} *)
   (*  ==================================================================== *)
 
   module Benum = struct
@@ -343,7 +351,7 @@ module O = struct
   end
 
   (*  ==================================================================== *)
-  (** {3 Apronexprmetic expressions} *)
+  (** {4 Apronexprmetic expressions} *)
   (*  ==================================================================== *)
 
   module Apron = struct
@@ -386,7 +394,7 @@ module O = struct
   end
 
   (*  ==================================================================== *)
-  (** {3 General expressions} *)
+  (** {4 General expressions} *)
   (*  ==================================================================== *)
 
   let eq env cond (e1:'a t) (e2:'a t) : 'a Bool.t
@@ -478,7 +486,7 @@ module O = struct
       Bdd.Cond.reduce_with ncond supp;
     end;
     let perm = Bdd.Cond.normalize_with ncond in
-    let lexpr = List.map (fun e -> permute e perm) lexpr in
+    let lexpr = permute_list lexpr perm in
     let lexpr =
       if careset then begin
 	Bdd.Cond.compute_careset ncond ~normalized:true;

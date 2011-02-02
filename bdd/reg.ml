@@ -23,7 +23,7 @@ type dt = Cudd.Man.d t
 type vt = Cudd.Man.v t
 
 (*  *********************************************************************** *)
-(** {2 Logical operations} *)
+(** {3 Logical operations} *)
 (*  *********************************************************************** *)
 
 let lnot x =
@@ -44,7 +44,7 @@ let shift_left man n x =
     else
       (nx, Cudd.Bdd.dfalse man)
   end
-  else     
+  else
     failwith ("Bdd.Reg.shift_left: negative range for the shift "^(string_of_int n))
 
 
@@ -63,9 +63,9 @@ let shift_right man n x =
     else
       (nx, x.(size-1))
   end
-  else     
+  else
     failwith ("Bdd.Reg.shift_right: negative range for the shift "^(string_of_int n))
-    
+
 let shift_right_logical man n x =
   let size = Array.length x in
   if size=0 then
@@ -81,7 +81,7 @@ let shift_right_logical man n x =
     else
       (nx, Cudd.Bdd.dfalse man)
   end
-  else     
+  else
     failwith ("Bdd.Reg.shift_right_logical: negative range for the shift "^(string_of_int n))
 
 (** This function extends the size of a signed or unsigned integer. *)
@@ -104,9 +104,9 @@ let extend man ~(signed:bool) (n:int) (x:'a t) =
     Array.init (size + n) (fun i -> x.(i))
   else
     Array.copy x
-      
+
 (*  *********************************************************************** *)
-(** {2 Arithmetic operations} *)
+(** {3 Arithmetic operations} *)
 (*  *********************************************************************** *)
 
 (** These are the successor and predecessor operations. They returns the new
@@ -181,11 +181,11 @@ let sub man x y =
     Cudd.Bdd.dand (Cudd.Bdd.xor x.(size-1) y.(size-1)) (Cudd.Bdd.xor x.(size-1) z.(size-1)))
   end
 
-let neg x = 
+let neg x =
   if x=[||] then x else fst (succ (Cudd.Bdd.manager x.(0)) (lnot x))
 
 let scale cst x =
-  if x=[||] then 
+  if x=[||] then
     x
   else begin
     let man = Cudd.Bdd.manager x.(0) in
@@ -212,7 +212,7 @@ let ite bdd x y =
   res
 
 let mul x y =
-  if x=[||] then 
+  if x=[||] then
     x
   else begin
     let man = Cudd.Bdd.manager x.(0) in
@@ -221,15 +221,15 @@ let mul x y =
     in
     let z = ref(Array.make size dfalse) in
     for i=0 to size-1 do
-      let (r,_,_) = 
-	add man !z (if i=0 then y else (fst (shift_left man i y))) 
+      let (r,_,_) =
+	add man !z (if i=0 then y else (fst (shift_left man i y)))
       in
       z := ite x.(i) r !z
     done;
     !z
   end
 
-(** {2 Predicates} *)
+(** {3 Predicates} *)
 
 let is_cst (x:'a t) : bool =
   try
@@ -261,7 +261,7 @@ let greatereq man x y =
   else
     let (z,c,v) = sub man x y in
     (Cudd.Bdd.eq v z.((Array.length z) - 1))
-    
+
 let greater man x y =
   if x=[||] then
     Cudd.Bdd.dfalse man
@@ -284,7 +284,7 @@ let higher man x y =
     Cudd.Bdd.dand (Cudd.Bdd.dnot c) (Cudd.Bdd.dnot (zero man z))
 
 (*  *********************************************************************** *)
-(** {2 Constants} *)
+(** {3 Constants} *)
 (*  *********************************************************************** *)
 
 let min_size n =
@@ -335,7 +335,7 @@ let to_int ~(signed:bool) (x:'a t) =
 	    2 * acc + 1
 	  else if Cudd.Bdd.is_false bdd then
 	    2 * acc
-	  else 
+	  else
 	    raise (Invalid_argument ("Bddreg.to_int: argument does not correspond to a constant value"))
 	end)
 	x
@@ -364,11 +364,11 @@ let higher_int man x n =
   higher man x y
 
 (*  *********************************************************************** *)
-(** {2 Decomposition in guarded form} *)
+(** {3 Decomposition in guarded form} *)
 (*  *********************************************************************** *)
 
 (*  ====================================================================== *)
-(** {3 Operations on minterms} *)
+(** {4 Operations on minterms} *)
 (*  ====================================================================== *)
 
 module Minterm = struct
@@ -411,7 +411,7 @@ module Minterm = struct
     if minterm=[||] then
       0
     else begin
-      let acc = 
+      let acc =
 	Array.fold_right
 	  (begin fun (tbool:Cudd.Man.tbool) acc ->
 	    begin match tbool with
@@ -450,13 +450,13 @@ module Minterm = struct
     in
     parcours minterm 0
 
-  let map (f:t -> 'a) (minterm:t) : 'a list 
+  let map (f:t -> 'a) (minterm:t) : 'a list
     =
     let res = ref [] in
     let nf minterm = begin res := (f minterm) :: !res end in
     iter nf minterm;
     List.rev !res
-        
+
 end
 
 let guard_of_minterm man (x:'a t) (minterm:Minterm.t) : 'a Cudd.Bdd.t
@@ -511,7 +511,7 @@ let guardints man ~(signed:bool) (x:'a t) : ('a Cudd.Bdd.t * int) list
   !lguardint
 
 (*  *********************************************************************** *)
-(** {2 Evaluation} *)
+(** {3 Evaluation} *)
 (*  *********************************************************************** *)
 
 let cofactor x bdd = Array.map (fun x -> Cudd.Bdd.cofactor x bdd) x
@@ -519,7 +519,7 @@ let restrict x bdd = Array.map (fun x -> Cudd.Bdd.restrict x bdd) x
 let tdrestrict x bdd = Array.map (fun x -> Cudd.Bdd.tdrestrict x bdd) x
 
 (*  *********************************************************************** *)
-(** {2 Printing} *)
+(** {3 Printing} *)
 (*  *********************************************************************** *)
 
 open Format
@@ -532,7 +532,7 @@ let print f fmt x =
 let print_minterm
   ~(signed:bool)
   (print_bdd: Format.formatter -> 'a Cudd.Bdd.t -> unit)
-  fmt 
+  fmt
   (x:'a t)
   =
   if x=[||] then
@@ -552,12 +552,34 @@ let print_minterm
     end
   end
 
-let permute reg tab =
-  Array.map (fun x -> Cudd.Bdd.permute x tab) reg
+let permute_memo memo reg tab =
+  Array.map (fun x -> Cudd.Bdd.permute ~memo x tab) reg
+
+let permute ?memo reg tab =
+  match memo with
+  | Some memo -> permute_memo memo reg tab
+  | None ->
+      let hash = Cudd.Hash.create 1 in
+      let memo = Cudd.Memo.Hash hash in
+      let res = permute_memo memo reg tab in
+      Cudd.Hash.clear hash;
+      res
+
 let varmap reg =
   Array.map Cudd.Bdd.varmap reg
 
-let vectorcompose tab reg = Array.map (Cudd.Bdd.vectorcompose tab) reg
+let vectorcompose_memo memo tab reg =
+  Array.map (Cudd.Bdd.vectorcompose ~memo tab) reg
+
+let vectorcompose ?memo tab reg =
+  match memo with
+  | Some memo -> vectorcompose_memo memo tab reg
+  | None ->
+      let hash = Cudd.Hash.create 1 in
+      let memo = Cudd.Memo.Hash hash in
+      let res = vectorcompose_memo memo tab reg in
+      Cudd.Hash.clear hash;
+      res
 
 (*i \section{Tests} %====================================================== i*)
 

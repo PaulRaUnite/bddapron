@@ -1,4 +1,4 @@
-(** Building BDDAPRON expressions from Abstract Syntax Trees *)
+(** Abstract syntax tree for BDD expressions *)
 
 (* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
@@ -11,26 +11,17 @@
 type cst = [
   | `Bool of bool
   | `Bint of (bool * int) * int
-  | `Apron of Apron.Coeff.t
 ]
 
 (** Unary operators *)
 type unop = [
-| `Not
-| `Apron of Apron.Texpr1.unop * Apron.Texpr1.typ * Apron.Texpr1.round
+  | `Not
+  | `Negate
 ]
 
 (** Boolean/finite-type binary operators *)
-type bbinop = [
-  | `Or
-  | `And
-  | `EQ
-  | `NEQ
-  | `GT
-  | `GEQ
-  | `LEQ
-  | `LT
-]
+type bbinop = Or | And | EQ | NEQ | GT | GEQ | LEQ | LT
+
 (** Binary operators *)
 type binop = [
 | `Bool of bbinop
@@ -38,14 +29,13 @@ type binop = [
 ]
 
 (** Expressions *)
-type 'a expr = [
-  | `Cst of cst
-  | `Ref of 'a
-  | `Unop of unop * 'a expr
-  | `Binop of binop * 'a expr * 'a expr
-  | `If of 'a expr * 'a expr * 'a expr
-  | `In of 'a expr * 'a expr list
-]
+type 'a expr =
+  | Cst of cst
+  | Ref of 'a
+  | Unop of unop * 'a expr
+  | Binop of binop * 'a expr * 'a expr
+  | If of 'a expr * 'a expr * 'a expr
+  | In of 'a expr * 'a expr list
 
 (*  ********************************************************************** *)
 (** {3 Error and printing functions} *)

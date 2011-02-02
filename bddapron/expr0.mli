@@ -14,7 +14,7 @@
 *)
 
 (*  ********************************************************************** *)
-(** {2 Expressions} *)
+(** {3 Expressions} *)
 (*  ********************************************************************** *)
 
 type 'a t = [
@@ -28,7 +28,7 @@ type 'a expr = 'a t
     integer and enumerated types expressions *)
 
 (*  ====================================================================== *)
-(** {3 Boolean expressions} *)
+(** {4 Boolean expressions} *)
 (*  ====================================================================== *)
 
 module Bool : sig
@@ -64,7 +64,7 @@ module Bool : sig
   val cofactor : 'a t -> 'a t -> 'a t
   val restrict : 'a t -> 'a t -> 'a t
   val tdrestrict : 'a t -> 'a t -> 'a t
-  val permute : 'a t -> int array -> 'a t
+  val permute : ?memo:Cudd.Memo.t -> 'a t -> int array -> 'a t
   val varmap : 'a t -> 'a t
 
   val substitute_by_var : 'a Env.t -> 'a Cond.t -> 'a t -> ('a * 'a) list -> 'a t
@@ -74,7 +74,7 @@ module Bool : sig
 end
 
 (*  ====================================================================== *)
-(** {3 Bounded integer expressions} *)
+(** {4 Bounded integer expressions} *)
 (*  ====================================================================== *)
 
 module Bint : sig
@@ -106,7 +106,7 @@ module Bint : sig
   val cofactor : 'a t -> 'a Bool.t -> 'a t
   val restrict : 'a t -> 'a Bool.t -> 'a t
   val tdrestrict : 'a t -> 'a Bool.t -> 'a t
-  val permute : 'a t -> int array -> 'a t
+  val permute : ?memo:Cudd.Memo.t -> 'a t -> int array -> 'a t
   val varmap : 'a t -> 'a t
 
   val substitute_by_var : 'a Env.t -> 'a Cond.t -> 'a t -> ('a * 'a) list -> 'a t
@@ -116,7 +116,7 @@ module Bint : sig
 end
 
 (*  ====================================================================== *)
-(** {3 Enumerated expressions} *)
+(** {4 Enumerated expressions} *)
 (*  ====================================================================== *)
 
 module Benum : sig
@@ -130,7 +130,7 @@ module Benum : sig
   val cofactor : 'a t -> 'a Bool.t -> 'a t
   val restrict : 'a t -> 'a Bool.t -> 'a t
   val tdrestrict : 'a t -> 'a Bool.t -> 'a t
-  val permute : 'a t -> int array -> 'a t
+  val permute : ?memo:Cudd.Memo.t -> 'a t -> int array -> 'a t
   val varmap : 'a t -> 'a t
   val substitute_by_var : 'a Env.t -> 'a Cond.t -> 'a t -> ('a * 'a) list -> 'a t
   val substitute : 'a Env.t -> 'a Cond.t -> 'a t -> ('a * 'a expr) list -> 'a t
@@ -138,7 +138,7 @@ module Benum : sig
 end
 
 (*  ====================================================================== *)
-(** {3 Arithmetic expressions} *)
+(** {4 Arithmetic expressions} *)
 (*  ====================================================================== *)
 
 type apron_coeff = Apron.Coeff.t
@@ -183,7 +183,7 @@ module Apron : sig
   val cofactor :  'a t -> 'a Bool.t -> 'a t
   val restrict : 'a t -> 'a Bool.t -> 'a t
   val tdrestrict : 'a t -> 'a Bool.t -> 'a t
-  val permute : 'a t -> int array -> 'a t
+  val permute : ?memo:Cudd.Memo.t -> 'a t -> int array -> 'a t
   val varmap : 'a t -> 'a t
 
   val substitute_by_var : 'a Env.t -> 'a Cond.t -> 'a t -> ('a * 'a) list -> 'a t
@@ -193,7 +193,7 @@ module Apron : sig
 end
 
 (*  ====================================================================== *)
-(** {3 General expressions} *)
+(** {4 General expressions} *)
 (*  ====================================================================== *)
 
 (** The following operations raise a [Failure] exception in case of a typing
@@ -221,7 +221,7 @@ val tdrestrict : 'a t -> 'a Bool.t -> 'a t
     (** Simplify the expression knowing that the BDD is true.  Generalizes
 	[cofactor]. *)
 
-val permute : 'a t -> int array -> 'a t
+val permute : ?memo:Cudd.Memo.t -> 'a t -> int array -> 'a t
 val varmap : 'a t -> 'a t
   (** Permutation (rather internal) *)
 
@@ -244,7 +244,7 @@ val normalize :
   'a Cond.t * 'a t list -> 'a Cond.t * 'a t list
 
 (*  ********************************************************************** *)
-(** {2 Opened signature and Internal functions} *)
+(** {3 Opened signature and Internal functions} *)
 (*  ********************************************************************** *)
 
 module O : sig
@@ -285,7 +285,7 @@ module O : sig
     val cofactor :  'a t -> 'a t -> 'a t
     val restrict :  'a t -> 'a t -> 'a t
     val tdrestrict :  'a t -> 'a t -> 'a t
-    val permute : 'a t -> int array -> 'a t
+    val permute : ?memo:Cudd.Memo.t -> 'a t -> int array -> 'a t
     val varmap : 'a t -> 'a t
 
     val substitute_by_var : 'b -> ('a,'b) Cond.O.t -> 'a t -> ('a * 'a) list -> 'a t
@@ -323,7 +323,7 @@ module O : sig
     val cofactor :  'a t -> 'a Bool.t -> 'a t
     val restrict :  'a t -> 'a Bool.t -> 'a t
     val tdrestrict :  'a t -> 'a Bool.t -> 'a t
-    val permute : 'a t -> int array -> 'a t
+    val permute : ?memo:Cudd.Memo.t -> 'a t -> int array -> 'a t
     val varmap : 'a t -> 'a t
 
     val substitute_by_var : 'b -> ('a,'b) Cond.O.t -> 'a t -> ('a * 'a) list -> 'a t
@@ -343,7 +343,7 @@ module O : sig
     val cofactor :  'a t -> 'a Bool.t -> 'a t
     val restrict :  'a t -> 'a Bool.t -> 'a t
     val tdrestrict :  'a t -> 'a Bool.t -> 'a t
-    val permute : 'a t -> int array -> 'a t
+    val permute : ?memo:Cudd.Memo.t -> 'a t -> int array -> 'a t
     val varmap : 'a t -> 'a t
     val substitute_by_var : 'b -> ('a,'b) Cond.O.t -> 'a t -> ('a * 'a) list -> 'a t
     val substitute : 'b -> ('a,'b) Cond.O.t -> 'a t -> ('a * 'a expr) list -> 'a t
@@ -388,7 +388,7 @@ module O : sig
     val cofactor :  'a t -> 'a Bool.t -> 'a t
     val restrict : 'a t -> 'a Bool.t -> 'a t
     val tdrestrict : 'a t -> 'a Bool.t -> 'a t
-    val permute : 'a t -> int array -> 'a t
+    val permute : ?memo:Cudd.Memo.t -> 'a t -> int array -> 'a t
     val varmap : 'a t -> 'a t
 
     val substitute_by_var : 'b -> ('a,'b) Cond.O.t -> 'a t -> ('a * 'a) list -> 'a t
@@ -412,8 +412,8 @@ module O : sig
   val cofactor :  'a t -> 'a Bool.t -> 'a t
   val restrict : 'a t -> 'a Bool.t -> 'a t
   val tdrestrict : 'a t -> 'a Bool.t -> 'a t
-  val permute : 'a t -> int array -> 'a t
-  val permute_list : 'a t list -> int array -> 'a t list
+  val permute : ?memo:Cudd.Memo.t -> 'a t -> int array -> 'a t
+  val permute_list : ?memo:Cudd.Memo.t -> 'a t list -> int array -> 'a t list
   val varmap : 'a t -> 'a t
 
   val substitute_by_var : 'b -> ('a,'b) Cond.O.t -> 'a t -> ('a * 'a) list -> 'a t

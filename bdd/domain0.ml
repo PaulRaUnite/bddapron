@@ -13,7 +13,7 @@ type vt = Cudd.Man.v t
 let size = Cudd.Bdd.size
 
 (*  ********************************************************************** *)
-(** {2 Opened signature and Internal functions} *)
+(** {3 Opened signature and Internal functions} *)
 (*  ********************************************************************** *)
 
 module O = struct
@@ -217,7 +217,7 @@ let apply_change abs change =
 end
 
 (*  ********************************************************************** *)
-(** {2 Closed signature} *)
+(** {3 Closed signature} *)
 (*  ********************************************************************** *)
 
 let print = O.print

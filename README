@@ -20,10 +20,8 @@ Required
 1)
 OCaml
 Camlidl
-C  libraries and interfaces
-  CUDD (http://vlsi.colorado.edu/~fabio/CUDD/)	
+C/OCaml  libraries and interfaces
   MLCUDDIDL (http://pop-art.inrialpes.fr/~bjeannet/mlxxxidl-forge/mlcuddidl/index.html)
-OCaml libraries:
   camllib (http://http://pop-art.inrialpes.fr/~bjeannet/bjeannet-forge/camllib/)
 2) Same as above plus
 C  libraries and interfaces
@@ -45,10 +43,6 @@ make example2.byte
 make example1.opt
 make example2.opt 
 		# examples
-
-make bddtop     # for a custom toplevel for Bdd (contains CUDD C library 
-                                                 + extension)
-make bddaprontop # for a custom toplevel for Bddapron (adds APRON C library)
 
 make bdd.pdf bddapron.pdf # doc
 make html        # doc

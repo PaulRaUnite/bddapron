@@ -1,14 +1,14 @@
-(** Boolean/Numerical domain linked to environment *)
+(** Boolean/Numerical domain with normalized environment *)
 
 (* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 (*  ********************************************************************** *)
-(** {2 Generic interface} *)
+(** {3 Generic interface} *)
 (*  ********************************************************************** *)
 
 (*  ====================================================================== *)
-(** {3 Types} *)
+(** {4 Types} *)
 (*  ====================================================================== *)
 
 type ('a,'b,'c,'d) man = ('a,'b,'c,'d) Domain0.man
@@ -89,14 +89,14 @@ val unify : ('a,'b,'c,'d) man -> ('a,'d) t -> ('a,'d) t -> ('a,'d) t
 val rename : ('a,'b,'c,'d) man -> ('a,'d) t -> ('a * 'a) list -> ('a,'d) t
 
 (*  ********************************************************************** *)
-(** {2 Implementation based on {!Mtbdddomain0}} *)
+(** {3 Implementation based on {!Mtbdddomain0}} *)
 (*  ********************************************************************** *)
 
 val make_mtbdd : ?global:bool -> 'b Apron.Manager.t -> ('a,'b) Domain0.mtbdd
   (** Make a mtbdd manager *)
 
 (*  ====================================================================== *)
-(** {3 Type conversion functions} *)
+(** {4 Type conversion functions} *)
 (*  ====================================================================== *)
 
 val man_is_mtbdd : ('a,'b,'c,'d) man -> bool
@@ -118,13 +118,13 @@ val to_mtbdd :
       Raises [Failure] if the argument manager is not a mtbdd manager *)
 
 (*  ********************************************************************** *)
-(** {2 Implementation based on {!Bdddomain0}} *)
+(** {3 Implementation based on {!Bdddomain0}} *)
 (*  ********************************************************************** *)
 
 val make_bdd : 'b Apron.Manager.t -> ('a,'b) bdd
 
 (*  ====================================================================== *)
-(** {3 Type conversion functions} *)
+(** {4 Type conversion functions} *)
 (*  ====================================================================== *)
 
 val man_is_bdd : ('a,'b,'c,'d) man -> bool

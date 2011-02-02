@@ -24,7 +24,7 @@ type dt = Cudd.Man.d t
 type vt = Cudd.Man.v t
 
 (*  *********************************************************************** *)
-(** {2 Logical operations} *)
+(** {3 Logical operations} *)
 (*  *********************************************************************** *)
 val lnot: 'a t -> 'a t
   (** Logical negation (for all bits). *)
@@ -40,9 +40,9 @@ val shift_right: 'a Cudd.Man.t -> int -> 'a t -> 'a t * 'a Cudd.Bdd.t
     bits. This an {e arithmetical} shift: the sign is inserted
     as the new most significant bits. Returns the resulting
     register and the carry, which contains the last bit shifted
-    out of the register. *) 
+    out of the register. *)
 
-val shift_right_logical: 'a Cudd.Man.t -> int -> 'a t -> 'a t * 'a Cudd.Bdd.t 
+val shift_right_logical: 'a Cudd.Man.t -> int -> 'a t -> 'a t * 'a Cudd.Bdd.t
   (** Same as [shift_right], but here {e logical} shift: a zero
     is always inserted. *)
 
@@ -54,7 +54,7 @@ val extend: 'a Cudd.Man.t -> signed:bool -> int -> 'a t -> 'a t
     not. *)
 
 (*  *********************************************************************** *)
-(** {2 Arithmetic operations} *)
+(** {3 Arithmetic operations} *)
 (*  *********************************************************************** *)
 
 val succ: 'a Cudd.Man.t -> 'a t -> 'a t * 'a Cudd.Bdd.t
@@ -78,7 +78,7 @@ val ite: 'a Cudd.Bdd.t -> 'a t -> 'a t -> 'a t
   (** if-then-else operation. Zero-size possible. *)
 
 (*  *********************************************************************** *)
-(** {2 Predicates} *)
+(** {3 Predicates} *)
 (*  *********************************************************************** *)
 
 val is_cst: 'a t -> bool
@@ -97,7 +97,7 @@ val higher: 'a Cudd.Man.t -> 'a t -> 'a t -> 'a Cudd.Bdd.t
   (** Unsigned strictly-greater-than test. *)
 
 (*  *********************************************************************** *)
-(** {2 Constants: conversion and predicates} *)
+(** {3 Constants: conversion and predicates} *)
 (*  *********************************************************************** *)
 
 val min_size: int -> int
@@ -122,27 +122,27 @@ val higher_int: 'a Cudd.Man.t -> 'a t -> int -> 'a Cudd.Bdd.t
      defined by the first given register. *)
 
 (*  *********************************************************************** *)
-(** {2 Decomposition in guarded form} *)
+(** {3 Decomposition in guarded form} *)
 (*  *********************************************************************** *)
 
 module Minterm : sig
   type t = Cudd.Man.tbool array
     (** Type of a minterm: an array of Booleans extend with undefined value,
-        indexed by variable indices. *)
+	indexed by variable indices. *)
   val is_indet: t -> bool
     (** Is the minterm completely non-determinated ? (ie, contain only
-        undefined values) *)
+	undefined values) *)
   val of_int: int -> int -> t
     (** Convert a possibly negative integer into a minterm of size [size] *)
   val to_int: signed:bool -> t -> int
     (** Convert a minterm to a (possibly signed) integer.  Raise
-        [Invalid_argument] if the minterm is not deterministic. *)
+	[Invalid_argument] if the minterm is not deterministic. *)
   val iter: (t -> unit) -> t -> unit
     (** Iterate the function on all determinated minterms represented by the
-        argument minterm. *)
+	argument minterm. *)
   val map: (t -> 'a) -> t -> 'a list
     (** Apply the function to all determinated minterms represented by the
-        argument minterm and return the list of the results. *)
+	argument minterm and return the list of the results. *)
 end
 
 val guard_of_minterm: 'a Cudd.Man.t -> 'a t -> Minterm.t -> 'a Cudd.Bdd.t
@@ -153,7 +153,7 @@ val guardints: 'a Cudd.Man.t -> signed:bool -> 'a t -> ('a Cudd.Bdd.t * int) lis
   (** Return the list [g -> n] represented by the BDD register. *)
 
 (*  *********************************************************************** *)
-(** {2 Evaluation} *)
+(** {3 Evaluation} *)
 (*  *********************************************************************** *)
 
 val cofactor : 'a t -> 'a Cudd.Bdd.t -> 'a t
@@ -161,24 +161,25 @@ val restrict : 'a t -> 'a Cudd.Bdd.t -> 'a t
 val tdrestrict : 'a t -> 'a Cudd.Bdd.t -> 'a t
 
 (*  *********************************************************************** *)
-(** {2 Printing} *)
+(** {3 Printing} *)
 (*  *********************************************************************** *)
 
 val print: (Format.formatter -> int -> unit) -> Format.formatter -> 'a t -> unit
   (** [print f fmt t] prints the register [t] using the formatter
     [fmt] and the function [f] to print BDDs indices. *)
 
-val print_minterm: 
-  signed:bool -> 
-  (Format.formatter -> 'a Cudd.Bdd.t -> unit) -> 
+val print_minterm:
+  signed:bool ->
+  (Format.formatter -> 'a Cudd.Bdd.t -> unit) ->
   Format.formatter -> 'a t -> unit
   (** [print_minterm f fmt t] prints the register [t] using the formatter
     [fmt] and the function [f] to convert BDDs indices to
     names. *)
 
-val permute : 'a t -> int array -> 'a t
-  (** Permutation (scale [Cudd.Bdd.permute]) *)
+val permute : ?memo:Cudd.Memo.t -> 'a t -> int array -> 'a t
+  (** Permutation (scale [Cudd.Bdd.permute] and [Cudd.Bdd.permute_memo]) *)
 val varmap : 'a t -> 'a t
   (** Permutation (scale [Cudd.Bdd.varmap]) *)
-val vectorcompose : 'a Cudd.Bdd.t array -> 'a t -> 'a t
-  (** Composition (scale [Cudd.Bdd.vectorcompose]) *)
+val vectorcompose : ?memo:Cudd.Memo.t -> 'a Cudd.Bdd.t array -> 'a t -> 'a t
+  (** Composition (scale [Cudd.Bdd.vectorcompose] and
+      [Cudd.Bdd.vectorcompose_memo]) *)

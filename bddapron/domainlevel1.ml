@@ -1,5 +1,4 @@
-(** Functor to transform an abstract domain interface from level 0
-    to level 1 (internal) *)
+(** Functor from level 0 to level 1 (internal) *)
 
 (* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)

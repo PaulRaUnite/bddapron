@@ -56,11 +56,11 @@ val print :
   (** Printing function *)
 
 (*  ********************************************************************** *)
-(** {2 Constructors, accessors, tests and property extraction} *)
+(** {3 Constructors, accessors, tests and property extraction} *)
 (*  ********************************************************************** *)
 
 (*  ====================================================================== *)
-(** {3 Basic constructor} *)
+(** {4 Basic constructor} *)
 (*  ====================================================================== *)
 
 val bottom : ('a,'b) man -> 'a Env.t -> 'b t
@@ -68,7 +68,7 @@ val top : ('a,'b) man -> 'a Env.t -> 'b t
 val of_apron : ('a,'b) man -> 'a Env.t -> 'b Apron.Abstract0.t -> 'b t
 
 (*  ====================================================================== *)
-(** {3 Tests} *)
+(** {4 Tests} *)
 (*  ====================================================================== *)
 
 val is_bottom : ('a,'b) man -> 'b t -> bool
@@ -80,7 +80,7 @@ val is_eq : ('a,'b) man -> 'b t -> 'b t -> bool
   (** Inclusion and equality tests *)
 
 (*  ====================================================================== *)
-(** {3 Extraction of properties} *)
+(** {4 Extraction of properties} *)
 (*  ====================================================================== *)
 
 val to_bddapron : ('a,'b) man -> 'b t -> ('a Expr0.Bool.t * 'b Apron.Abstract0.t) list
@@ -89,7 +89,7 @@ val to_bddapron : ('a,'b) man -> 'b t -> ('a Expr0.Bool.t * 'b Apron.Abstract0.t
       APRON abstract value *)
 
 (*  ********************************************************************** *)
-(** {2 Operations} *)
+(** {3 Operations} *)
 (*  ********************************************************************** *)
 
 val meet : ('a,'b) man -> 'b t -> 'b t -> 'b t
@@ -123,7 +123,7 @@ val apply_permutation :
   ('a,'b) man -> 'b t -> int array option * Apron.Dim.perm option -> 'b t
 
 (*  ********************************************************************** *)
-(** {2 Opened signature and Internal functions} *)
+(** {3 Opened signature and Internal functions} *)
 (*  ********************************************************************** *)
 
 module O : sig

@@ -5,7 +5,7 @@
 
 (** The grammar is indicated below *)
 
-(** {2 From strings} *)
+(** {3 From strings} *)
 
 val expr0_of_string : string Env.t -> string Cond.t -> string -> string Expr0.t
 
@@ -20,11 +20,11 @@ val boolexpr2_of_string :
   ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
   string Env.t -> string Cond.t -> string -> string Expr2.Bool.t
 
-(** {2 Misc.} *)
+(** {3 Misc.} *)
 
 val expr0_of_lexbuf : string Env.t -> string Cond.t -> Lexing.lexbuf -> string Expr0.t
 
-(** {2 Grammar of expressions} *)
+(** {3 Grammar of expressions} *)
 
 (**
 {v

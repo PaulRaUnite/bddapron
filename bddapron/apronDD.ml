@@ -12,10 +12,10 @@ type 'a table = 'a leaf Cudd.Mtbddc.table
 type 'a leaf_u = 'a leaf Cudd.Mtbddc.unique
 
 type 'a global = {
-  op_is_leq : (('a leaf_u, 'a leaf_u) Cudd.User.test2,  Cudd.User.global) Cudd.User.op;
-  op_join : (('a leaf_u, 'a leaf_u, 'a leaf_u) Cudd.User.op2, Cudd.User.global) Cudd.User.op;
-  op_meet : (('a leaf_u, 'a leaf_u, 'a leaf_u) Cudd.User.op2, Cudd.User.global) Cudd.User.op;
-  op_exist : (('a leaf_u, Cudd.User.global) Cudd.User.exist, Cudd.User.global) Cudd.User.op;
+  op_is_leq : ('a leaf_u, 'a leaf_u) Cudd.User.test2;
+  op_join : ('a leaf_u, 'a leaf_u, 'a leaf_u) Cudd.User.op2;
+  op_meet : ('a leaf_u, 'a leaf_u, 'a leaf_u) Cudd.User.op2;
+  op_exist : 'a leaf_u Cudd.User.exist;
 }
 type 'a man = {
   apron : 'a Apron.Manager.t;
@@ -37,16 +37,16 @@ let myunique = Cudd.Mtbddc.unique
 let myget = Cudd.Mtbddc.get
 let mydval = Cudd.Mtbddc.dval
 
-let neutral_join x =
-  let apron =  Apron.Abstract0.manager x in
-  Apron.Abstract0.is_bottom apron x
-
 let special_is_leq apron dd1 dd2 =
   if Cudd.Mtbddc.is_cst dd1 && Apron.Abstract0.is_bottom apron (mydval dd1) then
     Some true
   else if Cudd.Mtbddc.is_cst dd2 && Apron.Abstract0.is_bottom apron (mydval dd2) then
     Some false
   else None
+
+let neutral_join x =
+  let apron = Apron.Abstract0.manager x in
+  Apron.Abstract0.is_bottom apron x
 
 let special_join apron dd1 dd2 =
   if Cudd.Mtbddc.is_cst dd1 && Apron.Abstract0.is_bottom apron (mydval dd1) then
@@ -64,33 +64,44 @@ let special_meet apron dd1 dd2 =
   else
     None
 
+let make_op_join man =
+  match man.oglobal with
+    | Some global -> global.op_join
+    | None ->
+	Cudd.User.make_op2
+	  ~memo:(Cudd.Memo.Hash(Cudd.Hash.create 2))
+	  ~commutative:true ~idempotent:true
+	  ~special:(special_join man.apron)
+	  (fun x y -> myunique man.table (Apron.Abstract0.join man.apron (myget x) (myget y)))
+
 let make_global (apron:'a Apron.Manager.t) (table:'a table) : 'a global =
   let op_is_leq =
-    Cudd.User.register_test2
-      ~cachetyp:Cudd.User.global
-      ~commutative:false ~reflexive:true
+    Cudd.User.make_test2
+      ~memo:Cudd.Memo.Global
+      ~symetric:false ~reflexive:true
       ~special:(special_is_leq apron)
       (fun x y -> (Apron.Abstract0.is_leq apron (myget x) (myget y)))
   in
   let op_join =
-    Cudd.User.register_op2
-      ~cachetyp:Cudd.User.global
+    Cudd.User.make_op2
+      ~memo:Cudd.Memo.Global
       ~commutative:true ~idempotent:true
       ~special:(special_join apron)
       (fun x y -> myunique table (Apron.Abstract0.join apron (myget x) (myget y)))
   in
   let op_meet =
-    Cudd.User.register_op2
-      ~cachetyp:Cudd.User.global
+    Cudd.User.make_op2
+      ~memo:Cudd.Memo.Global
       ~commutative:true ~idempotent:true
       ~special:(special_meet apron)
       (fun x y -> myunique table (Apron.Abstract0.meet apron (myget x) (myget y)))
   in
   let op_exist =
-    Cudd.User.register_exist
-      ~cachetyp:Cudd.User.global
+    Cudd.User.make_exist
+      ~memo:Cudd.Memo.Global
       op_join
-  in {
+  in 
+  {
     op_is_leq = op_is_leq;
     op_join = op_join;
     op_meet = op_meet;
@@ -169,7 +180,7 @@ let is_leq man (x:'a t) (y:'a t) =
   match man.oglobal with
   | None ->
       Cudd.User.map_test2
-	~commutative:false ~reflexive:true
+	~symetric:false ~reflexive:true
 	~special:(special_is_leq man.apron)
 	(fun x y -> Apron.Abstract0.is_leq man.apron (myget x) (myget y))
 	x y
@@ -442,41 +453,54 @@ let assign_texpr_array man org tdim texpr odest =
 let substitute_texpr_array man org tdim texpr odest =
   asssub_texpr_array ?asssub_bdd:None Substitute man org tdim texpr odest
 
-let make_funjoin (man:'a man)
-    =
-  let special = Some(special_join man.apron) in
-  let op = (fun x y -> myunique man.table (Apron.Abstract0.join man.apron (myget x) (myget y))) in
-  `Fun (special,op)
-
 let exist man ~(supp:Cudd.Man.v Cudd.Bdd.t) (t:'a t) : 'a t =
   match man.oglobal with
   | None ->
-      Cudd.User.map_exist (make_funjoin man) ~supp t
+      let op2 = make_op_join man in
+      let exist =
+	Cudd.User.make_exist
+	  ~memo:(Cudd.Memo.Hash(Cudd.Hash.create 2)) op2
+      in
+      let res = Cudd.User.apply_exist exist ~supp t in
+      Cudd.User.clear_op2 op2;
+      Cudd.User.clear_exist exist;
+      res
   | Some global ->
       Cudd.User.apply_exist global.op_exist ~supp t
 
-let make_funjoin2 man bottomdd : ('a,'b) Cudd.User.mexist
-    =
-  let special =
-    Some (fun dd1 dd2 ->
-      if Cudd.Mtbddc.is_equal dd1 bottomdd then Some dd2
-      else if Cudd.Mtbddc.is_equal dd2 bottomdd then Some dd1
-      else None
-    )
-  in
-  let op = (fun x y -> myunique man.table (Apron.Abstract0.join man.apron (myget x) (myget y))) in
-  `Fun (special,op)
-
-let existand (man:'a man)
+let existand
+    (man:'a man)
     ~(bottom:'a Apron.Abstract0.t Cudd.Mtbddc.unique)
-    ~(supp:Cudd.Man.v Cudd.Bdd.t) (guard:Cudd.Man.v Cudd.Bdd.t) (t:'a t) : 'a t
+    ~(supp:Cudd.Bdd.vt) (guard:Cudd.Bdd.vt) (t:'a t)
+    : 
+    'a t
     =
-  match man.oglobal with
-  | None ->
-      let bottomdd = Cudd.Mtbddc.cst_u (Cudd.Bdd.manager supp) bottom in
-      Cudd.User.map_existand ~bottom (make_funjoin2 man bottomdd) ~supp guard t
-  | Some global ->
-      let (mexist:('a leaf_u, Cudd.User.global) Cudd.User.mexist) =
-	(`Op global.op_join)
-      in
-      Cudd.User.map_existand ~bottom mexist ~supp guard t
+  let op2 = 
+    match man.oglobal with
+      | None ->
+	  let bottomdd = Cudd.Mtbddc.cst_u (Cudd.Bdd.manager supp) bottom in
+	  let op2 = 
+	    Cudd.User.make_op2
+	      ~memo:(Cudd.Memo.Hash(Cudd.Hash.create 2))
+	      ~commutative:true ~idempotent:true
+	      ~special:(fun dd1 dd2 ->
+		if (Cudd.Mtbddc.is_equal dd1 bottomdd || Cudd.Mtbddc.is_equal dd2 bottomdd) then
+		  Some(bottomdd)
+		else 
+		  None
+	      )
+	      (fun x y -> myunique man.table (Apron.Abstract0.join man.apron (myget x) (myget y)))
+	  in
+	  op2
+      | Some global ->
+	  global.op_join
+  in
+  let existand = Cudd.User.make_existand
+    ~memo:(Cudd.Memo.Hash(Cudd.Hash.create 3))
+    ~bottom op2 
+  in
+  let res = Cudd.User.apply_existand existand ~supp guard t in
+  Cudd.User.clear_op2 op2;
+  Cudd.User.clear_existand existand;
+  res
+

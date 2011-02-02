@@ -10,7 +10,7 @@ open Bdd.Env
 open Env
 
 (*  ********************************************************************** *)
-(** {2 Arrays of expressions} *)
+(** {3 Arrays of expressions} *)
 (*  ********************************************************************** *)
 
 let texpr_cofactor cofactor (texpr:'a Expr0.t array) bdd : 'a Expr0.t array =
@@ -37,7 +37,7 @@ let texpr_cofactors (env:('a,'b,'c,'d) Env.O.t) (texpr: 'a Expr0.t array) topvar
   (t1,t2)
 
 (*  ********************************************************************** *)
-(** {2 Assignements and substitutions} *)
+(** {3 Assignements and substitutions} *)
 (*  ********************************************************************** *)
 
 let split_lvar
@@ -110,7 +110,7 @@ let split_lvarlexpr
 
 
 (*  ********************************************************************** *)
-(** {2 Recursive descend} *)
+(** {3 Recursive descend} *)
 (*  ********************************************************************** *)
 
 let cofactors

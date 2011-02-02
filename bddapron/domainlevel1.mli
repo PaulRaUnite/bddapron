@@ -1,5 +1,4 @@
-(** Functor to transform an abstract domain interface from level 0
-    to level 1 (internal) *)
+(** Functor to transform an abstract domain interface from level 0 to level 1 (internal) *)
 
 (* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
@@ -52,7 +51,7 @@ module type Level0 = sig
 end
 
 (*  ********************************************************************** *)
-(** {2 Abstract domain of level 1} *)
+(** {3 Abstract domain of level 1} *)
 (*  ********************************************************************** *)
 
 module type Level1 = sig
@@ -78,12 +77,12 @@ module type Level1 = sig
     Format.formatter -> ('a,'b) t -> unit
     (** Printing function *)
 
-  (** {3 Basic constructor} *)
+  (** {4 Basic constructor} *)
   val bottom : ('a,'b) man -> 'a Env.t -> ('a,'b) t
   val top : ('a,'b) man -> 'a Env.t -> ('a,'b) t
   val of_apron : ('a,'b) man -> 'a Env.t -> 'b Apron.Abstract1.t -> ('a,'b) t
 
-  (** {3 Tests} *)
+  (** {4 Tests} *)
 
   val is_bottom : ('a,'b) man -> ('a,'b) t -> bool
   val is_top : ('a,'b) man -> ('a,'b) t -> bool
@@ -93,13 +92,13 @@ module type Level1 = sig
   val is_eq : ('a,'b) man -> ('a,'b) t -> ('a,'b) t -> bool
     (** Inclusion and equality tests *)
 
-  (** {3 Extraction of properties} *)
+  (** {4 Extraction of properties} *)
   val to_bddapron : ('a,'b) man -> ('a,'b) t -> ('a Expr1.Bool.t * 'b Apron.Abstract1.t) list
     (** Conversion to a disjunction of a conjunction of pair of a
 	purely Boolean formula (without numerical constraints) and
 	an APRON abstract value *)
 
-  (** {3 Operations} *)
+  (** {4 Operations} *)
 
   val meet : ('a,'b) man -> ('a,'b) t -> ('a,'b) t -> ('a,'b) t
   val join : ('a,'b) man -> ('a,'b) t -> ('a,'b) t -> ('a,'b) t
@@ -134,7 +133,7 @@ module type Level1 = sig
   val widening : ('a,'b) man -> ('a,'b) t -> ('a,'b) t -> ('a,'b) t
     (** Widening *)
 
-  (** {3 Change of environments and renaming} *)
+  (** {4 Change of environments and renaming} *)
   val change_environment : ('a,'b) man -> ('a,'b) t -> 'a Env.t -> ('a,'b) t
     (** Change the environment (eliminate (forget) variables not
 	belonging to the new environment, and introduce new

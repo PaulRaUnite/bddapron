@@ -4,7 +4,7 @@
    Please read the COPYING file packaged in the distribution  *)
 
 (*  ********************************************************************** *)
-(** {2 Generic interface} *)
+(** {3 Generic interface} *)
 (*  ********************************************************************** *)
 
 type ('a,'b,'c,'d) man = {
@@ -70,7 +70,7 @@ let apply_change ~bottom man = man.apply_change ~bottom man.man
 let apply_permutation man = man.apply_permutation man.man
 
 (*  ********************************************************************** *)
-(** {2 Implementation based on {!Mtbdddomain0}} *)
+(** {3 Implementation based on {!Mtbdddomain0}} *)
 (*  ********************************************************************** *)
 
 type ('a,'b) mtbdd =
@@ -128,7 +128,7 @@ let to_mtbdd (manabs:('a,'b,'c,'d) man * 'd t) : ('a,'b) mtbdd * 'b Mtbdddomain0
     failwith ""
 
 (*  ********************************************************************** *)
-(** {2 Implementation based on {!Bdddomain0}} *)
+(** {3 Implementation based on {!Bdddomain0}} *)
 (*  ********************************************************************** *)
 
 type ('a,'b) bdd =

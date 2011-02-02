@@ -1,4 +1,4 @@
-(** Finite-type and arithmetical expressions linked to normalized environments *)
+(** Finite-type and arithmetical expressions with normalized environments *)
 
 (* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
@@ -8,13 +8,13 @@ open Bdd.Env
 open Env
 
 (*  ********************************************************************** *)
-(** {2 Opened signature and Internal functions} *)
+(** {3 Opened signature and Internal functions} *)
 (*  ********************************************************************** *)
 
 module O = struct
 
   (*  ==================================================================== *)
-  (** {3 General expressions} *)
+  (** {4 General expressions} *)
   (*  ==================================================================== *)
 
   type ('a,'b) t = ('b, 'a Expr0.t) Env.value
@@ -40,7 +40,7 @@ module O = struct
     make_value env (Expr0.O.var env cond var)
 
   (*  ==================================================================== *)
-  (** {3 Bdd expressions} *)
+  (** {4 Bdd expressions} *)
   (*  ==================================================================== *)
 
   module Bool = struct
@@ -165,14 +165,14 @@ module O = struct
   end
 
   (*  ==================================================================== *)
-  (** {3 Arith expressions} *)
+  (** {4 Arith expressions} *)
   (*  ==================================================================== *)
 
   module Apron = struct
     type ('a,'b) t = ('b, 'a ApronexprDD.t) Env.value
     constraint 'b = ('a,'c,'d,'e) Env.O.t
 
-    let of_expr0 = Env.make_value 
+    let of_expr0 = Env.make_value
     let get_env = Env.get_env
     let to_expr0 = Env.get_val0
     let of_expr e : ('a,'b) t =
@@ -241,7 +241,7 @@ module O = struct
   end
 
   (*  ====================================================================== *)
-  (** {3 General expressions} *)
+  (** {4 General expressions} *)
   (*  ====================================================================== *)
 
   let typ_of_expr e = Expr0.O.typ_of_expr e.env e.val0
@@ -314,7 +314,7 @@ module O = struct
     (cond,lexpr)
 
   (*  ====================================================================== *)
-  (** {3 List of expressions} *)
+  (** {4 List of expressions} *)
   (*  ====================================================================== *)
 
   module List = struct
@@ -357,11 +357,11 @@ module O = struct
 end
 
 (*  ********************************************************************** *)
-(** {2 Closed signature} *)
+(** {3 Closed signature} *)
 (*  ********************************************************************** *)
 
 (*  ====================================================================== *)
-(** {3 Operations on general expressions} *)
+(** {4 Operations on general expressions} *)
 (*  ====================================================================== *)
 
 type 'a t = ('a Env.t, 'a Expr0.t) Env.value
@@ -388,7 +388,7 @@ let make = O.make
 let normalize = O.normalize
 
 (*  ====================================================================== *)
-(** {3 Boolean expressions} *)
+(** {4 Boolean expressions} *)
 (*  ====================================================================== *)
 
 module Bool = struct
@@ -430,7 +430,7 @@ module Bool = struct
 end
 
 (*  ====================================================================== *)
-(** {3 Bounded integer expressions} *)
+(** {4 Bounded integer expressions} *)
 (*  ====================================================================== *)
 
 module Bint = struct
@@ -471,7 +471,7 @@ module Bint = struct
 end
 
 (*  ====================================================================== *)
-(** {3 Enumerated expressions} *)
+(** {4 Enumerated expressions} *)
 (*  ====================================================================== *)
 
 module Benum = struct
@@ -497,7 +497,7 @@ module Benum = struct
 end
 
 (*  ====================================================================== *)
-(** {3 Arithmetic expressions} *)
+(** {4 Arithmetic expressions} *)
 (*  ====================================================================== *)
 type apron_coeff = Apron.Coeff.t
 type apron_typ = Apron.Texpr1.typ
@@ -536,7 +536,7 @@ module Apron = struct
 end
 
 (*  ====================================================================== *)
-(** {3 List of expressions} *)
+(** {4 List of expressions} *)
 (*  ====================================================================== *)
 
 module List = struct

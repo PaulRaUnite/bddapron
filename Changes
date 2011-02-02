@@ -1,0 +1,11 @@
+
+-------------
+BDDAPRON 2.2.0:
+-------------
+
+Distribution:
+  * Uses findlib and findlib conventions
+
+General:
+  * Adaptation to new version mlcuddidl 2.2.0 and mlgmpidl 1.20
+

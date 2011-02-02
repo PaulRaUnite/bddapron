@@ -4,7 +4,7 @@
    Please read the COPYING file packaged in the distribution  *)
 
 (*  ********************************************************************** *)
-(** {2 Types} *)
+(** {3 Types} *)
 (*  ********************************************************************** *)
 
 exception Bddindex
@@ -78,7 +78,7 @@ type ('a,'b,'c,'d,'e) t0 = {
   copy_ext : 'e -> 'e;
 }
 
-(** {3 Opened signature} *)
+(** {4 Opened signature} *)
 module O : sig
   type ('a,'b,'c,'d,'e) t = ('a,'b,'c,'d,'e) t0
   constraint 'b = [>'a typ]
@@ -101,7 +101,7 @@ end
 type ('a,'d) t = ('a,'a typ,'a typdef,'d,unit) O.t
 
 (*  ********************************************************************** *)
-(** {2 Printing} *)
+(** {3 Printing} *)
 (*  ********************************************************************** *)
 val print_typ :
   (Format.formatter -> 'a -> unit) ->
@@ -121,7 +121,7 @@ val print : Format.formatter -> ('a,'b,'c,'d,'e) O.t -> unit
     (** Print an environment *)
 
 (*  ********************************************************************** *)
-(** {2 Constructors} *)
+(** {3 Constructors} *)
 (*  ********************************************************************** *)
 
 val marshal : 'a -> string
@@ -175,7 +175,7 @@ val copy : ('a,'b,'c,'d,'e) O.t -> ('a,'b,'c,'d,'e) O.t
       (** Copy *)
 
 (*  ********************************************************************** *)
-(** {2 Accessors} *)
+(** {3 Accessors} *)
 (*  ********************************************************************** *)
 
 val mem_typ : ('a,'b,'c,'d,'e) O.t -> 'a -> bool
@@ -197,7 +197,7 @@ val labels : ('a,'b,'c,'d,'e) O.t -> 'a PSette.t
     (** Return the list of labels (not variables) *)
 
 (*  ********************************************************************** *)
-(** {2 Adding types and variables} *)
+(** {3 Adding types and variables} *)
 (*  ********************************************************************** *)
 
 val add_typ_with : ('a,'b,'c,'d,'e) O.t -> 'a -> 'c -> unit
@@ -225,7 +225,7 @@ val add_var_with : ('a,'b,'c,'d,'e) O.t -> 'a -> 'b -> unit
     (** Addition without normalization (internal) *)
 
 (* ********************************************************************** *)
-(** {2 Operations} *)
+(** {3 Operations} *)
 (* ********************************************************************** *)
 
 val iter_ordered :
@@ -248,7 +248,7 @@ val permutation21 : ('a,'b,'c,'d,'e) O.t -> ('a,'b,'c,'d,'e) O.t -> int array
     (** Permutation from a superenvironment to a subenvironment *)
 
 (*  ********************************************************************** *)
-(** {2 Precomputing change of environments} *)
+(** {3 Precomputing change of environments} *)
 (*  ********************************************************************** *)
 
 (** Contain the computed information to switch from one
@@ -264,7 +264,7 @@ type 'a change = {
 val compute_change : ('a,'b,'c,'d,'e) O.t -> ('a,'b,'c,'d,'e) O.t -> 'd change
 
 (*  ********************************************************************** *)
-(** {2 Utilities} *)
+(** {3 Utilities} *)
 (*  ********************************************************************** *)
 
 val notfound : ('a, Format.formatter, unit, 'b) format4 -> 'a
@@ -289,14 +289,14 @@ val extend_environment :
 	to the value. *)
 
 (*  ********************************************************************** *)
-(** {2 Internal functions} *)
+(** {3 Internal functions} *)
 (*  ********************************************************************** *)
 
 val compare_idb : int*bool -> int*bool -> int
   (** Comparison *)
 
 (* ====================================================================== *)
-(** {3 Normalisation} *)
+(** {4 Normalisation} *)
 (* ====================================================================== *)
 
 val permutation : ('a,'b,'c,'d,'e) O.t -> int array
@@ -309,7 +309,7 @@ val check_normalized : ('a,'b,'c,'d,'e) O.t -> bool
     (** Prints error message and returns [false] if not normalized *)
 
 (* ====================================================================== *)
-(** {3 Permutations} *)
+(** {4 Permutations} *)
 (* ====================================================================== *)
 
 val compose_permutation : int array -> int array -> int array
@@ -318,7 +318,7 @@ val compose_opermutation :
 val permutation_of_offset : int -> int -> int array
 
 (* ====================================================================== *)
-(** {3 Used by level1 APIs} *)
+(** {4 Used by level1 APIs} *)
 (* ====================================================================== *)
 
 val check_var : ('a,'b,'c,'d,'e) O.t -> 'a -> unit

@@ -86,7 +86,7 @@ end
 type 'a t = ('a,'a typ,'a typdef,unit) O.t
 
 (*  ********************************************************************** *)
-(** {2 Printing} *)
+(** {3 Printing} *)
 (*  ********************************************************************** *)
 
 let print_typ print_symbol fmt typ =
@@ -103,7 +103,7 @@ let print_idcondb = Bdd.Env.print_idcondb
 let print_order = Bdd.Env.print_order
 
 (*  ********************************************************************** *)
-(** {2 Constructors} *)
+(** {3 Constructors} *)
 (*  ********************************************************************** *)
 
 let marshal = Bdd.Env.marshal
@@ -125,7 +125,7 @@ let make_string ?bddindex0 ?bddsize ?relational cudd =
 let copy = Bdd.Env.copy
 
 (*  ********************************************************************** *)
-(** {2 Accessors} *)
+(** {3 Accessors} *)
 (*  ********************************************************************** *)
 
 let mem_typ = Bdd.Env.mem_typ
@@ -144,7 +144,7 @@ let labels = Bdd.Env.labels
 
 
 (*  ********************************************************************** *)
-(** {2 Adding types and variables} *)
+(** {3 Adding types and variables} *)
 (*  ********************************************************************** *)
 
 let add_typ_with = Bdd.Env.add_typ_with
@@ -233,7 +233,7 @@ let rename_vars env lvarvar =
   nenv
 
 (* ********************************************************************** *)
-(** {2 Operations} *)
+(** {3 Operations} *)
 (* ********************************************************************** *)
 
 let is_leq = Bdd.Env.is_leq
@@ -247,7 +247,7 @@ let lce env1 env2 =
   env
 
 (*  ********************************************************************** *)
-(** {2 Precomputing change of environments} *)
+(** {3 Precomputing change of environments} *)
 (*  ********************************************************************** *)
 
 type change = {
@@ -263,7 +263,7 @@ let compute_change env1 env2 =
   { cbdd = cbdd; capron = capron; }
 
 (*  ********************************************************************** *)
-(** {2 Utilities} *)
+(** {3 Utilities} *)
 (*  ********************************************************************** *)
 
 type ('a,'b) value = ('a,'b) Bdd.Env.value = {

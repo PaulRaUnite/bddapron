@@ -6,7 +6,7 @@
 open Format
 
 (*  ********************************************************************** *)
-(** {2 Datatypes } *)
+(** {3 Datatypes } *)
 (*  ********************************************************************** *)
 
 exception Bddindex
@@ -105,8 +105,8 @@ let string_remove_null s =
     | '\\' | '\000'  -> incr nl
     | _ -> ()
   done;
-  if !nl = l then 
-    s 
+  if !nl = l then
+    s
   else begin
     let ns = String.create !nl in
     let ni = ref 0 in
@@ -149,13 +149,13 @@ let string_add_null ns =
     for i=0 to !l - 1 do
       match String.unsafe_get ns !ni with
       | '\\' ->
-	  String.unsafe_set s i 
+	  String.unsafe_set s i
 	    begin match String.unsafe_get ns (!ni + 1) with
 	    | '\\' -> '\\'
 	    | _ -> '\000'
 	    end;
 	  ni := !ni + 2
-      | _ as c -> 
+      | _ as c ->
 	  String.unsafe_set s i c;
 	  incr ni
     done;
@@ -237,7 +237,7 @@ end
 type ('a,'d) t = ('a,'a typ,'a typdef,'d,unit) O.t
 
 (*  ********************************************************************** *)
-(** {2 Printing} *)
+(** {3 Printing} *)
 (*  ********************************************************************** *)
 
 let typ_of_var env label : 'a
@@ -294,7 +294,7 @@ let print_order env (fmt:Format.formatter) : unit
   ()
 
 (*  ********************************************************************** *)
-(** {2 Constructors} *)
+(** {3 Constructors} *)
 (*  ********************************************************************** *)
 
 
@@ -314,7 +314,7 @@ let make
     ~copy_ext:(fun x -> ())
     ?bddindex0 ?bddsize ?relational cudd ()
 
-let make_string ?bddindex0 ?bddsize ?relational cudd = 
+let make_string ?bddindex0 ?bddsize ?relational cudd =
   make ~symbol:string_symbol ?bddindex0 ?bddsize ?relational cudd
 
 let copy env =
@@ -324,7 +324,7 @@ let copy env =
   }
 
 (*  ********************************************************************** *)
-(** {2 Internal functions} *)
+(** {3 Internal functions} *)
 (*  ********************************************************************** *)
 let permutation env : int array =
     let perm = Array.init (Cudd.Man.get_bddvar_nb env.cudd) (fun i -> i) in
@@ -445,7 +445,7 @@ let permutation_of_offset (length:int) (offset:int) : int array =
   perm
 
 (*  ********************************************************************** *)
-(** {2 Accessors} *)
+(** {3 Accessors} *)
 (*  ********************************************************************** *)
 
 let mem_typ env typ =
@@ -480,7 +480,7 @@ let labels env =
     (PSette.empty env.symbol.compare)
 
 (*  ********************************************************************** *)
-(** {2 Adding types and variables} *)
+(** {3 Adding types and variables} *)
 (*  ********************************************************************** *)
 
 let enum_size_of_typ env (typ:'a) : int
@@ -677,7 +677,7 @@ let rename_vars env lvarvar =
   nenv
 
 (* ********************************************************************** *)
-(** {2 Operations} *)
+(** {3 Operations} *)
 (* ********************************************************************** *)
 
 let iter_ordered (env:('a,'b,'c,'d,'e) O.t) (f:'a -> int array -> unit)
@@ -861,7 +861,7 @@ let permutation21 env2 env1 : int array
   perm
 
 (*  ********************************************************************** *)
-(** {2 Precomputing change of environments} *)
+(** {3 Precomputing change of environments} *)
 (*  ********************************************************************** *)
 
 type 'a change = {
@@ -900,7 +900,7 @@ let compute_change env1 env2 =
   { intro = intro; remove = remove }
 
 (*  ********************************************************************** *)
-(** {2 Utilities} *)
+(** {3 Utilities} *)
 (*  ********************************************************************** *)
 
 
@@ -951,7 +951,7 @@ let check_var (env:('a,'b,'c,'d,'e) O.t) (var:'a) : unit =
     let typ = typ_of_var env var in
     let ok =
       match typ with
-      | #Enum.typ -> PMappe.mem var env.vartid
+      | `Benum _ -> PMappe.mem var env.vartid
       | _ -> true
     in
     if not ok then raise Not_found

@@ -1,4 +1,4 @@
-(** Boolean/Numerical domain linked to environment *)
+(** Boolean/Numerical domain with normalized environment *)
 
 (* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
@@ -10,7 +10,7 @@ open Bdd.Env
 open Env
 
 (*  ********************************************************************** *)
-(** {2 Generic interface} *)
+(** {3 Generic interface} *)
 (*  ********************************************************************** *)
 
 type ('a,'b,'c,'d) man = ('a,'b,'c,'d) Domain0.man
@@ -182,7 +182,7 @@ let rename man t lvarvar =
     (Domain0.apply_permutation man t.val0 perm)
 
 (*  ********************************************************************** *)
-(** {2 Implementation based on {!Mtbdddomain1}} *)
+(** {3 Implementation based on {!Mtbdddomain1}} *)
 (*  ********************************************************************** *)
 
 let make_mtbdd = Domain0.make_mtbdd
@@ -205,7 +205,7 @@ let to_mtbdd (manabs:('a,'b,'c,'d) man * ('a,'d) t)
     failwith ""
 
 (*  ********************************************************************** *)
-(** {2 Implementation based on {!Bdddomain1}} *)
+(** {3 Implementation based on {!Bdddomain1}} *)
 (*  ********************************************************************** *)
 
 let make_bdd = Domain0.make_bdd

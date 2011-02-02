@@ -1,4 +1,4 @@
-(** Finite-type expressions linked to normalized environments *)
+(** Finite-type expressions with normalized environments *)
 
 (* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
@@ -7,13 +7,13 @@ open Format
 open Env
 
 (*  ********************************************************************** *)
-(** {2 Opened signatures and Internal functions} *)
+(** {3 Opened signatures and Internal functions} *)
 (*  ********************************************************************** *)
 
 module O = struct
 
   (*  ==================================================================== *)
-  (** {3 Datatypes} *)
+  (** {4 Datatypes} *)
   (*  ==================================================================== *)
 
   type ('a,'b,'c) t = ('b, 'c Expr0.t) Env.value
@@ -26,7 +26,7 @@ module O = struct
   type ('a,'b) vt = ('a,'b,Cudd.Man.v) t
 
   (*  ==================================================================== *)
-  (** {3 Expressions} *)
+  (** {4 Expressions} *)
   (*  ==================================================================== *)
 
   let typ_of_expr e = Expr0.O.typ_of_expr e.env e.val0
@@ -61,7 +61,7 @@ module O = struct
   let print fmt (e:('a,'b,'c) expr) : unit = Expr0.O.print e.env fmt e.val0
 
   (*  -------------------------------------------------------------------- *)
-  (** {4 Boolean expressions} *)
+  (** {5 Boolean expressions} *)
   (*  -------------------------------------------------------------------- *)
 
   module Bool = struct
@@ -148,7 +148,7 @@ module O = struct
   end
 
   (*  -------------------------------------------------------------------- *)
-  (** {4 Bounded integer expressions} *)
+  (** {5 Bounded integer expressions} *)
   (*  -------------------------------------------------------------------- *)
 
   module Bint = struct
@@ -224,7 +224,7 @@ module O = struct
   end
 
   (*  -------------------------------------------------------------------- *)
-  (** {4 Enumerated type expressions} *)
+  (** {5 Enumerated type expressions} *)
   (*  -------------------------------------------------------------------- *)
 
   module Benum = struct
@@ -281,7 +281,7 @@ module O = struct
   end
 
   (*  ==================================================================== *)
-  (** {3 General expressions} *)
+  (** {4 General expressions} *)
   (*  ==================================================================== *)
 
   let var env (var:'a) : ('a,'b,'c) expr
@@ -294,7 +294,7 @@ module O = struct
   let to_expr0 = Env.get_val0
 
   (*  ====================================================================== *)
-  (** {3 List of expressions} *)
+  (** {4 List of expressions} *)
   (*  ====================================================================== *)
 
   module List = struct
@@ -331,11 +331,11 @@ module O = struct
 end
 
 (*  ********************************************************************** *)
-(** {2 Closed signatures} *)
+(** {3 Closed signatures} *)
 (*  ********************************************************************** *)
 
 (*  ====================================================================== *)
-(** {3 Expressions} *)
+(** {4 Expressions} *)
 (*  ====================================================================== *)
 
 type ('a,'b) t = (('a,'b) Env.t, 'b Expr0.t) Env.value

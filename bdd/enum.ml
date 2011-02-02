@@ -7,7 +7,7 @@ open Format
 open Env
 
 (*  ********************************************************************** *)
-(** {2 Types} *)
+(** {3 Types} *)
 (*  ********************************************************************** *)
 
 type 'a typ = [
@@ -20,7 +20,7 @@ type 'a typdef = [
 ]
   (** An enumerated type is defined by its (ordered) set of labels *)
 
-(** {3 Datatype representing a BDD register of enumerated type} *)
+(** {4 Datatype representing a BDD register of enumerated type} *)
 
 type 'a t = {
   typ: string;
@@ -33,7 +33,7 @@ type dt = Cudd.Man.d t
 type vt = Cudd.Man.v t
 
 (*  ====================================================================== *)
-(** {3 Associations} *)
+(** {4 Associations} *)
 (*  ====================================================================== *)
 
 let labels_of_typ (env:('a,'b,'c,'d,'e) Env.O.t) typ : 'a array
@@ -94,7 +94,7 @@ let label_of_typcode (env:('a,'b,'c,'d,'e) Env.O.t) (typ:'a) (code:int) : 'a
 
 
 (*  *********************************************************************** *)
-(** {2 Constants and Operation(s)} *)
+(** {3 Constants and Operation(s)} *)
 (*  *********************************************************************** *)
 
 let of_label (env:('a,'b,'c,'d,'e) Env.O.t) (label:'a) :'d t  =
@@ -151,7 +151,7 @@ let ite bdd a b =
     reg = Reg.ite bdd a.reg b.reg }
 
 (*  *********************************************************************** *)
-(** {2 Decomposition in guarded form} *)
+(** {3 Decomposition in guarded form} *)
 (*  *********************************************************************** *)
 
 module Minterm = struct
@@ -196,7 +196,7 @@ let guardlabels (env:('a,'b,'c,'d,'e) Env.O.t) (x:'d t) : ('d Cudd.Bdd.t * 'a) l
   List.rev res
 
 (*  ********************************************************************** *)
-(** {2 Evaluation} *)
+(** {3 Evaluation} *)
 (*  ********************************************************************** *)
 
 let cofactor x bdd = { x with reg = Reg.cofactor x.reg bdd }
@@ -204,7 +204,7 @@ let restrict x bdd = { x with reg = Reg.restrict x.reg bdd }
 let tdrestrict x bdd = { x with reg = Reg.tdrestrict x.reg bdd }
 
 (*  ********************************************************************** *)
-(** {2 Printing} *)
+(** {3 Printing} *)
 (*  ********************************************************************** *)
 
 open Format
@@ -233,6 +233,7 @@ let print_minterm
       lguardlabels
   end
 
-let permute x tab = { x with reg = Reg.permute x.reg tab }
+let permute ?memo x tab = { x with reg = Reg.permute ?memo x.reg tab }
 let varmap x = { x with reg = Reg.varmap x.reg }
-let vectorcompose tab x =  { x with reg = Reg.vectorcompose tab x.reg }
+let vectorcompose ?memo tab x =
+  { x with reg = Reg.vectorcompose ?memo tab x.reg }

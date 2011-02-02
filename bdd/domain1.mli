@@ -1,10 +1,10 @@
-(** Boolean (abstract) domain with integrated environment *)
+(** Boolean (abstract) domain with normalized environment *)
 
 (* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
 
 (*  ********************************************************************** *)
-(** {2 Abstract domain} *)
+(** {3 Abstract domain} *)
 (*  ********************************************************************** *)
 
 type ('a,'b) t = ('a,'b) Expr1.Bool.t
@@ -66,7 +66,7 @@ val rename :('a,'b) t -> ('a*'a) list -> ('a,'b) t
   (** Change of environments *)
 
 (*  ********************************************************************** *)
-(** {2 Opened signature and Internal functions} *)
+(** {3 Opened signature and Internal functions} *)
 (*  ********************************************************************** *)
 
 (** We provide here the same functions and modules as before, but with opened

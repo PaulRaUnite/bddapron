@@ -1,4 +1,4 @@
-(** Finite-type and arithmetical expressions linked to normalized environments *)
+(** Finite-type and arithmetical expressions with normalized environments *)
 
 (* This file is part of the BDDAPRON Library, released under LGPL license.
    Please read the COPYING file packaged in the distribution  *)
@@ -14,7 +14,7 @@
 *)
 
 (*  ********************************************************************** *)
-(** {2 Expressions} *)
+(** {3 Expressions} *)
 (*  ********************************************************************** *)
 
 type 'a t = ('a Env.t, 'a Expr0.t) Env.value
@@ -22,7 +22,7 @@ type 'a expr = 'a t
   (** Type of general expressions *)
 
 (*  ====================================================================== *)
-(** {3 Boolean expressions} *)
+(** {4 Boolean expressions} *)
 (*  ====================================================================== *)
 
 module Bool : sig
@@ -48,7 +48,7 @@ module Bool : sig
   val of_bool : 'a Env.t -> 'a Cond.t -> bool -> 'a t
   val var : 'a Env.t -> 'a Cond.t -> 'a -> 'a t
 
-  (** {4 Logical connectors} *)
+  (** {5 Logical connectors} *)
 
   val dnot : 'a Cond.t -> 'a t -> 'a t
   val dand : 'a Cond.t -> 'a t -> 'a t -> 'a t
@@ -91,7 +91,7 @@ module Bool : sig
 end
 
 (*  ====================================================================== *)
-(** {3 Bounded integer expressions} *)
+(** {4 Bounded integer expressions} *)
 (*  ====================================================================== *)
 
 module Bint : sig
@@ -149,7 +149,7 @@ module Bint : sig
 end
 
 (*  ====================================================================== *)
-(** {3 Enumerated expressions} *)
+(** {4 Enumerated expressions} *)
 (*  ====================================================================== *)
 
 module Benum : sig
@@ -191,7 +191,7 @@ module Benum : sig
 end
 
 (*  ====================================================================== *)
-(** {3 Arithmetic expressions} *)
+(** {4 Arithmetic expressions} *)
 (*  ====================================================================== *)
 
 type apron_coeff = Apron.Coeff.t
@@ -256,7 +256,7 @@ module Apron : sig
 end
 
 (*  ====================================================================== *)
-(** {3 General expressions} *)
+(** {4 General expressions} *)
 (*  ====================================================================== *)
 
 val typ_of_expr : 'a t -> 'a Env.typ
@@ -308,7 +308,7 @@ val normalize :
   'a Cond.t * 'a t list -> 'a Cond.t * 'a t list
 
 (*  ====================================================================== *)
-(** {3 List of expressions} *)
+(** {4 List of expressions} *)
 (*  ====================================================================== *)
 
 module List : sig
@@ -338,7 +338,7 @@ module List : sig
 end
 
 (*  ********************************************************************** *)
-(** {2 Opened signature and Internal functions} *)
+(** {3 Opened signature and Internal functions} *)
 (*  ********************************************************************** *)
 
 module O : sig
@@ -363,7 +363,7 @@ module O : sig
     val of_bool : 'b -> ('a,'b) Cond.O.t -> bool -> ('a,'b) t
     val var : 'b -> ('a,'b) Cond.O.t -> 'a -> ('a,'b) t
 
-    (** {4 Logical connectors} *)
+    (** {5 Logical connectors} *)
 
     val dnot : ('a,'b) Cond.O.t -> ('a,'b) t -> ('a,'b) t
     val dand : ('a,'b) Cond.O.t -> ('a,'b) t -> ('a,'b) t -> ('a,'b) t
@@ -571,7 +571,7 @@ module O : sig
     ('a,'b) Cond.O.t * ('a,'b) t list
 
   (*  ====================================================================== *)
-  (** {3 List of expressions} *)
+  (** {4 List of expressions} *)
   (*  ====================================================================== *)
 
   module List : sig

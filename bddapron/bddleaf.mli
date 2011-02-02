@@ -11,7 +11,7 @@ type ('a,'b) elt = {
 type ('a,'b) t = ('a,'b) elt list
 
 (*  ********************************************************************** *)
-(** {2 Utilities} *)
+(** {3 Utilities} *)
 (*  ********************************************************************** *)
 
 val fold2 : ('a -> 'b -> 'c -> 'a) -> 'a -> 'b list -> 'c list -> 'a
@@ -21,7 +21,7 @@ val iter2 : ('a -> 'b -> unit) -> 'a list -> 'b list -> unit
 	list, then on the second. *)
 
 (*  ********************************************************************** *)
-(** {2 Normalisation} *)
+(** {3 Normalisation} *)
 (*  ********************************************************************** *)
 
 val check_unicity : is_equal:('b -> 'b -> bool) -> ('a,'b) elt list -> bool
@@ -92,7 +92,7 @@ val make_unique :
     (** Remove duplicatas (by reconstructing the list) *)
 
 (*  ********************************************************************** *)
-(** {2 Others} *)
+(** {3 Others} *)
 (*  ********************************************************************** *)
 val guard : cudd:'a Cudd.Man.t -> ('a,'b) t -> 'a Cudd.Bdd.t
     (** Return the union of guards in the list *)

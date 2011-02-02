@@ -14,18 +14,18 @@ type 'a symbol = 'a Bdd.Env.symbol = {
 }
 
 type typ = [
-  | `Int 
+  | `Int
   | `Real
 ]
 
 type ('a,'b) typ_of_var = 'a -> 'b constraint 'b = [> typ]
 
 (*  ********************************************************************** *)
-(** {2 Expressions} *)
+(** {3 Expressions} *)
 (*  ********************************************************************** *)
 
 (*  ==================================================================== *)
-(** {3 Linear expressions} *)
+(** {4 Linear expressions} *)
 (*  ==================================================================== *)
 
 module Lin :
@@ -55,7 +55,7 @@ module Lin :
   end
 
 (*  ==================================================================== *)
-(** {3 Polynomial expressions} *)
+(** {4 Polynomial expressions} *)
 (*  ==================================================================== *)
 
 module Poly :
@@ -85,7 +85,7 @@ module Poly :
   end
 
 (*  ==================================================================== *)
-(** {3 Tree expressions} *)
+(** {4 Tree expressions} *)
 (*  ==================================================================== *)
 
 module Tree :
@@ -113,7 +113,7 @@ module Tree :
   end
 
 (*  ==================================================================== *)
-(** {3 Conversions} *)
+(** {4 Conversions} *)
 (*  ==================================================================== *)
 
 val lin_of_poly : 'a symbol -> 'a Poly.t ->'a  Lin.t
@@ -123,7 +123,7 @@ val tree_of_lin : 'a Lin.t -> 'a Tree.t
 val tree_of_poly : 'a Poly.t -> 'a Tree.t
 
 (*  ********************************************************************** *)
-(** {2 General expressions and operations} *)
+(** {3 General expressions and operations} *)
 (*  ********************************************************************** *)
 
 type 'a t =
@@ -158,20 +158,20 @@ val print_typ : Format.formatter -> [> typ] -> unit
 
 val to_texpr0 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Texpr0.t
 val to_texpr1 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Texpr1.t
-val to_apron : 
-  'a symbol -> Apron.Environment.t -> 'a t -> 
-      [ 
+val to_apron :
+  'a symbol -> Apron.Environment.t -> 'a t ->
+      [
 	| `Linexpr1 of Apron.Linexpr1.t
 	| `Texpr1 of Apron.Texpr1.t
       ]
 
 (*  ********************************************************************** *)
-(** {2 Constraints} *)
+(** {3 Constraints} *)
 (*  ********************************************************************** *)
 
 module Condition :
   sig
-    type typ = Apron.Tcons1.typ = 
+    type typ = Apron.Tcons1.typ =
       EQ | SUPEQ | SUP | DISEQ | EQMOD of Apron.Scalar.t
     type 'a t = typ * 'a expr
     val make : ('a,'b) typ_of_var -> typ -> 'a expr -> [ `Cond of 'a t | `Bool of bool ]
@@ -181,9 +181,9 @@ module Condition :
     val compare : 'a symbol -> 'a t -> 'a t -> int
     val to_tcons0 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Tcons0.t
     val to_tcons1 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Tcons1.t
-    val to_apron : 
-      'a symbol -> Apron.Environment.t -> 'a t -> 
-	[ 
+    val to_apron :
+      'a symbol -> Apron.Environment.t -> 'a t ->
+	[
 	  | `Lincons1 of Apron.Lincons1.t
 	  | `Tcons1 of Apron.Tcons1.t
 	]

@@ -15,13 +15,13 @@ let make_man = ApronDD.make_man
 
 
 (*  ********************************************************************** *)
-(** {2 Opened signature and Internal functions} *)
+(** {3 Opened signature and Internal functions} *)
 (*  ********************************************************************** *)
 
 module O = struct
 
   (*  ==================================================================== *)
-  (** {3 Interface to ApronDD} *)
+  (** {4 Interface to ApronDD} *)
   (*  ==================================================================== *)
 
   let size man = Cudd.Mtbddc.size
@@ -60,7 +60,7 @@ module O = struct
   let widening = ApronDD.widening
 
   (*  ==================================================================== *)
-  (** {3 Meet with an elementary condition, cofactors} *)
+  (** {4 Meet with an elementary condition, cofactors} *)
   (*  ==================================================================== *)
 
   let meet_idcondb
@@ -85,7 +85,7 @@ module O = struct
     end
 
   (*  ==================================================================== *)
-  (** {3 Meet with Boolean formula} *)
+  (** {4 Meet with Boolean formula} *)
   (*  ==================================================================== *)
 
   let meet_condition man env cond (t:'b t) (condition:'a Expr0.Bool.t) : 'b t =
@@ -100,7 +100,7 @@ module O = struct
       t [| `Bool condition |]
 
   (*  ==================================================================== *)
-  (** {3 Assignement/Substitution} *)
+  (** {4 Assignement/Substitution} *)
   (*  ==================================================================== *)
 
   let assign_lexpr
@@ -176,7 +176,7 @@ module O = struct
       org texpr
 
   (*  ==================================================================== *)
-  (** {3 Forget} *)
+  (** {4 Forget} *)
   (*  ==================================================================== *)
 
   let forget_list (man:('a,'b) man) env (t:'b t) (lvar:'a list) =
@@ -206,15 +206,21 @@ module O = struct
 	if tadim=[||] then
 	  ApronDD.exist man ~supp t
 	else begin
-	  let mop1 = `Fun (begin fun tu ->
-	    let t = Cudd.Mtbddc.get tu in
-	    let res = Apron.Abstract0.forget_array man.apron t tadim false in
-	    let resu = Cudd.Mtbddc.unique man.ApronDD.table res in
-	    resu
-	  end)
+	  let op2 = ApronDD.make_op_join man in
+	  let op1 = Cudd.User.make_op1
+	    (begin fun tu ->
+	      let t = Cudd.Mtbddc.get tu in
+	      let res = Apron.Abstract0.forget_array man.apron t tadim false in
+	      let resu = Cudd.Mtbddc.unique man.ApronDD.table res in
+	      resu
+	    end)
 	  in
-	  let joinop = ApronDD.make_funjoin man in
-	  Cudd.User.map_existop1 mop1 joinop ~supp t
+	  let existop1 = Cudd.User.make_existop1 ~op1 op2 in
+	  let res = Cudd.User.apply_existop1 existop1 ~supp t in
+	  Cudd.User.clear_op2 op2;
+	  Cudd.User.clear_op1 op1;
+	  Cudd.User.clear_existop1 existop1;
+	  res
 	end
       end
     end
@@ -272,7 +278,7 @@ module O = struct
 end
 
 (*  ********************************************************************** *)
-(** {2 Closed signature} *)
+(** {3 Closed signature} *)
 (*  ********************************************************************** *)
 
 let size = O.size

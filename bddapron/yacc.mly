@@ -1,6 +1,6 @@
-/* 
+/*
   This file is part of the BDDAPRON Library, released under LGPL license.
-   Please read the COPYING file packaged in the distribution 
+   Please read the COPYING file packaged in the distribution
 */
 
 %{
@@ -11,7 +11,7 @@ open Syntax
 %token TK_LBRACKET TK_RBRACKET TK_SEMICOLON TK_COLON TK_LPAR TK_RPAR TK_LBRACE TK_RBRACE
 %token TK_BOOL TK_UINT TK_SINT TK_INT TK_REAL
 %token TK_IN TK_COMMA
-%token TK_TYPEDEF TK_ENUM TK_IF TK_THEN TK_ELSE 
+%token TK_TYPEDEF TK_ENUM TK_IF TK_THEN TK_ELSE
 %token TK_VERTEX TK_RAY TK_LINE TK_MOD TK_RAYMOD TK_LINEMOD
 %token <(Apron.Texpr1.typ * Apron.Texpr1.round)> TK_MUL
 %token <(Apron.Texpr1.typ * Apron.Texpr1.round)> TK_ADD
@@ -66,8 +66,8 @@ num: TK_MPQF
 {
   let mpqf = $1 in
   if Mpzf.cmp_int (Mpqf.get_den mpqf) 1 = 0 then
-    let mpzf = Mpqf.get_num mpqf in
-    let mpz = Mpzf.mpz mpzf in
+    let mpz = Mpz.init() in
+    Mpq.get_num mpz mpqf;
     Mpz.get_int mpz
   else
     raise (Error (Print.sprintf "Error: expecting integer here"))
