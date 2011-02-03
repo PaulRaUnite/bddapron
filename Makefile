@@ -35,7 +35,8 @@ MLMODULES = $(BDDMOD) $(BDDAPRONMOD)
 
 FILES_TOINSTALL = META \
 	bdd.cmi bdd.cma bddapron.cmi bddapron.cma \
-	bdd.cmx bdd.cmxa bdd.a bddapron.cmx bddapron.cmxa bddapron.a
+	bdd.cmx bdd.cmxa bdd.a bddapron.cmx bddapron.cmxa bddapron.a \
+	bdd.p.cmx bdd.p.cmxa bdd.p.a bddapron.p.cmx bddapron.p.cmxa bddapron.p.a
 
 ifneq ($(OCAMLPACK),)
 FILES_TOINSTALL += bdd_ocamldoc.mli bddapron_ocamldoc.mli
@@ -51,30 +52,43 @@ all: $(FILES_TOINSTALL)
 byte: bdd.cma bddapron.cma
 opt: bdd.cmxa bddapron.cmxa
 
-bddapron.cma: bddapron.cmo bdd.cmi
+bddapron.cma: bddapron.cmo 
 	$(OCAMLFIND) ocamlc $(OCAMLFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) \
 	-a -o $@ $<
-bddapron.cmxa: bddapron.cmx bdd.cmx
+bddapron.cmxa: bddapron.cmx 
 	$(OCAMLFIND) ocamlopt $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) \
 	-a -o $@ $<
 	$(RANLIB) bddapron.a
+bddapron.p.cmxa: bddapron.p.cmx 
+	$(OCAMLFIND) ocamlopt $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) \
+	-a -o $@ $<
+	$(RANLIB) bddapron.p.a
 bdd.cma: bdd.cmo
 	$(OCAMLFIND) ocamlc $(OCAMLFLAGS) $(OCAMLINC) -package $(BDD_REQ_PKG) -a -o $@ $^
 bdd.cmxa: bdd.cmx
 	$(OCAMLFIND) ocamlopt $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDD_REQ_PKG) -a -o $@ $^
 	$(RANLIB) bdd.a
+bdd.p.cmxa: bdd.p.cmx
+	$(OCAMLFIND) ocamlopt -p $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDD_REQ_PKG) -a -o $@ $^
+	$(RANLIB) bdd.p.a
 
-bddapron.cmo bddapron.cmi: $(BDDAPRONMOD:%=%.cmo) bdd.cmi
+bddapron.cmo bddapron.cmi: $(BDDAPRONMOD:%=%.cmo)
 	$(OCAMLFIND) ocamlc $(OCAMLFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) -pack -o bddapron.cmo $(BDDAPRONMOD:%=%.cmo)
 
-bddapron.cmx: $(BDDAPRONMOD:%=%.cmx) bdd.cmx
-	$(OCAMLFIND) ocamlopt $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) -pack -o bddapron.cmx $(BDDAPRONMOD:%=%.cmx)
+bddapron.cmx: $(BDDAPRONMOD:%=%.cmx) 
+	$(OCAMLFIND) ocamlopt $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) -pack -o $@ $(BDDAPRONMOD:%=%.cmx)
+
+bddapron.p.cmx: $(BDDAPRONMOD:%=%.p.cmx)
+	$(OCAMLFIND) ocamlopt -p $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) -pack -o $@ $(BDDAPRONMOD:%=%.p.cmx)
 
 bdd.cmo bdd.cmi: $(BDDMOD:%=%.cmo)
 	$(OCAMLFIND) ocamlc $(OCAMLFLAGS) $(OCAMLINC) -package $(BDD_REQ_PKG) -pack -o bdd.cmo $^
 
 bdd.cmx: $(BDDMOD:%=%.cmx)
-	$(OCAMLFIND) ocamlopt $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDD_REQ_PKG) -pack -o bdd.cmx $^
+	$(OCAMLFIND) ocamlopt $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDD_REQ_PKG) -pack -o $@ $^
+
+bdd.p.cmx: $(BDDMOD:%=%.p.cmx)
+	$(OCAMLFIND) ocamlopt -p $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDD_REQ_PKG) -pack -o $@ $^
 
 
 META: Makefile
@@ -233,6 +247,9 @@ bdd/%.cmo: bdd/%.ml
 bdd/%.cmx: bdd/%.ml
 	$(OCAMLFIND) ocamlopt $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDD_REQ_PKG) -I bdd -for-pack Bdd -c $<
 
+bdd/%.p.cmx: bdd/%.ml
+	$(OCAMLFIND) ocamlopt -p $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDD_REQ_PKG) -I bdd -for-pack Bdd -c -o $@ $<
+
 bddapron/%.cmi: bddapron/%.mli bdd.cmi
 	$(OCAMLFIND) ocamlc $(OCAMLFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) -I bddapron -c $<
 
@@ -241,6 +258,9 @@ bddapron/%.cmo: bddapron/%.ml bdd.cmi
 
 bddapron/%.cmx: bddapron/%.ml bdd.cmx
 	$(OCAMLFIND) ocamlopt $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) -I bddapron -for-pack Bddapron -c $<
+
+bddapron/%.p.cmx: bddapron/%.ml bdd.p.cmx
+	$(OCAMLFIND) ocamlopt -p $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) -I bddapron -for-pack Bddapron -c -o $@ $<
 
 bddapron/%.ml: bddapron/%.mll
 	$(OCAMLLEX) $^
