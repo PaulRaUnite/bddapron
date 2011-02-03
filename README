@@ -19,7 +19,8 @@ Required
 
 1)
 OCaml
-Camlidl
+Camlidl (http://caml.inria.fr/pub/old_caml_site/camlidl/)
+FINDLIB (http://projects.camlcity.org/projects/findlib.html)
 C/OCaml  libraries and interfaces
   MLCUDDIDL (http://pop-art.inrialpes.fr/~bjeannet/mlxxxidl-forge/mlcuddidl/index.html)
   camllib (http://http://pop-art.inrialpes.fr/~bjeannet/bjeannet-forge/camllib/)

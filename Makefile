@@ -34,9 +34,12 @@ BDDAPRONMOD := $(BDDAPRONMOD:%=bddapron/%)
 MLMODULES = $(BDDMOD) $(BDDAPRONMOD)
 
 FILES_TOINSTALL = META \
-	bdd_ocamldoc.mli bddapron_ocamldoc.mli \
 	bdd.cmi bdd.cma bddapron.cmi bddapron.cma \
 	bdd.cmx bdd.cmxa bdd.a bddapron.cmx bddapron.cmxa bddapron.a
+
+ifneq ($(OCAMLPACK),)
+FILES_TOINSTALL += bdd_ocamldoc.mli bddapron_ocamldoc.mli
+endif
 
 #---------------------------------------
 # Rules
