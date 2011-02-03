@@ -269,11 +269,11 @@ bddapron/%.ml bddapron/%.mli: bddapron/%.mly
 	$(OCAMLYACC) $^
 
 depend: bddapron/yacc.ml bddapron/yacc.mli bddapron/lex.ml
-	$(OCAMLFIND) ocamldep -package $(BDD_REQ_PKG) $(OCAMLINC) -I bdd $(BDDMOD:%=%.mli) $(BDDMOD:%=%.ml) >Makefile.depend
-	$(OCAMLFIND) ocamldep -package $(BDDAPRON_REQ_PKG) $(OCAMLINC) -I bddapron $(BDDAPRONMOD:%=%.mli) $(BDDAPRONMOD:%=%.ml) >>Makefile.depend
+	$(OCAMLFIND) ocamldep $(OCAMLINC) -I bdd $(BDDMOD:%=%.mli) $(BDDMOD:%=%.ml) >Makefile.depend
+	$(OCAMLFIND) ocamldep $(OCAMLINC) -I bddapron $(BDDAPRONMOD:%=%.mli) $(BDDAPRONMOD:%=%.ml) >>Makefile.depend
 
 Makefile.depend: bddapron/yacc.ml bddapron/yacc.mli bddapron/lex.ml
-	$(OCAMLFIND) ocamldep -package $(BDD_REQ_PKG) $(OCAMLINC) -I bdd $(BDDMOD:%=%.mli) $(BDDMOD:%=%.ml) >Makefile.depend
-	$(OCAMLFIND) ocamldep -package $(BDDAPRON_REQ_PKG) $(OCAMLINC) -I bddapron $(BDDAPRONMOD:%=%.mli) $(BDDAPRONMOD:%=%.ml) >>Makefile.depend
+	$(OCAMLFIND) ocamldep $(OCAMLINC) -I bdd $(BDDMOD:%=%.mli) $(BDDMOD:%=%.ml) >Makefile.depend
+	$(OCAMLFIND) ocamldep $(OCAMLINC) -I bddapron $(BDDAPRONMOD:%=%.mli) $(BDDAPRONMOD:%=%.ml) >>Makefile.depend
 
 -include Makefile.depend
