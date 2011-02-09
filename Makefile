@@ -93,23 +93,21 @@ bdd.p.cmx: $(BDDMOD:%=%.p.cmx)
 
 META: Makefile
 	/bin/rm -f META
-	echo "\n\
-description = \"Logico-numerical domain(s) based on BDDs and APRON\" \n\
-version = \"2.1.0\" \n\
-requires = \"bddapron.bdd\" \n\
-package \"bdd\" ( \n\
-requires = \"camllib cudd\" \n\
-archive(byte) = \"bdd.cma\" \n\
-archive(native) = \"bdd.cmxa\" \n\
-archive(native,gprof) = \"bdd.p.cmxa\" \n\
-) \n\
-package \"bddapron\" ( \n\
-requires = \"bddapron.bdd gmp apron\" \n\
-archive(byte) = \"bddapron.cma\" \n\
-archive(native) = \"bddapron.cmxa\" \n\
-archive(native,gprof) = \"bddapron.p.cmxa\" \n\
-) \n\
-" >META
+	echo "description = \"Logico-numerical domain(s) based on BDDs and APRON\"" >META
+	echo "version = \"2.1.0\"" >>META
+	echo "requires = \"bddapron.bdd\"" >>META
+	echo "package \"bdd\" (" >>META
+	echo "requires = \"camllib cudd\"" >>META
+	echo "archive(byte) = \"bdd.cma\"" >>META
+	echo "archive(native) = \"bdd.cmxa\"" >>META
+	echo "archive(native,gprof) = \"bdd.p.cmxa\"" >>META
+	echo ")" >>META
+	echo "package \"bddapron\" (" >>META
+	echo "requires = \"bddapron.bdd gmp apron\"" >>META
+	echo "archive(byte) = \"bddapron.cma\"" >>META
+	echo "archive(native) = \"bddapron.cmxa\"" >>META
+	echo "archive(native,gprof) = \"bddapron.p.cmxa\"" >>META
+	echo ")" >>META
 
 install: $(FILES_TOINSTALL)
 	$(OCAMLFIND) remove $(PKG-NAME)
@@ -190,6 +188,24 @@ html: bdd_ocamldoc.mli bddapron_ocamldoc.mli bdd.cmi bddapron.cmi bddapron.odoc
 	cp $(shell $(OCAMLFIND) query cudd)/cudd_ocamldoc.mli tmp/cudd.mli
 	cp $(shell $(OCAMLFIND) query apron)/apron_ocamldoc.mli tmp/apron.mli
 	$(OCAMLDOC) -html -d html -colorize-code -intro bddapron.odoc \
+-I $(shell $(OCAMLFIND) query gmp) \
+-I $(shell $(OCAMLFIND) query cudd) \
+-I $(shell $(OCAMLFIND) query apron) \
+-I $(shell $(OCAMLFIND) query camllib) \
+$(shell $(OCAMLFIND) query gmp)/*.mli \
+tmp/cudd.mli tmp/apron.mli \
+$(patsubst %,$(shell $(OCAMLFIND) query apron)/%, box.mli oct.mli polka.mli ppl.mli polkaGrid.mli t1p.mli) \
+$(shell $(OCAMLFIND) query camllib)/*.mli \
+tmp/bdd.mli tmp/bddapron.mli
+
+dot: bdd_ocamldoc.mli bddapron_ocamldoc.mli bdd.cmi bddapron.cmi bddapron.odoc
+	mkdir -p html
+	mkdir -p tmp
+	cp bdd_ocamldoc.mli tmp/bdd.mli
+	cp bddapron_ocamldoc.mli tmp/bddapron.mli
+	cp $(shell $(OCAMLFIND) query cudd)/cudd_ocamldoc.mli tmp/cudd.mli
+	cp $(shell $(OCAMLFIND) query apron)/apron_ocamldoc.mli tmp/apron.mli
+	$(OCAMLDOC) -dot -dot-reduce -o bddapron.dot \
 -I $(shell $(OCAMLFIND) query gmp) \
 -I $(shell $(OCAMLFIND) query cudd) \
 -I $(shell $(OCAMLFIND) query apron) \
