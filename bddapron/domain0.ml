@@ -21,6 +21,7 @@ type ('a,'b,'c,'d) man = {
   bottom : 'c -> 'a Env.t -> 'd;
   top : 'c -> 'a Env.t -> 'd;
   of_apron : 'c -> 'a Env.t -> 'b Apron.Abstract0.t -> 'd;
+  of_bddapron : 'c -> 'a Env.t -> ('a Expr0.Bool.t * 'b Apron.Abstract0.t) list -> 'd;
   is_bottom : 'c -> 'd -> bool;
   is_top : 'c -> 'd -> bool;
   is_leq : 'c -> 'd -> 'd -> bool;
@@ -33,6 +34,7 @@ type ('a,'b,'c,'d) man = {
   substitute_lexpr : 'c -> 'a Env.t -> 'a Cond.t -> 'd -> 'a list -> 'a Expr0.t list -> 'd option -> 'd;
   forget_list : 'c -> 'a Env.t -> 'd -> 'a list -> 'd;
   widening : 'c -> 'd -> 'd -> 'd;
+  widening_threshold : 'c -> 'd -> 'd -> Apron.Lincons0.t array -> 'd;
   apply_change :  bottom:'d -> 'c -> 'd -> Env.change -> 'd;
   apply_permutation : 'c -> 'd -> int array option * Apron.Dim.perm option -> 'd;
 }
@@ -54,6 +56,7 @@ let print ?print_apron man = man.print ?print_apron
 let bottom man = man.bottom man.man
 let top man = man.top man.man
 let of_apron man = man.of_apron man.man
+let of_bddapron man = man.of_bddapron man.man
 let is_bottom man = man.is_bottom man.man
 let is_top man = man.is_top man.man
 let is_leq man = man.is_leq man.man
@@ -66,6 +69,7 @@ let assign_lexpr ?relational ?nodependency man = man.assign_lexpr ?relational ?n
 let substitute_lexpr man = man.substitute_lexpr man.man
 let forget_list man = man.forget_list man.man
 let widening man = man.widening man.man
+let widening_threshold man = man.widening_threshold man.man
 let apply_change ~bottom man = man.apply_change ~bottom man.man
 let apply_permutation man = man.apply_permutation man.man
 
@@ -92,6 +96,7 @@ let make_mtbdd ?global (apron:'b Apron.Manager.t) : ('a,'b) mtbdd =
     bottom = Mtbdddomain0.bottom;
     top = Mtbdddomain0.top;
     of_apron = Mtbdddomain0.of_apron;
+    of_bddapron = Mtbdddomain0.of_bddapron;
     is_bottom = Mtbdddomain0.is_bottom;
     is_top = Mtbdddomain0.is_top;
     is_leq = Mtbdddomain0.is_leq;
@@ -104,16 +109,18 @@ let make_mtbdd ?global (apron:'b Apron.Manager.t) : ('a,'b) mtbdd =
     substitute_lexpr = Mtbdddomain0.substitute_lexpr;
     forget_list = Mtbdddomain0.forget_list;
     widening = Mtbdddomain0.widening;
+    widening_threshold = Mtbdddomain0.widening_threshold;
     apply_change = Mtbdddomain0.apply_change;
     apply_permutation = Mtbdddomain0.apply_permutation;
   }
+
 
 let man_of_mtbdd (man:('a,'b) mtbdd) : ('a,'b,'c,'d) man =
   Obj.magic man
 let of_mtbdd (manabs:('a,'b) mtbdd * 'b Mtbdddomain0.t) : ('a,'b,'c,'d) man * 'd t =
   Obj.magic manabs
 
-let man_is_mtbdd man =
+let man_is_mtbdd (man:('a,'b,'c,'d) man) =
   man.typ="mtbdd"
 
 let man_to_mtbdd (man:('a,'b,'c,'d) man) : ('a,'b) mtbdd =
@@ -150,6 +157,7 @@ let make_bdd (apron:'b Apron.Manager.t) : ('a,'b) bdd =
     bottom = Bdddomain0.bottom;
     top = Bdddomain0.top;
     of_apron = Bdddomain0.of_apron;
+    of_bddapron = Bdddomain0.of_bddapron;
     is_bottom = Bdddomain0.is_bottom;
     is_top = Bdddomain0.is_top;
     is_leq = Bdddomain0.is_leq;
@@ -162,6 +170,7 @@ let make_bdd (apron:'b Apron.Manager.t) : ('a,'b) bdd =
     substitute_lexpr = Bdddomain0.substitute_lexpr;
     forget_list = Bdddomain0.forget_list;
     widening = Bdddomain0.widening;
+    widening_threshold = Bdddomain0.widening_threshold;
     apply_change = Bdddomain0.apply_change;
     apply_permutation = Bdddomain0.apply_permutation;
   }
@@ -185,36 +194,20 @@ let to_bdd (manabs:('a,'b,'c,'d) man * 'd t) : ('a,'b) bdd * 'b Bdddomain0.t =
   else
     failwith ""
 
-(*
-let cudd = Cudd.Man.make_v ();;
-let env = Env.make cudd;;
-let apron = Oct.manager_alloc ();;
+(*  ********************************************************************** *)
+(** {3 Generic functions} *)
+(*  ********************************************************************** *)
 
-let make () =
-  let man =
-    if true then
-      man_of_bdd (make_bdd apron)
-    else
-      man_of_mtbdd (make_mtbdd apron)
-  in
-  let bottom = bottom man env in
-  ((man,bottom),to_bdd (man,bottom))
-
-let bdd = make_bdd apron;;
-let mtbdd = make_mtbdd apron;;
-
-let abs man =
-  begin
-    try
-      let bdd = man_to_bdd man in
-      bdd.man.Bdddomain0.meet_disjoint <- false;
-    with Failure _ -> ()
-  end;
-  begin
-    try
-      let mtbdd = man_to_mtbdd man in
-      ()
-    with Failure _ -> ()
-  end;
-  bottom man env
-*)
+let man_get_apron (man:('a,'b,'c,'d) man) : 'b Apron.Manager.t =
+  if man_is_bdd man then
+  let man = man_to_bdd man in
+  let bdd = man.man in
+  let apron = bdd.Bdddomain0.apron in
+   apron
+  else if man_is_mtbdd man then
+    let man = man_to_mtbdd man in
+    let mtbdd = man.man in
+    let apron = mtbdd.ApronDD.apron in
+    apron
+  else
+    failwith ""

@@ -48,11 +48,13 @@ val print :
 
 val get_env : ('a,'d) t -> 'a Env.t
 val to_level0 :  ('a,'d) t -> 'd
+val of_level0 : 'a Env.t -> 'd -> ('a,'d) t
 
 val size : ('a,'b,'c,'d) man -> ('a,'d) t -> int
 val bottom : ('a,'b,'c,'d) man -> 'a Env.t -> ('a,'d) t
 val top : ('a,'b,'c,'d) man -> 'a Env.t -> ('a,'d) t
 val of_apron : ('a,'b,'c,'d) man -> 'a Env.t -> 'b Apron.Abstract1.t -> ('a,'d) t
+val of_bddapron : ('a,'b,'c,'d) man -> 'a Env.t -> ('a Expr1.Bool.t * 'b Apron.Abstract1.t) list -> ('a,'d) t
 val is_bottom : ('a,'b,'c,'d) man -> ('a,'d) t -> bool
 val is_top : ('a,'b,'c,'d) man -> ('a,'d) t -> bool
 val is_leq : ('a,'b,'c,'d) man -> ('a,'d) t -> ('a,'d) t -> bool
@@ -83,10 +85,13 @@ val substitute_listexpr2 :
   ('a,'d) t -> 'a list -> 'a Expr2.List.t -> ('a,'d) t option -> ('a,'d) t
 val forget_list : ('a,'b,'c,'d) man -> ('a,'d) t -> 'a list -> ('a,'d) t
 val widening : ('a,'b,'c,'d) man -> ('a,'d) t -> ('a,'d) t -> ('a,'d) t
+val widening_threshold : ('a,'b,'c,'d) man -> ('a,'d) t -> ('a,'d) t -> Apron.Lincons1.earray -> ('a,'d) t
 val change_environment :
   ('a,'b,'c,'d) man -> ('a,'d) t -> 'a Env.t -> ('a,'d) t
 val unify : ('a,'b,'c,'d) man -> ('a,'d) t -> ('a,'d) t -> ('a,'d) t
 val rename : ('a,'b,'c,'d) man -> ('a,'d) t -> ('a * 'a) list -> ('a,'d) t
+
+val man_get_apron : ('a,'b,'c,'d) man -> 'b Apron.Manager.t
 
 (*  ********************************************************************** *)
 (** {3 Implementation based on {!Mtbdddomain0}} *)

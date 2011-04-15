@@ -46,11 +46,31 @@ module O = struct
   let restrict e1 e2 = Env.mapbinop Expr0.restrict e1 e2
   let tdrestrict e1 e2 = Env.mapbinop Expr0.tdrestrict e1 e2
 
-  let substitute_by_var e lvarvar =
-    make_value e.env (Expr0.O.substitute_by_var e.Env.env e.Env.val0 lvarvar)
-  let substitute e lvarexpr =
+  let substitute_by_var ?memo e lvarvar =
+    make_value e.env (Expr0.O.substitute_by_var ?memo e.Env.env e.Env.val0 lvarvar)
+  let substitute_by_var_list ?memo le lvarvar =
+    match le with
+    | [] -> []
+    | [e] -> [substitute_by_var ?memo e lvarvar]
+    | _ ->
+	let env = (List.hd le).env in
+	let lval0 = List.map (fun e -> e.val0) le in
+	let lval0 = Expr0.O.substitute_by_var_list ?memo env lval0 lvarvar in
+	List.map (make_value env) lval0
+
+  let substitute ?memo e lvarexpr =
     let lvarexpr = Env.check_lvarvalue e.env lvarexpr in
-    make_value e.env (Expr0.O.substitute e.env e.val0 lvarexpr)
+    make_value e.env (Expr0.O.substitute ?memo e.env e.val0 lvarexpr)
+  let substitute_list ?memo le lvarexpr =
+    match le with
+    | [] -> []
+    | [e] -> [substitute ?memo e lvarexpr]
+    | _ ->
+	let env = (List.hd le).env in
+	let lval0 = List.map (fun e -> e.val0) le in
+	let lvarexpr = Env.check_lvarvalue env lvarexpr in
+	let lval0 = Expr0.O.substitute_list ?memo env lval0 lvarexpr in
+	List.map (make_value env) lval0
 
   let eq e1 e2 = Env.mapbinope Expr0.O.eq e1 e2
 
@@ -136,11 +156,11 @@ module O = struct
     let restrict e1 e2 = Env.mapbinop Cudd.Bdd.restrict e1 e2
     let tdrestrict e1 e2 = Env.mapbinop Cudd.Bdd.tdrestrict e1 e2
 
-    let substitute_by_var e lvarvar =
+    let substitute_by_var ?memo e lvarvar =
       make_value e.Env.env
-	(Expr0.O.Bool.substitute_by_var e.Env.env e.Env.val0 lvarvar)
-    let substitute e lvarexpr =
-      of_expr (substitute (to_expr e) lvarexpr)
+	(Expr0.O.Bool.substitute_by_var ?memo e.Env.env e.Env.val0 lvarvar)
+    let substitute ?memo e lvarexpr =
+      of_expr (substitute ?memo (to_expr e) lvarexpr)
 
     let print fmt (x:('a,'b,'c) t) =
       Expr0.O.print_bdd x.env fmt x.val0
@@ -205,11 +225,11 @@ module O = struct
     let restrict e1 e2 = Env.mapbinop Int.restrict e1 e2
     let tdrestrict e1 e2 = Env.mapbinop Int.tdrestrict e1 e2
 
-    let substitute_by_var e lvarvar =
+    let substitute_by_var ?memo e lvarvar =
       make_value e.Env.env
-	(Expr0.O.Bint.substitute_by_var e.Env.env e.Env.val0 lvarvar)
-    let substitute e lvarexpr =
-      of_expr (substitute (to_expr e) lvarexpr)
+	(Expr0.O.Bint.substitute_by_var ?memo e.Env.env e.Env.val0 lvarvar)
+    let substitute ?memo e lvarexpr =
+      of_expr (substitute ?memo (to_expr e) lvarexpr)
 
     let guard_of_int (e:('a,'b,'c) t) (n:int) : ('a,'b,'c) Bool.t =
       make_value e.env (Int.guard_of_int e.env.cudd e.val0 n)
@@ -262,11 +282,11 @@ module O = struct
     let restrict e1 e2 = Env.mapbinop Enum.restrict e1 e2
     let tdrestrict e1 e2 = Env.mapbinop Enum.tdrestrict e1 e2
 
-    let substitute_by_var e lvarvar =
+    let substitute_by_var ?memo e lvarvar =
       make_value e.Env.env
-	(Expr0.O.Benum.substitute_by_var e.Env.env e.Env.val0 lvarvar)
-    let substitute e lvarexpr =
-      of_expr (substitute (to_expr e) lvarexpr)
+	(Expr0.O.Benum.substitute_by_var ?memo e.Env.env e.Env.val0 lvarvar)
+    let substitute ?memo e lvarexpr =
+      of_expr (substitute ?memo (to_expr e) lvarexpr)
 
     let guard_of_label (e:('a,'b,'c) t) (n:'a) : ('a,'b,'c) Bool.t =
       make_value e.env (Enum.guard_of_label e.env e.val0 n)
@@ -318,10 +338,7 @@ module O = struct
       List.map (fun expr0 -> Env.make_value e.env expr0) e.val0
 
     let extend_environment e nenv =
-      Env.extend_environment
-	(fun lexpr0 perm ->
-	  (List.map (fun e -> Expr0.O.permute e perm) lexpr0))
-	e nenv
+      Env.extend_environment Expr0.O.permute_list e nenv
 
     let print ?first ?sep ?last fmt x =
       Print.list ?first ?sep ?last
@@ -356,6 +373,8 @@ let ite = O.ite
 let eq = O.eq
 let substitute_by_var = O.substitute_by_var
 let substitute = O.substitute
+let substitute_by_var_list = O.substitute_by_var_list
+let substitute_list = O.substitute_list
 let support = O.support
 let support_cond = O.support_cond
 let cofactor = O.cofactor

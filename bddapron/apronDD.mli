@@ -36,7 +36,7 @@ val make_man : ?global:bool -> 'a Apron.Manager.t -> 'a man
 val make_op_join : 'a man -> ('a leaf_u,'a leaf_u,'a leaf_u) Cudd.User.op2
 val print :
   ?print_apron:(
-    (int -> string) -> 
+    (int -> string) ->
       Format.formatter -> 'a Apron.Abstract0.t -> unit
   ) ->
   (Format.formatter -> Cudd.Bdd.vt -> unit) ->
@@ -52,6 +52,7 @@ val is_leq : 'a man -> 'a t -> 'a t -> bool
 val join : 'a man -> 'a t -> 'a t -> 'a t
 val meet : 'a man -> 'a t -> 'a t -> 'a t
 val widening : 'a man -> 'a t -> 'a t -> 'a t
+val widening_threshold : 'a man -> 'a t -> 'a t -> Apron.Lincons0.t array -> 'a t
 val meet_tcons_array : 'a man -> 'a t -> Apron.Tcons0.t array -> 'a t
 val forget_array : 'a man -> 'a t -> Apron.Dim.t array -> 'a t
 val permute_dimensions : 'a man -> 'a t -> Apron.Dim.perm -> 'a t

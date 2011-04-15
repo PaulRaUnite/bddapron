@@ -25,6 +25,7 @@ type ('a,'b,'c,'d) man = {
   bottom : 'c -> 'a Env.t -> 'd;
   top : 'c -> 'a Env.t -> 'd;
   of_apron : 'c -> 'a Env.t -> 'b Apron.Abstract0.t -> 'd;
+  of_bddapron : 'c -> 'a Env.t -> ('a Expr0.Bool.t * 'b Apron.Abstract0.t) list -> 'd;
   is_bottom : 'c -> 'd -> bool;
   is_top : 'c -> 'd -> bool;
   is_leq : 'c -> 'd -> 'd -> bool;
@@ -37,6 +38,7 @@ type ('a,'b,'c,'d) man = {
   substitute_lexpr : 'c -> 'a Env.t -> 'a Cond.t -> 'd -> 'a list -> 'a Expr0.t list -> 'd option -> 'd;
   forget_list : 'c -> 'a Env.t -> 'd -> 'a list -> 'd;
   widening : 'c -> 'd -> 'd -> 'd;
+  widening_threshold : 'c -> 'd -> 'd -> Apron.Lincons0.t array -> 'd;
   apply_change :  bottom:'d -> 'c -> 'd -> Env.change -> 'd;
   apply_permutation : 'c -> 'd -> int array option * Apron.Dim.perm option -> 'd;
 }
@@ -67,6 +69,7 @@ val print :
 val bottom : ('a,'b,'c,'d) man -> 'a Env.t -> 'd t
 val top : ('a,'b,'c,'d) man -> 'a Env.t -> 'd t
 val of_apron : ('a,'b,'c,'d) man -> 'a Env.t -> 'b Apron.Abstract0.t -> 'd t
+val of_bddapron : ('a,'b,'c,'d) man -> 'a Env.t -> ('a Expr0.Bool.t * 'b Apron.Abstract0.t) list -> 'd t
 val is_bottom : ('a,'b,'c,'d) man -> 'd t -> bool
 val is_top : ('a,'b,'c,'d) man -> 'd t -> bool
 val is_leq : ('a,'b,'c,'d) man -> 'd t -> 'd t -> bool
@@ -86,8 +89,11 @@ val substitute_lexpr :
   'a Env.t -> 'a Cond.t -> 'd t -> 'a list -> 'a Expr0.t list -> 'd t option -> 'd t
 val forget_list : ('a,'b,'c,'d) man -> 'a Env.t -> 'd t -> 'a list -> 'd t
 val widening : ('a,'b,'c,'d) man -> 'd t -> 'd t -> 'd t
+val widening_threshold : ('a,'b,'c,'d) man -> 'd t -> 'd t -> Apron.Lincons0.t array -> 'd t
 val apply_change : bottom:'d t -> ('a,'b,'c,'d) man -> 'd t -> Env.change -> 'd t
 val apply_permutation : ('a,'b,'c,'d) man -> 'd t -> int array option * Apron.Dim.perm option -> 'd t
+
+val man_get_apron : ('a,'b,'c,'d) man -> 'b Apron.Manager.t
 
 (*  ********************************************************************** *)
 (** {3 Implementation based on {!Mtbdddomain0}} *)

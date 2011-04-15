@@ -431,28 +431,6 @@ module O = struct
   (** {5 Printing a full BDD or IDD} *)
   (*  ---------------------------------------------------------------------- *)
 
-  let simplify env (bdd:'a Cudd.Bdd.t) =
-    let res = ref bdd in
-    PMappe.iter
-      (begin fun var set ->
-	if not (Cudd.Bdd.is_true set) then begin
-	  let bddreg = match bddvar env var with
-	    | `Benum bddenum -> bddenum.Enum.reg
-	    | `Bint bddint -> bddint.Int.reg
-	    | _ -> failwith ""
-	  in
-	  let bddtrue = Cudd.Bdd.dtrue env.cudd in
-	  let cube = Array.fold_right Cudd.Bdd.dand bddreg bddtrue in
-	  let newres = Cudd.Bdd.exist cube !res in
-	  let f = Cudd.Bdd.dand newres set in
-	  if Cudd.Bdd.is_equal f !res then
-	    res := newres;
-	end
-      end)
-      env.varset
-    ;
-    !res
-
   let print_bdd ?print_external_idcondb (env:('a,'b,'c,'d,'e) Env.O.t) fmt (bdd:'d Cudd.Bdd.t) =
     if Cudd.Bdd.is_true bdd then
       pp_print_string fmt "true"
@@ -721,17 +699,6 @@ module O = struct
     | `Bint x -> `Bint(Int.permute ?memo x permutation)
     | `Benum x -> `Benum(Enum.permute ?memo x permutation)
 
-  let permute_list ?memo lexpr (permutation:int array) =
-    match memo with
-    | Some memo -> 
-        List.map (fun x -> permute ~memo x permutation) lexpr
-    | None ->
-	let hash = Cudd.Hash.create 1 in
-	let memo = Cudd.Memo.Hash hash in
-	let res = List.map (fun x -> permute ~memo x permutation) lexpr in
-	Cudd.Hash.clear hash;
-	res
-
   let compose ?memo (expr:'a expr) (composition:'a Cudd.Bdd.t array) : 'a expr
       =
     match expr with
@@ -739,23 +706,66 @@ module O = struct
     | `Bint x -> `Bint(Int.vectorcompose ?memo composition x)
     | `Benum x -> `Benum(Enum.vectorcompose ?memo composition x)
 
-  let substitute_by_var
-      (env:('a,'b,'c,'d,'e) Env.O.t)
-      (expr:'d expr)
-      (substitution: ('a * 'a) list)
-      : 'd expr
+  let permute_list ?memo lexpr (permutation:int array) =
+    match memo with
+    | Some memo ->
+	List.map (fun x -> permute ~memo x permutation) lexpr
+    | None ->
+	let hash = Cudd.Hash.create 1 in
+	let memo = Cudd.Memo.Hash hash in
+	let res = List.map (fun x -> permute ~memo x permutation) lexpr in
+	Cudd.Hash.clear hash;
+	res
+
+  let compose_list ?memo (lexpr:'a expr list) (composition:'a Cudd.Bdd.t array) : 'a expr list
       =
+    match memo with
+    | Some memo ->
+	List.map (fun x -> compose ~memo x composition) lexpr
+    | None ->
+	let hash = Cudd.Hash.create 1 in
+	let memo = Cudd.Memo.Hash hash in
+	let res = List.map (fun x -> compose ~memo x composition) lexpr in
+	Cudd.Hash.clear hash;
+	res
+
+  let substitute_by_var ?memo env expr substitution =
     let perm = permutation_of_rename env substitution in
-    permute expr perm
+    permute ?memo expr perm
 
   let substitute
+      ?memo
       (env:('a,'b,'c,'d,'e) Env.O.t)
       (expr:'d expr)
       (substitution: ('a * 'd expr) list)
       : 'd expr
       =
     let composition = composition_of_lvarexpr env substitution in
-    compose expr composition
+    compose ?memo expr composition
+
+  let substitute_by_var_list
+      ?memo
+      (env:('a,'b,'c,'d,'e) Env.O.t)
+      (lexpr:'d expr list)
+      (substitution: ('a * 'a) list)
+      : 'd expr list
+      =
+    if lexpr=[] then []
+    else
+      let perm = permutation_of_rename env substitution in
+      permute_list ?memo lexpr perm
+
+  let substitute_list
+      ?memo
+      (env:('a,'b,'c,'d,'e) Env.O.t)
+      (lexpr:'d expr list)
+      (substitution: ('a * 'd expr) list)
+      : 'd expr list
+      =
+    if lexpr=[] then []
+    else
+      let composition = composition_of_lvarexpr env substitution in
+      compose_list ?memo lexpr composition
 
   let cofactor expr bdd = mapmonop (fun x -> Cudd.Bdd.cofactor x bdd) expr
   let restrict expr bdd = mapmonop (fun x -> Cudd.Bdd.restrict x bdd) expr
@@ -819,15 +829,15 @@ module O = struct
     let permute = Cudd.Bdd.permute
     let varmap = Cudd.Bdd.varmap
 
-    let substitute_by_var (env:('a,'b,'c,'d,'e) Env.O.t) expr (substitution:('a*'a) list)
+    let substitute_by_var ?memo (env:('a,'b,'c,'d,'e) Env.O.t) expr (substitution:('a*'a) list)
 	=
       let perm = permutation_of_rename env substitution in
-      Cudd.Bdd.permute expr perm
+      Cudd.Bdd.permute ?memo expr perm
 
-    let substitute (env:('a,'b,'c,'d,'e) Env.O.t) expr (substitution: ('a * 'd expr) list)
+    let substitute ?memo (env:('a,'b,'c,'d,'e) Env.O.t) expr (substitution: ('a * 'd expr) list)
 	=
       let composition = composition_of_lvarexpr env substitution in
-      Cudd.Bdd.vectorcompose composition expr
+      Cudd.Bdd.vectorcompose ?memo composition expr
 
     let print ?print_external_idcondb (env:('a,'b,'c,'d,'e) Env.O.t) fmt (x:'d t) =
       print_bdd env fmt x
@@ -887,15 +897,15 @@ module O = struct
     let permute = Int.permute
     let varmap = Int.varmap
 
-    let substitute_by_var env expr (substitution:('a*'a) list)
+    let substitute_by_var ?memo env expr (substitution:('a*'a) list)
 	=
       let perm = permutation_of_rename env substitution in
-      Int.permute expr perm
+      Int.permute ?memo expr perm
 
-    let substitute env expr (substitution: ('a * 'd expr) list)
+    let substitute ?memo env expr (substitution: ('a * 'd expr) list)
 	=
       let composition = composition_of_lvarexpr env substitution in
-      Int.vectorcompose composition expr
+      Int.vectorcompose ?memo composition expr
 
     let guard_of_int (env:('a,'b,'c,'d,'e) Env.O.t) = Int.guard_of_int env.cudd
     let guardints (env:('a,'b,'c,'d,'e) Env.O.t) = Int.guardints env.cudd
@@ -936,15 +946,15 @@ module O = struct
     let permute = Enum.permute
     let varmap = Enum.varmap
 
-    let substitute_by_var env expr (substitution:('a*'a) list)
+    let substitute_by_var ?memo env expr (substitution:('a*'a) list)
 	=
       let perm = permutation_of_rename env substitution in
-      Enum.permute expr perm
+      Enum.permute ?memo expr perm
 
-    let substitute env expr (substitution: ('a * 'd expr) list)
+    let substitute ?memo env expr (substitution: ('a * 'd expr) list)
 	=
       let composition = composition_of_lvarexpr env substitution in
-      Enum.vectorcompose composition expr
+      Enum.vectorcompose ?memo composition expr
 
     let guard_of_label = Enum.guard_of_label
     let guardlabels = Enum.guardlabels
@@ -1103,6 +1113,8 @@ let ite = O.ite
 let eq = O.eq
 let substitute_by_var = O.substitute_by_var
 let substitute = O.substitute
+let substitute_by_var_list = O.substitute_by_var_list
+let substitute_list = O.substitute_list
 let cofactor = O.cofactor
 let restrict = O.restrict
 let tdrestrict = O.tdrestrict

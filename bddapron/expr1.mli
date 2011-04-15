@@ -84,8 +84,8 @@ module Bool : sig
   val restrict : 'a t -> 'a t -> 'a t
   val tdrestrict : 'a t -> 'a t -> 'a t
 
-  val substitute_by_var : 'a Cond.t -> 'a t -> ('a * 'a) list -> 'a t
-  val substitute : 'a Cond.t -> 'a t -> ('a * 'a expr) list -> 'a t
+  val substitute_by_var : ?memo:Cudd.Memo.t -> 'a Cond.t -> 'a t -> ('a * 'a) list -> 'a t
+  val substitute : ?memo:Cudd.Memo.t -> 'a Cond.t -> 'a t -> ('a * 'a expr) list -> 'a t
 
   val print : 'a Cond.t -> Format.formatter -> 'a t -> unit
 end
@@ -137,8 +137,8 @@ module Bint : sig
   val restrict : 'a t -> 'a Bool.t -> 'a t
   val tdrestrict : 'a t -> 'a Bool.t -> 'a t
 
-  val substitute_by_var : 'a Cond.t -> 'a t -> ('a * 'a) list -> 'a t
-  val substitute : 'a Cond.t -> 'a t -> ('a * 'a expr) list -> 'a t
+  val substitute_by_var : ?memo:Cudd.Memo.t -> 'a Cond.t -> 'a t -> ('a * 'a) list -> 'a t
+  val substitute : ?memo:Cudd.Memo.t -> 'a Cond.t -> 'a t -> ('a * 'a expr) list -> 'a t
 
   val guard_of_int : 'a Cond.t -> 'a t -> int -> 'a Bool.t
     (** Return the guard of the integer value. *)
@@ -178,8 +178,8 @@ module Benum : sig
   val restrict : 'a t -> 'a Bool.t -> 'a t
   val tdrestrict : 'a t -> 'a Bool.t -> 'a t
 
-  val substitute_by_var : 'a Cond.t -> 'a t -> ('a * 'a) list -> 'a t
-  val substitute : 'a Cond.t -> 'a t -> ('a * 'a expr) list -> 'a t
+  val substitute_by_var : ?memo:Cudd.Memo.t -> 'a Cond.t -> 'a t -> ('a * 'a) list -> 'a t
+  val substitute : ?memo:Cudd.Memo.t -> 'a Cond.t -> 'a t -> ('a * 'a expr) list -> 'a t
 
   val guard_of_label : 'a Cond.t -> 'a t -> 'a -> 'a Bool.t
     (** Return the guard of the label. *)
@@ -249,8 +249,8 @@ module Apron : sig
   val restrict : 'a t -> 'a Bool.t -> 'a t
   val tdrestrict : 'a t -> 'a Bool.t -> 'a t
 
-  val substitute_by_var : 'a Cond.t -> 'a t -> ('a * 'a) list -> 'a t
-  val substitute : 'a Cond.t -> 'a t -> ('a * 'a expr) list -> 'a t
+  val substitute_by_var : ?memo:Cudd.Memo.t -> 'a Cond.t -> 'a t -> ('a * 'a) list -> 'a t
+  val substitute : ?memo:Cudd.Memo.t -> 'a Cond.t -> 'a t -> ('a * 'a expr) list -> 'a t
 
   val print : 'a Cond.t -> Format.formatter -> 'a t -> unit
 end
@@ -282,10 +282,12 @@ val ite : 'a Cond.t -> 'a Bool.t -> 'a t -> 'a t -> 'a t
 val eq : 'a Cond.t -> 'a t -> 'a t -> 'a Bool.t
   (** Equality operation *)
 
-val substitute_by_var : 'a Cond.t -> 'a t -> ('a * 'a) list -> 'a t
+val substitute_by_var : ?memo:Cudd.Memo.t -> 'a Cond.t -> 'a t -> ('a * 'a) list -> 'a t
+val substitute_by_var_list : ?memo:Cudd.Memo.t -> 'a Cond.t -> 'a t list -> ('a * 'a) list -> 'a t list
     (** Variable renaming.
 	The new variables should already have been declared *)
-val substitute : 'a Cond.t -> 'a t -> ('a * 'a t) list -> 'a t
+val substitute : ?memo:Cudd.Memo.t -> 'a Cond.t -> 'a t -> ('a * 'a t) list -> 'a t
+val substitute_list : ?memo:Cudd.Memo.t -> 'a Cond.t -> 'a t list -> ('a * 'a t) list -> 'a t list
     (** Parallel substitution of variables by expressions *)
 
 val support : 'a Cond.t -> 'a t -> 'a PSette.t
@@ -399,8 +401,8 @@ module O : sig
     val restrict : ('a,'b) t -> ('a,'b) t -> ('a,'b) t
     val tdrestrict : ('a,'b) t -> ('a,'b) t -> ('a,'b) t
 
-    val substitute_by_var : ('a,'b) Cond.O.t -> ('a,'b) t -> ('a * 'a) list -> ('a,'b) t
-    val substitute : ('a,'b) Cond.O.t -> ('a,'b) t -> ('a * ('a,'b) expr) list -> ('a,'b) t
+    val substitute_by_var : ?memo:Cudd.Memo.t -> ('a,'b) Cond.O.t -> ('a,'b) t -> ('a * 'a) list -> ('a,'b) t
+    val substitute : ?memo:Cudd.Memo.t -> ('a,'b) Cond.O.t -> ('a,'b) t -> ('a * ('a,'b) expr) list -> ('a,'b) t
 
     val print : ('a,'b) Cond.O.t -> Format.formatter -> ('a,'b) t -> unit
   end
@@ -439,8 +441,8 @@ module O : sig
     val restrict : ('a,'b) t -> ('a,'b) Bool.t -> ('a,'b) t
     val tdrestrict : ('a,'b) t -> ('a,'b) Bool.t -> ('a,'b) t
 
-    val substitute_by_var : ('a,'b) Cond.O.t -> ('a,'b) t -> ('a * 'a) list -> ('a,'b) t
-    val substitute : ('a,'b) Cond.O.t -> ('a,'b) t -> ('a * ('a,'b) expr) list -> ('a,'b) t
+    val substitute_by_var : ?memo:Cudd.Memo.t -> ('a,'b) Cond.O.t -> ('a,'b) t -> ('a * 'a) list -> ('a,'b) t
+    val substitute : ?memo:Cudd.Memo.t -> ('a,'b) Cond.O.t -> ('a,'b) t -> ('a * ('a,'b) expr) list -> ('a,'b) t
 
     val guard_of_int : ('a,'b) Cond.O.t -> ('a,'b) t -> int -> ('a,'b) Bool.t
     (** Return the guard of the integer value. *)
@@ -466,8 +468,8 @@ module O : sig
     val restrict : ('a,'b) t -> ('a,'b) Bool.t -> ('a,'b) t
     val tdrestrict : ('a,'b) t -> ('a,'b) Bool.t -> ('a,'b) t
 
-    val substitute_by_var : ('a,'b) Cond.O.t -> ('a,'b) t -> ('a * 'a) list -> ('a,'b) t
-    val substitute : ('a,'b) Cond.O.t -> ('a,'b) t -> ('a * ('a,'b) expr) list -> ('a,'b) t
+    val substitute_by_var : ?memo:Cudd.Memo.t -> ('a,'b) Cond.O.t -> ('a,'b) t -> ('a * 'a) list -> ('a,'b) t
+    val substitute : ?memo:Cudd.Memo.t -> ('a,'b) Cond.O.t -> ('a,'b) t -> ('a * ('a,'b) expr) list -> ('a,'b) t
 
     val guard_of_label : ('a,'b) Cond.O.t -> ('a,'b) t -> 'a -> ('a,'b) Bool.t
     (** Return the guard of the label. *)
@@ -522,8 +524,8 @@ module O : sig
     val restrict : ('a,'b) t -> ('a,'b) Bool.t -> ('a,'b) t
     val tdrestrict : ('a,'b) t -> ('a,'b) Bool.t -> ('a,'b) t
 
-    val substitute_by_var : ('a,'b) Cond.O.t -> ('a,'b) t -> ('a * 'a) list -> ('a,'b) t
-    val substitute : ('a,'b) Cond.O.t -> ('a,'b) t -> ('a * ('a,'b) expr) list -> ('a,'b) t
+    val substitute_by_var : ?memo:Cudd.Memo.t -> ('a,'b) Cond.O.t -> ('a,'b) t -> ('a * 'a) list -> ('a,'b) t
+    val substitute : ?memo:Cudd.Memo.t -> ('a,'b) Cond.O.t -> ('a,'b) t -> ('a * ('a,'b) expr) list -> ('a,'b) t
 
     val print : ('a,'b) Cond.O.t -> Format.formatter -> ('a,'b) t -> unit
   end
@@ -543,11 +545,19 @@ module O : sig
   (** Equality operation *)
 
   val substitute_by_var :
+    ?memo:Cudd.Memo.t ->
     ('a,'b) Cond.O.t -> ('a,'b) t -> ('a * 'a) list -> ('a,'b) t
+  val substitute_by_var_list :
+    ?memo:Cudd.Memo.t ->
+    ('a,'b) Cond.O.t -> ('a,'b) t list -> ('a * 'a) list -> ('a,'b) t list
     (** Variable renaming.
 	The new variables should already have been declared *)
   val substitute :
+    ?memo:Cudd.Memo.t ->
     ('a,'b) Cond.O.t -> ('a,'b) t -> ('a * ('a,'b) t) list -> ('a,'b) t
+  val substitute_list :
+    ?memo:Cudd.Memo.t ->
+    ('a,'b) Cond.O.t -> ('a,'b) t list -> ('a * ('a,'b) t) list -> ('a,'b) t list
     (** Parallel substitution of variables by expressions *)
 
   val support : ('a,'b) Cond.O.t -> ('a,'b) t -> 'a PSette.t

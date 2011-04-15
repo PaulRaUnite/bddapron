@@ -24,6 +24,7 @@ module type Level0 = sig
   val bottom : ('a,'b) man -> 'a Env.t -> 'b t
   val top : ('a,'b) man -> 'a Env.t -> 'b t
   val of_apron : ('a,'b) man -> 'a Env.t -> 'b Apron.Abstract0.t -> 'b t
+  val of_bddapron : ('a,'b) man -> 'a Env.t -> ('a Expr0.Bool.t * 'b Apron.Abstract0.t) list -> 'b t
 
   val is_bottom : ('a,'b) man -> 'b t -> bool
   val is_top : ('a,'b) man -> 'b t -> bool
@@ -44,6 +45,7 @@ module type Level0 = sig
     'b t -> 'a list -> 'a Expr0.t list -> 'b t option -> 'b t
   val forget_list : ('a,'b) man -> 'a Env.t -> 'b t -> 'a list -> 'b t
   val widening : ('a,'b) man -> 'b t -> 'b t -> 'b t
+  val widening_threshold : ('a,'b) man -> 'b t -> 'b t -> Apron.Lincons0.t array -> 'b t
   val apply_change :
     bottom:'b t -> ('a,'b) man -> 'b t -> Env.change -> 'b t
   val apply_permutation :
@@ -57,6 +59,7 @@ module type Level1 = sig
 
   val get_env : ('a,'b) t -> 'a Env.t
   val to_level0 : ('a,'b) t -> 'b t0
+  val of_level0 : 'a Env.t -> 'b t0 -> ('a,'b) t
 
   val size : ('a,'b) man -> ('a,'b) t -> int
   val print :
@@ -68,6 +71,7 @@ module type Level1 = sig
   val bottom : ('a,'b) man -> 'a Env.t -> ('a,'b) t
   val top : ('a,'b) man -> 'a Env.t -> ('a,'b) t
   val of_apron : ('a,'b) man -> 'a Env.t -> 'b Apron.Abstract1.t -> ('a,'b) t
+  val of_bddapron : ('a,'b) man -> 'a Env.t -> ('a Expr1.Bool.t * 'b Apron.Abstract1.t) list -> ('a,'b) t
   val is_bottom : ('a,'b) man -> ('a,'b) t -> bool
   val is_top : ('a,'b) man -> ('a,'b) t -> bool
   val is_leq : ('a,'b) man -> ('a,'b) t -> ('a,'b) t -> bool
@@ -96,6 +100,7 @@ module type Level1 = sig
   val forget_list :
     ('a,'b) man -> ('a,'b) t -> 'a list -> ('a,'b) t
   val widening : ('a,'b) man -> ('a,'b) t -> ('a,'b) t -> ('a,'b) t
+  val widening_threshold : ('a,'b) man -> ('a,'b) t -> ('a,'b) t -> Apron.Lincons1.earray -> ('a,'b) t
   val change_environment : ('a,'b) man -> ('a,'b) t -> 'a Env.t -> ('a,'b) t
   val rename : ('a,'b) man -> ('a,'b) t -> ('a*'a) list -> ('a,'b) t
   val unify : ('a,'b) man -> ('a,'b) t -> ('a,'b) t -> ('a,'b) t
@@ -112,6 +117,7 @@ struct
 
   let get_env = Env.get_env
   let to_level0 = Env.get_val0
+  let of_level0 = Env.make_value
 
   let print ?print_apron fmt t = Level0.print ?print_apron t.env fmt t.val0
   let size man t = Level0.size man t.val0
@@ -124,6 +130,24 @@ struct
     ;
     make_value env
       (Level0.of_apron man env abs1.Apron.Abstract1.abstract0)
+  let of_bddapron man env lboolabs1 =
+    let eapron = env.ext.eapron in
+    let lboolabs0 =
+      List.map
+	(begin fun (boolexpr1,abs1) ->
+	  let env1 = Expr1.Bool.get_env boolexpr1 in
+	  if not (Env.is_eq env env1) then
+	    failwith "Bddapron.domainlevel1.of_bddapron: the BDDAPRON environment of one Boolean expression is different from the expected environment"
+	  ;
+	  if not (Apron.Environment.equal eapron env1.ext.eapron) then
+	    failwith "Bddapron.domainlevel1.of_apron: the APRON environment of one APRON abstract value is different from the numerical part of the expected BDDAPRON environment"
+	  ;
+	  (Expr1.Bool.to_expr0 boolexpr1, abs1.Apron.Abstract1.abstract0)
+	end)
+	lboolabs1
+    in
+    make_value env
+      (Level0.of_bddapron man env lboolabs0)
 
   let is_bottom man t = Level0.is_bottom man t.val0
   let is_top man t = Level0.is_top man t.val0
@@ -147,16 +171,19 @@ struct
       list0
 
   let meet man t1 t2 =
-    Env.check_value2 t1 t2;
     Env.mapbinop (Level0.meet man) t1 t2
 
   let join man t1 t2 =
-    Env.check_value2 t1 t2;
     Env.mapbinop (Level0.join man) t1 t2
 
   let widening man t1 t2 =
-    Env.check_value2 t1 t2;
     Env.mapbinop (Level0.widening man) t1 t2
+  let widening_threshold man t1 t2 tlincons1 =
+    Env.check_value2 t1 t2;
+    if not (Apron.Environment.equal (Env.apron t1.Env.env) tlincons1.Apron.Lincons1.array_env) then
+      failwith "Bddapron.DomainLevel1.widening_threshold: incompatible APRON environments"
+    ;
+    Env.make_value t1.Env.env (Level0.widening_threshold man t1.Env.val0 t2.Env.val0 tlincons1.Apron.Lincons1.lincons0_array)
 
   let meet_condition man cond t condition
       =

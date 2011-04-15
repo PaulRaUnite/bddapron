@@ -26,10 +26,10 @@ module O = struct
 
   let size man = Cudd.Mtbddc.size
   let print ?print_apron env fmt t =
-    ApronDD.print 
+    ApronDD.print
       ?print_apron
       (Bdd.Expr0.O.print_bdd env)
-      (Env.string_of_aprondim env) 
+      (Env.string_of_aprondim env)
       fmt t
 
   let bottom man env =
@@ -40,7 +40,6 @@ module O = struct
       ~cudd:(env.cudd) man (Apron.Environment.dimension env.ext.eapron)
   let of_apron man env abs0 =
     ApronDD.cst ~cudd:(env.cudd) man abs0
-
   let is_bottom = ApronDD.is_bottom
   let is_top = ApronDD.is_top
   let is_leq = ApronDD.is_leq
@@ -58,6 +57,16 @@ module O = struct
   let meet = ApronDD.meet
   let join = ApronDD.join
   let widening = ApronDD.widening
+  let widening_threshold = ApronDD.widening_threshold
+
+  let of_bddapron man env (lbddabs0:('a Expr0.Bool.t * 'b Apron.Abstract0.t) list) =
+    let bot = bottom man env in
+    List.fold_left
+      (fun res (bdd,abs0) ->
+	join man res
+	  (Cudd.Mtbddc.ite bdd (of_apron man env abs0) bot))
+      bot
+      lbddabs0
 
   (*  ==================================================================== *)
   (** {4 Meet with an elementary condition, cofactors} *)
@@ -286,6 +295,7 @@ let print = O.print
 let bottom = O.bottom
 let top = O.top
 let of_apron = O.of_apron
+let of_bddapron = O.of_bddapron
 let is_bottom = O.is_bottom
 let is_top = O.is_top
 let is_leq = O.is_leq
@@ -298,5 +308,6 @@ let assign_lexpr = O.assign_lexpr
 let substitute_lexpr = O.substitute_lexpr
 let forget_list = O.forget_list
 let widening = O.widening
+let widening_threshold = O.widening_threshold
 let apply_change = O.apply_change
 let apply_permutation = O.apply_permutation

@@ -83,8 +83,8 @@ module Bool : sig
   val permute : ?memo:Cudd.Memo.t -> 'a t -> int array -> 'a t
   val varmap : 'a t -> 'a t
 
-  val substitute_by_var : ('a,'b) Env.t -> 'b t -> ('a * 'a) list -> 'b t
-  val substitute : ('a,'b) Env.t -> 'b t -> ('a * 'b expr) list -> 'b t
+  val substitute_by_var : ?memo:Cudd.Memo.t -> ('a,'b) Env.t -> 'b t -> ('a * 'a) list -> 'b t
+  val substitute : ?memo:Cudd.Memo.t -> ('a,'b) Env.t -> 'b t -> ('a * 'b expr) list -> 'b t
 
   val print :
     ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
@@ -129,8 +129,8 @@ module Bint : sig
   val permute : ?memo:Cudd.Memo.t -> 'a t -> int array -> 'a t
   val varmap : 'a t -> 'a t
 
-  val substitute_by_var : ('a,'b) Env.t -> 'b t -> ('a * 'a) list -> 'b t
-  val substitute : ('a,'b) Env.t -> 'b t -> ('a * 'b expr) list -> 'b t
+  val substitute_by_var : ?memo:Cudd.Memo.t -> ('a,'b) Env.t -> 'b t -> ('a * 'a) list -> 'b t
+  val substitute : ?memo:Cudd.Memo.t -> ('a,'b) Env.t -> 'b t -> ('a * 'b expr) list -> 'b t
 
   val guard_of_int: ('a,'b) Env.t -> 'b t -> int -> 'b Bool.t
     (** Return the guard of the integer value. *)
@@ -161,8 +161,8 @@ module Benum : sig
   val tdrestrict : 'a t -> 'a Bool.t -> 'a t
   val permute : ?memo:Cudd.Memo.t -> 'a t -> int array -> 'a t
   val varmap : 'a t -> 'a t
-  val substitute_by_var : ('a,'b) Env.t -> 'b t -> ('a * 'a) list -> 'b t
-  val substitute : ('a,'b) Env.t -> 'b t -> ('a * 'b expr) list -> 'b t
+  val substitute_by_var : ?memo:Cudd.Memo.t -> ('a,'b) Env.t -> 'b t -> ('a * 'a) list -> 'b t
+  val substitute : ?memo:Cudd.Memo.t -> ('a,'b) Env.t -> 'b t -> ('a * 'b expr) list -> 'b t
   val guard_of_label : ('a,'b) Env.t -> 'b t -> 'a -> 'b Bool.t
     (** Return the guard of the label. *)
   val guardlabels : ('a,'b) Env.t -> 'b t -> ('b Bool.t * 'a) list
@@ -191,12 +191,14 @@ val ite : 'a Bool.t -> 'a t -> 'a t -> 'a t
 val eq : ('a,'b) Env.t -> 'b t -> 'b t -> 'b Bool.t
     (** Equality operation *)
 
-val substitute_by_var : ('a,'b) Env.t -> 'b t -> ('a * 'a) list -> 'b t
+val substitute_by_var : ?memo:Cudd.Memo.t -> ('a,'b) Env.t -> 'b t -> ('a * 'a) list -> 'b t
+val substitute_by_var_list : ?memo:Cudd.Memo.t -> ('a,'b) Env.t -> 'b t list -> ('a * 'a) list -> 'b t list
     (** Variable renaming.
 
 	The new variables should already have been declared *)
 
-val substitute : ('a,'b) Env.t -> 'b t -> ('a * 'b t) list -> 'b t
+val substitute : ?memo:Cudd.Memo.t -> ('a,'b) Env.t -> 'b t -> ('a * 'b t) list -> 'b t
+val substitute_list : ?memo:Cudd.Memo.t -> ('a,'b) Env.t -> 'b t list -> ('a * 'b t) list -> 'b t list
     (** Parallel substitution of variables by expressions *)
 
 val cofactor : 'a t -> 'a Cudd.Bdd.t -> 'a t
@@ -322,8 +324,8 @@ module O : sig
     val permute : ?memo:Cudd.Memo.t -> 'd t -> int array -> 'd t
     val varmap : 'a t -> 'a t
 
-    val substitute_by_var : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'a) list -> 'd t
-    val substitute : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'd expr) list -> 'd t
+    val substitute_by_var : ?memo:Cudd.Memo.t -> ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'a) list -> 'd t
+    val substitute : ?memo:Cudd.Memo.t -> ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'd expr) list -> 'd t
 
     val print :
     ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
@@ -368,8 +370,8 @@ module O : sig
     val permute : ?memo:Cudd.Memo.t -> 'd t -> int array -> 'd t
     val varmap : 'a t -> 'a t
 
-    val substitute_by_var : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'a) list -> 'd t
-    val substitute : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'd expr) list -> 'd t
+    val substitute_by_var : ?memo:Cudd.Memo.t -> ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'a) list -> 'd t
+    val substitute : ?memo:Cudd.Memo.t -> ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'd expr) list -> 'd t
 
     val guard_of_int: ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> int -> 'd Bool.t
     (** Return the guard of the integer value. *)
@@ -400,8 +402,8 @@ module O : sig
     val tdrestrict : 'd t -> 'd Bool.t -> 'd t
     val permute : ?memo:Cudd.Memo.t -> 'd t -> int array -> 'd t
     val varmap : 'a t -> 'a t
-    val substitute_by_var : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'a) list -> 'd t
-    val substitute : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'd expr) list -> 'd t
+    val substitute_by_var : ?memo:Cudd.Memo.t -> ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'a) list -> 'd t
+    val substitute : ?memo:Cudd.Memo.t -> ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'd expr) list -> 'd t
     val guard_of_label : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'a -> 'd Bool.t
     (** Return the guard of the label. *)
     val guardlabels : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('d Bool.t * 'a) list
@@ -430,11 +432,13 @@ module O : sig
   val eq : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'd t -> 'd Bool.t
   (** Equality operation *)
 
-  val substitute_by_var : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'a) list -> 'd t
+  val substitute_by_var : ?memo:Cudd.Memo.t -> ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'a) list -> 'd t
+  val substitute_by_var_list : ?memo:Cudd.Memo.t -> ('a,'b,'c,'d,'e) Env.O.t -> 'd t list -> ('a * 'a) list -> 'd t list
     (** Variable renaming.
 	The new variables should already have been declared *)
 
-  val substitute : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'd t) list -> 'd t
+  val substitute : ?memo:Cudd.Memo.t -> ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> ('a * 'd t) list -> 'd t
+  val substitute_list : ?memo:Cudd.Memo.t -> ('a,'b,'c,'d,'e) Env.O.t -> 'd t list -> ('a * 'd t) list -> 'd t list
     (** Parallel substitution of variables by expressions *)
 
   val support : ('a,'b,'c,'d,'e) Env.O.t -> 'd t -> 'a PSette.t
@@ -508,8 +512,9 @@ module O : sig
 
   val varmap : 'a t -> 'a t
   val permute : ?memo:Cudd.Memo.t -> 'd t -> int array -> 'd t
-  val permute_list : ?memo:Cudd.Memo.t -> 'd t list -> int array -> 'd t list
   val compose : ?memo:Cudd.Memo.t -> 'd t -> 'd Cudd.Bdd.t array -> 'd t
+  val permute_list : ?memo:Cudd.Memo.t -> 'd t list -> int array -> 'd t list
+  val compose_list : ?memo:Cudd.Memo.t -> 'd t list -> 'd Cudd.Bdd.t array -> 'd t list
 
   (*  ==================================================================== *)
   (** {4 Conversion to expressions} *)

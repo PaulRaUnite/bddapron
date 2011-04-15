@@ -200,7 +200,7 @@ let append ~is_equal ~merge ~unique ~disjoint list1 list2 =
     append_unique ~is_equal list1 list2
   else
     List.rev_append list2 list1
-      
+
 (** Remove duplicatas (by reconstructing the list) *)
 let make_unique  ~is_equal ~merge ~disjoint list =
   let nlist =
@@ -220,4 +220,3 @@ let guard ~cudd list =
     (begin fun res elt -> Cudd.Bdd.dor res elt.guard end)
     (Cudd.Bdd.dfalse cudd)
     list
-

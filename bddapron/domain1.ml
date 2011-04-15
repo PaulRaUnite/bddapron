@@ -44,6 +44,7 @@ let canonicalize ?apron man t = Domain0.canonicalize ?apron man t.val0
 let print ?print_apron man fmt t = Domain0.print ?print_apron man t.env fmt t.val0
 let get_env = Env.get_env
 let to_level0 = Env.get_val0
+let of_level0 = Env.make_value
 let size man t = Domain0.size man t.val0
 let bottom man env = make_value env (Domain0.bottom man env)
 let top man env = make_value env (Domain0.top man env)
@@ -54,6 +55,25 @@ let of_apron man env abs1 =
   ;
   make_value env
     (Domain0.of_apron man env abs1.Apron.Abstract1.abstract0)
+
+let of_bddapron man env lboolabs1 =
+    let eapron = env.ext.eapron in
+    let lboolabs0 =
+      List.map
+	(begin fun (boolexpr1,abs1) ->
+	  let env1 = Expr1.Bool.get_env boolexpr1 in
+	  if not (Env.is_eq env env1) then
+	    failwith "Bddapron.domainlevel1.of_bddapron: the BDDAPRON environment of one Boolean expression is different from the expected environment"
+	  ;
+	  if not (Apron.Environment.equal eapron env1.ext.eapron) then
+	    failwith "Bddapron.domainlevel1.of_apron: the APRON environment of one APRON abstract value is different from the numerical part of the expected BDDAPRON environment"
+	  ;
+	  (Expr1.Bool.to_expr0 boolexpr1, abs1.Apron.Abstract1.abstract0)
+	end)
+	lboolabs1
+    in
+    make_value env
+      (Domain0.of_bddapron man env lboolabs0)
 
 let is_bottom man t = Domain0.is_bottom man t.val0
 let is_top man t = Domain0.is_top man t.val0
@@ -77,18 +97,21 @@ let to_bddapron man t =
     list0
 
 let meet man t1 t2 =
-  Env.check_value2 t1 t2;
   Env.mapbinop (Domain0.meet man) t1 t2
 
 let join man t1 t2 =
-  Env.check_value2 t1 t2;
   Env.mapbinop (Domain0.join man) t1 t2
 
 let widening man t1 t2 =
-  Env.check_value2 t1 t2;
   Env.mapbinop (Domain0.widening man) t1 t2
+let widening_threshold man t1 t2 tlincons1 =
+  Env.check_value2 t1 t2;
+  if not (Apron.Environment.equal (Env.apron t1.Env.env) tlincons1.Apron.Lincons1.array_env) then
+    failwith "Bddapron.DomainLevel1.widening_threshold: incompatible APRON environments"
+    ;
+  Env.make_value t1.Env.env (Domain0.widening_threshold man t1.Env.val0 t2.Env.val0 tlincons1.Apron.Lincons1.lincons0_array)
 
-let meet_condition man cond t condition
+ let meet_condition man cond t condition
     =
   let condition0 =
     Bdd.Domain1.O.check_value Expr0.O.Bool.permute
@@ -180,6 +203,8 @@ let rename man t lvarvar =
   let perm = Env.rename_vars_with nenv lvarvar in
   make_value nenv
     (Domain0.apply_permutation man t.val0 perm)
+
+let man_get_apron = Domain0.man_get_apron
 
 (*  ********************************************************************** *)
 (** {3 Implementation based on {!Mtbdddomain1}} *)

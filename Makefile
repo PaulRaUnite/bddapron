@@ -240,6 +240,9 @@ example1.opt: bdd/example1.ml bdd.cmxa
 example2.opt: bddapron/example2.ml bddapron.cmxa
 	$(OCAMLFIND) ocamlopt -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ $< -package "bddapron.bddapron apron.boxMPQ apron.polkaMPQ" -linkpkg
 
+test2.opt: bddapron/test2.ml
+	$(OCAMLFIND) ocamlopt -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ $< -package "bddapron.bddapron apron.boxMPQ apron.polkaMPQ" -linkpkg -predicates debug
+
 test_random.opt: bddapron/test_random.ml bddapron.cmxa
 	$(OCAMLFIND) ocamlopt -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ cudd.cmxa camllib.cmxa bigarray.cmxa gmp.cmxa apron.cmxa boxMPQ.cmxa polkaMPQ.cmxa bddapron.cmxa -noautolink -ccopt "$(LCFLAGS)" -cclib "-lpolkaGrid_caml -lap_pkgrid -lap_ppl_caml -lap_ppl -lppl -lgmpxx -lpolkaMPQ_caml_debug -lpolkaMPQ_debug -loctMPQ_caml -loctMPQ -lboxMPQ_caml -lboxMPQ -lapron_caml_debug -lapron_debug -lgmp_caml -lmpfr -lgmp -cuddcaml.d -lcamlidl -lbigarray -lunix" $<
 
@@ -284,11 +287,7 @@ bddapron/%.ml: bddapron/%.mll
 bddapron/%.ml bddapron/%.mli: bddapron/%.mly
 	$(OCAMLYACC) $^
 
-depend: bddapron/yacc.ml bddapron/yacc.mli bddapron/lex.ml
-	$(OCAMLFIND) ocamldep $(OCAMLINC) -I bdd $(BDDMOD:%=%.mli) $(BDDMOD:%=%.ml) >Makefile.depend
-	$(OCAMLFIND) ocamldep $(OCAMLINC) -I bddapron $(BDDAPRONMOD:%=%.mli) $(BDDAPRONMOD:%=%.ml) >>Makefile.depend
-
-Makefile.depend: bddapron/yacc.ml bddapron/yacc.mli bddapron/lex.ml
+depend Makefile.depend: bddapron/yacc.ml bddapron/yacc.mli bddapron/lex.ml
 	$(OCAMLFIND) ocamldep $(OCAMLINC) -I bdd $(BDDMOD:%=%.mli) $(BDDMOD:%=%.ml) >Makefile.depend
 	$(OCAMLFIND) ocamldep $(OCAMLINC) -I bddapron $(BDDAPRONMOD:%=%.mli) $(BDDAPRONMOD:%=%.ml) >>Makefile.depend
 

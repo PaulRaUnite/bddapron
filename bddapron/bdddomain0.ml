@@ -269,6 +269,36 @@ module O = struct
 	disjoint = true;
       }
 
+  let of_bddapron man env lbddabs0 =
+    let lbddabs0 =
+      List.filter
+	(fun (bdd,abs0) ->
+	  not (Cudd.Bdd.is_false bdd || Apron.Abstract0.is_bottom man.apron abs0))
+	lbddabs0
+    in
+    let guardnonbottom =
+      List.fold_left
+	(fun res (bdd,abs0) -> Cudd.Bdd.dor res bdd)
+	(Cudd.Bdd.dfalse env.cudd)
+	lbddabs0
+    in
+    let res = {
+      list =
+	List.map
+	  (fun (bdd,abs0) ->
+	    {Bddleaf.guard=bdd; Bddleaf.leaf=abs0})
+	  lbddabs0;
+      bottom = {
+	guard = Cudd.Bdd.dnot guardnonbottom;
+	leaf = abs_of_env Apron.Abstract0.bottom man env;
+      };
+      unique = false;
+      disjoint = false;
+    }
+    in
+    canonicalize man res;
+    res
+
   (*  ==================================================================== *)
   (** {4 Tests} *)
   (*  ==================================================================== *)
@@ -464,7 +494,7 @@ module O = struct
     assert(check_wellformed man res);
     res
 
-  let widening man t1 t2 =
+  let widening_generic man t1 t2 otlincons0 =
     canonicalize ~unique:true ~disjoint:true man t1;
     canonicalize ~unique:true ~disjoint:true man t2;
     if is_bottom man t1 then t2
@@ -477,7 +507,12 @@ module O = struct
 	    if Cudd.Bdd.is_false nguard then
 	      res
 	    else begin
-	      let nleaf = Apron.Abstract0.widening man.apron elt1.leaf elt2.leaf in
+	      let nleaf = match otlincons0 with
+		| None ->
+		    Apron.Abstract0.widening man.apron elt1.leaf elt2.leaf
+		| Some(tlincons0) ->
+		    Apron.Abstract0.widening_threshold man.apron elt1.leaf elt2.leaf tlincons0
+	      in
 	      let nelt = { guard = nguard; leaf = nleaf } in
 	      L.cons_unique man nelt res
 	    end
@@ -516,6 +551,10 @@ module O = struct
       assert(check_wellformed man res);
       res
     end
+
+  let widening man t1 t2 = widening_generic man t1 t2 None
+  let widening_threshold man t1 t2 tlincons0 =
+    widening_generic man t1 t2 (Some tlincons0)
 
   (*  ******************************************************************** *)
   (** {3 Intersection with a guard} *)
@@ -1091,6 +1130,7 @@ let print = O.print
 let bottom = O.bottom
 let top = O.top
 let of_apron = O.of_apron
+let of_bddapron = O.of_bddapron
 let is_bottom = O.is_bottom
 let is_top = O.is_top
 let is_leq = O.is_leq
@@ -1103,5 +1143,6 @@ let assign_lexpr = O.assign_lexpr
 let substitute_lexpr = O.substitute_lexpr
 let forget_list = O.forget_list
 let widening = O.widening
+let widening_threshold = O.widening_threshold
 let apply_change = O.apply_change
 let apply_permutation = O.apply_permutation

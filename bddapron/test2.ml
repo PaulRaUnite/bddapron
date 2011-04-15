@@ -1,23 +1,18 @@
-
 (*
-ocaml -I $CAMLLIB_INSTALL/lib -I $MLCUDDIDL_INSTALL/lib -I $BDDAPRON_INSTALL/lib -I $MLGMPIDL_INSTALL/lib -I $APRON_INSTALL/lib
+ocaml
 
-#load "bigarray.cma";;
-#load "gmp.cma";;
-#load "apron.cma";;
-#load "camllib.cma";;
-#load "cudd.cma";;
-#load "bddapron.cma";;
-#load "polkaMPQ.cma";;
+#use "topfind";;
+#require "bddapron.bddapron";;
+#require "apron.polkaMPQ";;
 *)
 open Format;;
 open Bddapron;;
 
 let apron = Polka.manager_alloc_loose ();;
-let man = Domain1.make_bdd apron;;
+let man = Mtbdddomain1.make_man apron;;
 let cudd = Cudd.Man.make_v ();;
-let env = Env.make ~symbol:Env.string_symbol cudd;;
-let cond = Cond.make  ~symbol:Env.string_symbol cudd;;
+let env = Env.make ~bddindex0:0 ~bddsize:10 ~symbol:Env.string_symbol cudd;;
+let cond = Cond.make ~bddindex0:10 ~bddsize:10 ~symbol:Env.string_symbol cudd;;
 (*
 #install_printer p;;
 #install_printer Apron.Abstract1.print;;
@@ -51,7 +46,13 @@ let p fmt x = Domain0.print env fmt x;;
 let p fmt (x: Polka.loose Polka.t ApronDD.table) = Cudd.Mtbdd.print_table (fun x -> Apron.Abstract0.print string_of_int x) fmt x;;
 #install_printer p;;
 *)
+
+
+Env.add_typ_with env
+  "typ" (`Benum [|"a";"b";"c"|]);;
+
 Env.add_vars_with env [
+  ("e0",`Benum "typ");
   ("b0",`Bool);
   ("b1",`Bool);
   ("b2",`Bool);
@@ -59,21 +60,45 @@ Env.add_vars_with env [
   ("x1",`Real);
   ("x2",`Real);
 ];;
+
+
+(* ********************************************************************** *)
+
+let expr1 = Expr1.Bool.of_expr (Parser.expr1_of_string env cond "e0 in { a, b}");;
+let expr2 = Expr1.Bool.of_expr (Parser.expr1_of_string env cond "not (e0==c)");;
+
+Expr1.Bool.is_eq cond expr1 expr2;;
+
+printf "expr1=%a@.expr2=%a@."
+Cudd.Bdd.print__minterm expr1.Env.val0
+Cudd.Bdd.print__minterm expr2.Env.val0
+;;
+let expr = Parser.expr1_of_string env cond "if (b0==b1) and b2 then x0+2 else if not (b0==b1) then x0+1 else x0";;
+
+let nexpr = Expr1.substitute_by_var cond expr [("b0","b2")];;
+
+(* ********************************************************************** *)
+
 let string_of_dim i = "x"^(string_of_int i);;
-let print_table fmt table = 
+let print_table fmt table =
   Cudd.Mtbddc.print_table (fun x -> Apron.Abstract0.print string_of_dim x)
     fmt table
 ;;
 
-let top = Domain0.top man env;;
+let top = Mtbdddomain0.top man env;;
 printf "table = %a@." print_table man.ApronDD.table;;
 Gc.major();;
 printf "table = %a@." print_table man.ApronDD.table;;
 
+let bexpr0 = Parser.boolexpr2_of_string env cond
+  "e0 == a";;
+
+
+
 let bexpr1 = Parser.boolexpr2_of_string env cond
   "x0>=0";;
 let bexpr1 = bexpr1.Cond.val1.Env.val0;;
-let abs1 = Domain0.meet_condition man env cond top bexpr1;;
+let abs1 = Mtbdddomain0.meet_condition man env cond top bexpr1;;
 printf "table = %a@." print_table man.ApronDD.table;;
 Gc.major();;
 printf "table = %a@." print_table man.ApronDD.table;;
@@ -87,17 +112,10 @@ let bexpr2 = Parser.boolexpr2_of_string env cond
   "x0+2*x1>=2 and x0+x1<=6 and x2>=3 and x2<=11";;
 let bexpr2 = bexpr2.Cond.val1.Env.val0;;
 
-let abs1 = Domain0.meet_condition man env cond top bexpr1;;
+let abs1 = Mtbdddomain0.meet_condition man env cond top bexpr1;;
 printf "table = %a@." print_table man.ApronDD.table;;
-let abs2 = Domain0.meet_condition man env cond top bexpr2;;
+let abs2 = Mtbdddomain0.meet_condition man env cond top bexpr2;;
 printf "table = %a@." print_table man.ApronDD.table;;
-let abs = Domain0.join man abs1 abs2;;
+let abs = Mtbdddomain0.join man abs1 abs2;;
 printf "table = %a@." print_table man.ApronDD.table;;
 Gc.compact();;
-
-
-(* ********************************************************************** *)
-let expr = Parser.expr1_of_string env cond "if (b0==b1) and b2 then x0+2 else if not (b0==b1) then x0+1 else x0";;
-
-let nexpr = Expr1.substitute_by_var cond expr [("b0","b2")];;
-

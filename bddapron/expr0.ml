@@ -161,54 +161,81 @@ module O = struct
     end;
     ((if !change then Some tab else None), osub)
 
+  let substitute_list
+      ?memo
+      env cond
+      (le:'a t list) (substitution:('a * 'a t) list) : 'a t list
+      =
+    if substitution = [] || le=[] then
+      le
+    else begin
+      let (otab,sub) = compose_of_lvarexpr env cond substitution in
+      let (ohash,memo) =
+	if otab<>None && memo=None then
+	  let hash = Cudd.Hash.create 1 in
+	  let memo = Cudd.Memo.Hash hash in
+	  (Some hash, Some memo)
+	else
+	  (None,memo)
+      in
+      let res =
+	if PMappe.is_empty sub then begin
+	  let tab = match otab with
+	    | None -> assert false
+	    | Some(tab) -> tab
+	  in
+	  List.map
+	    (function
+	      | #Bdd.Expr0.t as x ->
+		  ((Bdd.Expr0.O.compose ?memo x tab):>'a t)
+	      | `Apron mtbdd ->
+		  `Apron (Cudd.Mtbdd.vectorcompose ?memo tab mtbdd)
+	    )
+	    le
+	end
+	else begin
+	  List.map
+	    (begin fun e -> match e with
+	    | #Bdd.Expr0.t as x ->
+		begin match otab with
+		| None -> e
+		| Some(tab) -> ((Bdd.Expr0.O.compose ?memo x tab):>'a t)
+		end
+	    | `Apron expr ->
+		let cudd = env.cudd in
+		let default = Cudd.Mtbdd.cst_u cudd (Cudd.Mtbdd.pick_leaf_u expr) in
+		let leaves_u = Cudd.Mtbdd.leaves_u expr in
+		let res = ref default in
+		Array.iter
+		  (begin fun leaf_u ->
+		    let guard = Cudd.Mtbdd.guard_of_leaf_u expr leaf_u in
+		    let apronexpr = Cudd.Mtbdd.get leaf_u in
+		    let nguard = match otab with
+		      | None -> guard
+		      | Some(tab) -> Cudd.Bdd.vectorcompose ?memo tab guard
+		    in
+		    let nexpr = ApronexprDD.substitute env apronexpr sub in
+		    res := Cudd.Mtbdd.ite nguard nexpr !res
+		  end)
+		  leaves_u;
+		`Apron !res
+	    end)
+	    le
+	end
+      in
+      begin match ohash with
+      | Some(hash) -> Cudd.Hash.clear hash
+      | None -> ()
+      end;
+      res
+    end
+
   let substitute
+      ?memo
       env cond
       (e:'a t) (substitution:('a * 'a t) list) : 'a t
       =
-    if substitution = [] then
-      e
-    else begin
-      let (tab,sub) = compose_of_lvarexpr env cond substitution in
-      if PMappe.is_empty sub then begin
-	let tab = match tab with
-	  | None -> assert false
-	  | Some(tab) -> tab
-	in
-	begin match e with
-	| #Bdd.Expr0.t as x ->
-	    ((Bdd.Expr0.O.compose x tab):>'a t)
-	| `Apron mtbdd ->
-	    `Apron (Cudd.Mtbdd.vectorcompose tab mtbdd)
-	end
-      end
-      else begin
-	begin match e with
-	| #Bdd.Expr0.t as x ->
-	    begin match tab with
-	    | None -> e
-	    | Some(tab) -> ((Bdd.Expr0.O.compose x tab):>'a t)
-	    end
-	| `Apron expr ->
-	    let cudd = env.cudd in
-	    let default = Cudd.Mtbdd.cst_u cudd (Cudd.Mtbdd.pick_leaf_u expr) in
-	    let leaves_u = Cudd.Mtbdd.leaves_u expr in
-	    let res = ref default in
-	    Array.iter
-	      (begin fun leaf_u ->
-		let guard = Cudd.Mtbdd.guard_of_leaf_u expr leaf_u in
-		let apronexpr = Cudd.Mtbdd.get leaf_u in
-		let nguard = match tab with
-		  | None -> guard
-		  | Some(tab) -> Cudd.Bdd.vectorcompose tab guard
-		in
-		let nexpr = ApronexprDD.substitute env apronexpr sub in
-		res := Cudd.Mtbdd.ite nguard nexpr !res
-	      end)
-	      leaves_u;
-	    `Apron !res
-	end
-      end
-    end
+    List.hd (substitute_list ?memo env cond [e] substitution)
 
   let var
       env cond
@@ -222,12 +249,20 @@ module O = struct
 	`Apron (ApronexprDD.var env var)
     | _ -> raise Not_found
 
+  let substitute_by_var_list
+      ?memo
+      env cond
+      le (substitution:('a * 'a) list)
+      =
+    substitute_list ?memo env cond le
+      (List.map (fun (v1,v2) -> (v1,var env cond v2)) substitution)
+
   let substitute_by_var
+      ?memo
       env cond
       e (substitution:('a * 'a) list)
       =
-    substitute env cond e
-      (List.map (fun (v1,v2) -> (v1,var env cond v2)) substitution)
+    List.hd (substitute_by_var_list ?memo env cond [e] substitution)
 
   let ddsubstitute = substitute
   let ddsubstitute_by_var = substitute_by_var
@@ -276,8 +311,8 @@ module O = struct
     let permute = Bdd.Expr0.O.Bool.permute
     let varmap = Bdd.Expr0.O.Bool.varmap
 
-    let substitute_by_var env cond (e:'a t) sub = of_expr (ddsubstitute_by_var env cond (to_expr e) sub)
-    let substitute env cond (e:'a t) sub = of_expr (ddsubstitute env cond (to_expr e) sub)
+    let substitute_by_var ?memo env cond (e:'a t) sub = of_expr (ddsubstitute_by_var ?memo env cond (to_expr e) sub)
+    let substitute ?memo env cond (e:'a t) sub = of_expr (ddsubstitute ?memo env cond (to_expr e) sub)
 
     let print = print_bdd
   end
@@ -318,8 +353,8 @@ module O = struct
     let permute = Bdd.Expr0.O.Bint.permute
     let varmap = Bdd.Expr0.O.Bint.varmap
 
-    let substitute_by_var env cond (e:'a t) sub = of_expr (ddsubstitute_by_var env cond (to_expr e) sub)
-    let substitute env cond (e:'a t) sub = of_expr (ddsubstitute env cond (to_expr e) sub)
+    let substitute_by_var ?memo env cond (e:'a t) sub = of_expr (ddsubstitute_by_var ?memo env cond (to_expr e) sub)
+    let substitute ?memo env cond (e:'a t) sub = of_expr (ddsubstitute ?memo env cond (to_expr e) sub)
     let guard_of_int env cond = Bdd.Expr0.O.Bint.guard_of_int env
     let guardints env cond = Bdd.Expr0.O.Bint.guardints env
 
@@ -343,8 +378,8 @@ module O = struct
     let tdrestrict = Bdd.Expr0.O.Benum.tdrestrict
     let permute = Bdd.Expr0.O.Benum.permute
     let varmap = Bdd.Expr0.O.Benum.varmap
-    let substitute_by_var env cond (e:'a t) sub = of_expr (ddsubstitute_by_var env cond (to_expr e) sub)
-    let substitute env cond (e:'a t) sub = of_expr (ddsubstitute env cond (to_expr e) sub)
+    let substitute_by_var ?memo env cond (e:'a t) sub = of_expr (ddsubstitute_by_var ?memo env cond (to_expr e) sub)
+    let substitute ?memo env cond (e:'a t) sub = of_expr (ddsubstitute ?memo env cond (to_expr e) sub)
     let guard_of_label env cond = Bdd.Expr0.O.Benum.guard_of_label env
     let guardlabels env cond = Bdd.Expr0.O.Benum.guardlabels env
     let print env cond fmt x = Bdd.Enum.print_minterm (print_bdd env cond) env fmt x
@@ -389,8 +424,8 @@ module O = struct
     let support = Cudd.Mtbdd.support
     let support_leaf = ApronexprDD.support_leaf
 
-    let substitute_by_var env cond (e:'a t) sub = of_expr (ddsubstitute_by_var env cond (to_expr e) sub)
-    let substitute env cond (e:'a t) sub = of_expr (ddsubstitute env cond (to_expr e) sub)
+    let substitute_by_var ?memo env cond (e:'a t) sub = of_expr (ddsubstitute_by_var ?memo env cond (to_expr e) sub)
+    let substitute ?memo env cond (e:'a t) sub = of_expr (ddsubstitute ?memo env cond (to_expr e) sub)
   end
 
   (*  ==================================================================== *)
@@ -497,7 +532,7 @@ module O = struct
 	  if not (Cudd.Bdd.is_equal supp ncond.supp) then begin
 	    Bdd.Cond.reduce_with ncond supp;
 	    let perm = Bdd.Cond.normalize_with ncond in
-	    let lexpr = List.map (fun e -> permute e perm) lexpr in
+	    let lexpr = permute_list lexpr perm in
 	    lexpr
 	  end
 	  else lexpr
@@ -534,6 +569,8 @@ let permute = O.permute
 let varmap = O.varmap
 let substitute_by_var = O.substitute_by_var
 let substitute = O.substitute
+let substitute_by_var_list = O.substitute_by_var_list
+let substitute_list = O.substitute_list
 let support = O.support
 let eq = O.eq
 let support_cond = O.support_cond

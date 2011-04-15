@@ -172,6 +172,8 @@ val vars : ('a,'b,'c,'d) O.t -> 'a PSette.t
     (** Return the list of variables (not labels) *)
 val labels : ('a,'b,'c,'d) O.t -> 'a PSette.t
     (** Return the list of labels (not variables) *)
+val apron :  ('a,'b,'c,'d) O.t -> Apron.Environment.t
+    (** return the APRON sub-environment *)
 
 (*  ********************************************************************** *)
 (** {3 Adding types and variables} *)
@@ -290,9 +292,9 @@ val mapterop :
   (('a,'b,'c,'d) O.t, 'h) value
 
 val var_of_aprondim :
-  ('a, 'b, 'c, 'd, ('e, 'f) ext) Bdd.Env.t0 -> Apron.Dim.t -> 'a
+  ('a,'b,'c,'d) O.t -> Apron.Dim.t -> 'a
 val aprondim_of_var :
-  ('a, 'b, 'c, 'd, ('e, 'f) ext) Bdd.Env.t0 -> 'a -> Apron.Dim.t
+  ('a,'b,'c,'d) O.t -> 'a -> Apron.Dim.t
 
 val string_of_aprondim :
-  ('a, 'b, 'c, 'd, ('e, 'f) ext) Bdd.Env.t0 -> Apron.Dim.t -> string
+  ('a,'b,'c,'d) O.t -> Apron.Dim.t -> string

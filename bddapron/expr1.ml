@@ -22,15 +22,34 @@ module O = struct
 
   type ('a,'b) expr = ('a,'b) t
 
-  let substitute (cond:('a,'b) Cond.O.t) (e:('a,'b) t) (substitution:('a * ('a,'b) t) list) : ('a,'b) t
+  let substitute ?memo (cond:('a,'b) Cond.O.t) (e:('a,'b) t) (substitution:('a * ('a,'b) t) list) : ('a,'b) t
       =
     let lvarexpr =
       Env.check_lvarvalue e.env substitution
     in
-    make_value e.env (Expr0.O.substitute e.env cond e.val0 lvarexpr)
+    make_value e.env (Expr0.O.substitute ?memo e.env cond e.val0 lvarexpr)
+  let substitute_list ?memo cond le lvarexpr =
+    match le with
+    | [] -> []
+    | [e] -> [substitute ?memo cond e lvarexpr]
+    | _ ->
+	let env = (List.hd le).env in
+	let lval0 = List.map (fun e -> e.val0) le in
+	let lvarexpr = Env.check_lvarvalue env lvarexpr in
+	let lval0 = Expr0.O.substitute_list ?memo env cond lval0 lvarexpr in
+	List.map (make_value env) lval0
 
-  let substitute_by_var (cond:('a,'b) Cond.O.t) (e:('a,'b) t) (substitution:('a*'a) list) =
-    make_value e.env (Expr0.O.substitute_by_var e.env cond e.val0 substitution)
+  let substitute_by_var ?memo (cond:('a,'b) Cond.O.t) (e:('a,'b) t) (substitution:('a*'a) list) =
+    make_value e.env (Expr0.O.substitute_by_var ?memo e.env cond e.val0 substitution)
+  let substitute_by_var_list ?memo cond le lvarvar =
+    match le with
+    | [] -> []
+    | [e] -> [substitute_by_var ?memo cond e lvarvar]
+    | _ ->
+	let env = (List.hd le).env in
+	let lval0 = List.map (fun e -> e.val0) le in
+	let lval0 = Expr0.O.substitute_by_var_list ?memo env cond lval0 lvarvar in
+	List.map (make_value env) lval0
 
   let ddsubstitute = substitute
   let ddsubstitute_by_var = substitute_by_var
@@ -82,10 +101,10 @@ module O = struct
 
     let print cond fmt e = Expr0.O.Bool.print e.env cond fmt e.val0
 
-    let substitute_by_var cond e sub =
-      of_expr (ddsubstitute_by_var cond (to_expr e) sub)
-    let substitute cond e sub =
-      of_expr (ddsubstitute cond (to_expr e) sub)
+    let substitute_by_var ?memo cond e sub =
+      of_expr (ddsubstitute_by_var ?memo cond (to_expr e) sub)
+    let substitute ?memo cond e sub =
+      of_expr (ddsubstitute ?memo cond (to_expr e) sub)
   end
 
   module Bint = struct
@@ -129,10 +148,10 @@ module O = struct
 
     let print cond fmt e = Expr0.O.Bint.print e.env cond fmt e.val0
 
-    let substitute_by_var cond e sub =
-      of_expr (ddsubstitute_by_var cond (to_expr e) sub)
-    let substitute cond e sub =
-      of_expr (ddsubstitute cond (to_expr e) sub)
+    let substitute_by_var ?memo cond e sub =
+      of_expr (ddsubstitute_by_var ?memo cond (to_expr e) sub)
+    let substitute ?memo cond e sub =
+      of_expr (ddsubstitute ?memo cond (to_expr e) sub)
 
   end
   module Benum = struct
@@ -158,10 +177,10 @@ module O = struct
 
     let print cond fmt e = Expr0.O.Benum.print e.env cond fmt e.val0
 
-    let substitute_by_var cond e sub =
-      of_expr (ddsubstitute_by_var cond (to_expr e) sub)
-    let substitute cond e sub =
-      of_expr (ddsubstitute cond (to_expr e) sub)
+    let substitute_by_var ?memo cond e sub =
+      of_expr (ddsubstitute_by_var ?memo cond (to_expr e) sub)
+    let substitute ?memo cond e sub =
+      of_expr (ddsubstitute ?memo cond (to_expr e) sub)
   end
 
   (*  ==================================================================== *)
@@ -234,10 +253,10 @@ module O = struct
     let print cond fmt (x:('a,'b) t) =
       ApronexprDD.print (Expr0.O.print_bdd x.env cond) x.env.symbol fmt x.val0
 
-    let substitute_by_var cond e sub =
-      of_expr (ddsubstitute_by_var cond (to_expr e) sub)
-    let substitute cond e sub =
-      of_expr (ddsubstitute cond (to_expr e) sub)
+    let substitute_by_var ?memo cond e sub =
+      of_expr (ddsubstitute_by_var ?memo cond (to_expr e) sub)
+    let substitute ?memo cond e sub =
+      of_expr (ddsubstitute ?memo cond (to_expr e) sub)
   end
 
   (*  ====================================================================== *)
@@ -332,10 +351,7 @@ module O = struct
       List.map (fun val0 -> Env.make_value lexpr1.env val0) lexpr1.val0
 
     let extend_environment e nenv =
-      Bdd.Env.extend_environment
-	(fun lexpr0 perm ->
-	  (List.map (fun e -> Expr0.O.permute e perm) lexpr0))
-	e nenv
+      Bdd.Env.extend_environment Expr0.O.permute_list e nenv
 
     let normalize ?reduce ?careset (cond,list) =
       let (cond,lexpr0) =
@@ -378,6 +394,8 @@ let ite = O.ite
 let eq = O.eq
 let substitute_by_var = O.substitute_by_var
 let substitute = O.substitute
+let substitute_by_var_list = O.substitute_by_var_list
+let substitute_list = O.substitute_list
 let support = O.support
 let support_cond = O.support_cond
 let cofactor = O.cofactor

@@ -100,7 +100,7 @@ let make_global (apron:'a Apron.Manager.t) (table:'a table) : 'a global =
     Cudd.User.make_exist
       ~memo:Cudd.Memo.Global
       op_join
-  in 
+  in
   {
     op_is_leq = op_is_leq;
     op_join = op_join;
@@ -217,6 +217,15 @@ let widening man (x:'a t) (y:'a t) : 'a t  =
       then Some dd2 else None
     )
     (fun x y -> myunique man.table (Apron.Abstract0.widening man.apron (myget x) (myget y)))
+    x y
+let widening_threshold man (x:'a t) (y:'a t) tlincons0 : 'a t  =
+  Cudd.User.map_op2
+    ~commutative:false ~idempotent:true
+    ~special:(fun dd1 dd2 ->
+      if Cudd.Mtbddc.is_cst dd1 && Apron.Abstract0.is_bottom man.apron (mydval dd1)
+      then Some dd2 else None
+    )
+    (fun x y -> myunique man.table (Apron.Abstract0.widening_threshold man.apron (myget x) (myget y) tlincons0))
     x y
 
 let meet_tcons_array man (x:'a t) tcons :'a t =
@@ -472,21 +481,21 @@ let existand
     (man:'a man)
     ~(bottom:'a Apron.Abstract0.t Cudd.Mtbddc.unique)
     ~(supp:Cudd.Bdd.vt) (guard:Cudd.Bdd.vt) (t:'a t)
-    : 
+    :
     'a t
     =
-  let op2 = 
+  let op2 =
     match man.oglobal with
       | None ->
 	  let bottomdd = Cudd.Mtbddc.cst_u (Cudd.Bdd.manager supp) bottom in
-	  let op2 = 
+	  let op2 =
 	    Cudd.User.make_op2
 	      ~memo:(Cudd.Memo.Hash(Cudd.Hash.create 2))
 	      ~commutative:true ~idempotent:true
 	      ~special:(fun dd1 dd2 ->
 		if (Cudd.Mtbddc.is_equal dd1 bottomdd || Cudd.Mtbddc.is_equal dd2 bottomdd) then
 		  Some(bottomdd)
-		else 
+		else
 		  None
 	      )
 	      (fun x y -> myunique man.table (Apron.Abstract0.join man.apron (myget x) (myget y)))
@@ -497,10 +506,9 @@ let existand
   in
   let existand = Cudd.User.make_existand
     ~memo:(Cudd.Memo.Hash(Cudd.Hash.create 3))
-    ~bottom op2 
+    ~bottom op2
   in
   let res = Cudd.User.apply_existand existand ~supp guard t in
   Cudd.User.clear_op2 op2;
   Cudd.User.clear_existand existand;
   res
-

@@ -66,6 +66,7 @@ val print :
 val bottom : ('a,'b) man -> 'a Env.t -> 'b t
 val top : ('a,'b) man -> 'a Env.t -> 'b t
 val of_apron : ('a,'b) man -> 'a Env.t -> 'b Apron.Abstract0.t -> 'b t
+val of_bddapron : ('a,'b) man -> 'a Env.t -> ('a Expr0.Bool.t * 'b Apron.Abstract0.t) list -> 'b t
 
 (*  ====================================================================== *)
 (** {4 Tests} *)
@@ -115,6 +116,7 @@ val forget_list :
   (** Forget (existential quantification) a list of variables *)
 
 val widening : ('a,'b) man -> 'b t -> 'b t -> 'b t
+val widening_threshold : ('a,'b) man -> 'b t -> 'b t -> Apron.Lincons0.t array -> 'b t
   (** Widening *)
 
 val apply_change :
@@ -140,6 +142,7 @@ module O : sig
   val bottom : ('a,'b) man -> ('a,'c,'d,'e) Env.O.t -> 'b t
   val top : ('a,'b) man -> ('a,'c,'d,'e) Env.O.t -> 'b t
   val of_apron : ('a,'b) man -> ('a,'c,'d,'e) Env.O.t -> 'b Apron.Abstract0.t -> 'b t
+  val of_bddapron : ('a,'b) man -> ('a,'c,'d,'e) Env.O.t -> ('a Expr0.Bool.t * 'b Apron.Abstract0.t) list -> 'b t
   val is_bottom : ('a,'b) man -> 'b t -> bool
   val is_top : ('a,'b) man -> 'b t -> bool
   val is_leq : ('a,'b) man -> 'b t -> 'b t -> bool
@@ -159,6 +162,7 @@ module O : sig
   val forget_list :
     ('a,'b) man -> ('a,'c,'d,'e) Env.O.t -> 'b t -> 'a list -> 'b t
   val widening : ('a,'b) man -> 'b t -> 'b t -> 'b t
+  val widening_threshold : ('a,'b) man -> 'b t -> 'b t -> Apron.Lincons0.t array -> 'b t
   val apply_change :
     bottom:'b t -> ('a,'b) man -> 'b t -> Env.change -> 'b t
   val apply_permutation :

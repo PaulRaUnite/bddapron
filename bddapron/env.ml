@@ -141,7 +141,7 @@ let vars env =
   let vars = Array.fold_right add qvar vars in
   vars
 let labels = Bdd.Env.labels
-
+let apron env = env.ext.eapron
 
 (*  ********************************************************************** *)
 (** {3 Adding types and variables} *)
@@ -287,19 +287,19 @@ let mapbinop = Bdd.Env.mapbinop
 let mapbinope = Bdd.Env.mapbinope
 let mapterop = Bdd.Env.mapterop
 
-let var_of_aprondim env dim =
+let var_of_aprondim (env:('a,'b,'c,'d) O.t) dim =
   let avar = Apron.Environment.var_of_dim env.ext.eapron dim in
   let strvar = Apron.Var.to_string avar in
   let var = env.symbol.unmarshal strvar in
   var
 
-let aprondim_of_var env var =
+let aprondim_of_var (env:('a,'b,'c,'d) O.t) var =
   let varstr = env.symbol.marshal var in
   let avar = Apron.Var.of_string varstr in
   let dim = Apron.Environment.dim_of_var env.ext.eapron avar in
   dim
 
-let string_of_aprondim env =
+let string_of_aprondim (env:('a,'b,'c,'d) O.t) =
   Print.string_of_print
     (fun fmt dim ->
       env.symbol.print fmt (var_of_aprondim env dim))
