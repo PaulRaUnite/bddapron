@@ -18,7 +18,7 @@ Required
 ========
 
 1)
-OCaml
+OCaml 3.12.x
 Camlidl (http://caml.inria.fr/pub/old_caml_site/camlidl/)
 FINDLIB (http://projects.camlcity.org/projects/findlib.html)
 C/OCaml  libraries and interfaces
