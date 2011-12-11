@@ -138,8 +138,37 @@ module O = struct
 	~merge:(Apron.Abstract0.join man.apron)
 	~disjoint
 	list
-  end
 
+    (** Is the element empty ? *)
+    let is_bottom apron (elt:'a elt) =
+      Cudd.Bdd.is_false elt.guard || Apron.Abstract0.is_bottom apron elt.leaf
+
+    (** Intersection of an element with a general cube *)
+    let meet_cube apron env cond (elt:'a elt) cube =
+      let (cubebool,cubecond) = Common.cube_split cond cube in
+      let nguard = Cudd.Bdd.dand elt.guard cubebool in
+      let nelt = {
+	guard = nguard;
+	leaf =
+	  if Cudd.Bdd.is_cst cubecond || Cudd.Bdd.is_false nguard then
+	    elt.leaf
+	  else
+	    let tcons0_array = Common.tcons0_array_of_cubecond env cond cubecond in
+	    Apron.Abstract0.meet_tcons_array apron elt.leaf tcons0_array
+      }
+      in
+      nelt
+
+    let forget apron elt bsupp tadim =
+      {
+	guard = Cudd.Bdd.exist bsupp elt.guard;
+	leaf =
+	  if tadim=[||]
+	  then elt.leaf
+	  else Apron.Abstract0.forget_array apron elt.leaf tadim false
+      }
+
+  end
 
   (*  ******************************************************************** *)
   (** {3 Checking functions} *)
@@ -560,52 +589,10 @@ module O = struct
   (** {3 Intersection with a guard} *)
   (*  ******************************************************************** *)
 
-  let elt_is_bottom apron elt =
-    Cudd.Bdd.is_false elt.guard ||
-      Apron.Abstract0.is_bottom apron elt.leaf
-
   let descend_merge ~merge (ga,lista) (gb,listb) =
     let g = Cudd.Bdd.dor ga gb in
     let list = merge lista listb in
     (g,list)
-
-  (** Intersection of an element with a cube of conditions *)
-  let abs_meet_cubecond
-      apron
-      env cond
-      abs (cubecond:Cudd.Bdd.vt)
-      =
-    let eapron = env.ext.eapron in
-    let lidcondb = Cudd.Bdd.list_of_cube cubecond in
-    let tidcondb = Array.of_list lidcondb in
-    let ttcons0 =
-      Array.map
-	(begin fun idb ->
-	  let `Apron condition = Bdd.Cond.cond_of_idb cond idb in
-	  let tcons0 = Apronexpr.Condition.to_tcons0 env.symbol eapron condition in
-	  tcons0
-	end)
-	tidcondb
-    in
-    Apron.Abstract0.meet_tcons_array apron abs ttcons0
-
-  (** Intersection of an element with a general cube *)
-  let elt_meet_cube apron env cond (elt:'b elt) cube =
-    let supp = Cudd.Bdd.support cube in
-    let suppbool = Cudd.Bdd.support_diff supp cond.supp in
-    let cubecond = Cudd.Bdd.exist suppbool cube in
-    let cubebool = Cudd.Bdd.cofactor cube cubecond in
-    let nguard = Cudd.Bdd.dand elt.guard cubebool in
-    let nelt = {
-      guard = nguard;
-      leaf =
-	if Cudd.Bdd.is_cst cubecond || Cudd.Bdd.is_false nguard then
-	  elt.leaf
-	else
-	  abs_meet_cubecond apron env cond elt.leaf cubecond
-    }
-    in
-    nelt
 
   (** bdd may contain constraints. *)
   let elt_descend_bdd ~merge ~maxdepth apron env cond =
@@ -614,13 +601,13 @@ module O = struct
       ~cudd ~maxdepth
       ~nocare:(begin fun (elt,bdd) ->
 	let res =
-	  Cudd.Bdd.is_false bdd || elt_is_bottom apron elt
+	  Cudd.Bdd.is_false bdd || L.is_bottom apron elt
 	in
 	res
       end)
       ~cube_of_down:(fun (elt,bdd) -> Cudd.Bdd.cube_of_bdd bdd)
       ~cofactor:(fun (elt,bdd) cube ->
-	let nelt = elt_meet_cube apron env cond elt cube in
+	let nelt = L.meet_cube apron env cond elt cube in
 	(nelt, Cudd.Bdd.cofactor bdd cube)
       )
       ~select:(fun (elt,bdd) ->
@@ -750,10 +737,10 @@ module O = struct
     let ores =
       Descend.descend
 	~cudd ~maxdepth
-	~nocare:(fun (elt,texpr) -> elt_is_bottom apron elt)
+	~nocare:(fun (elt,texpr) -> L.is_bottom apron elt)
 	~cube_of_down:(fun (elt,texpr) -> dtrue)
 	~cofactor:(fun (elt,texpr) cube ->
-	  let nelt = elt_meet_cube apron env cond elt cube in
+	  let nelt = L.meet_cube apron env cond elt cube in
 	  (nelt, Descend.texpr_cofactor Expr0.cofactor texpr cube)
 	)
 	~select:(fun (elt,texpr) ->
@@ -979,32 +966,10 @@ module O = struct
   let forget_list man env t lvar =
     if lvar=[] then t
     else begin
-      let eapron = env.ext.eapron in
-      let (lbvar,ladim) =
-	List.fold_left
-	  (begin fun (lbvar,ladim) var ->
-	    match Env.typ_of_var env var with
-	    | #Bdd.Env.typ -> (var::lbvar,ladim)
-	    | _ ->
-		let avar = Apron.Var.of_string (env.symbol.marshal var) in
-		let adim = Apron.Environment.dim_of_var eapron avar in
-		(lbvar,adim::ladim)
-	  end)
-	  ([],[]) lvar
-      in
-      let bsupp = Bdd.Expr0.O.bddsupport env lbvar in
-      let tadim = Array.of_list ladim in
+      let (bsupp,tadim) = Common.lvar_split env lvar in
       let nlist =
 	List.map
-	  (begin fun elt ->
-	    {
-	      guard = Cudd.Bdd.exist bsupp elt.guard;
-	      leaf =
-		if tadim=[||]
-		then elt.leaf
-		else Apron.Abstract0.forget_array man.apron elt.leaf tadim false
-	    }
-	  end)
+	  (fun elt -> L.forget man.apron elt bsupp tadim)
 	  t.list
       in
       let nbottom =
@@ -1097,6 +1062,7 @@ module O = struct
       in
       res
     end
+
 
 end
 

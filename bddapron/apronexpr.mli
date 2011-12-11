@@ -51,6 +51,7 @@ module Lin :
     val normalize_as_constraint : 'a t -> 'a t
     val print : 'a symbol -> Format.formatter -> 'a t -> unit
 
+    val of_linexpr1 : 'a symbol -> Apron.Environment.t -> Apron.Linexpr1.t -> 'a t
     val to_linexpr1 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Linexpr1.t
   end
 
@@ -110,6 +111,8 @@ module Tree :
     val substitute_by_var : 'a t -> ('a,'a) PMappe.t -> 'a t
     val print : 'a symbol -> Format.formatter -> 'a t -> unit
     val compare : 'a symbol -> 'a t -> 'a t -> int
+    val of_expr : 'a symbol -> Apron.Texpr1.expr -> 'a t
+    val to_expr : 'a symbol -> 'a t -> Apron.Texpr1.expr
   end
 
 (*  ==================================================================== *)
@@ -156,6 +159,8 @@ val typ_of_expr : ('a,'b) typ_of_var -> 'a t -> [`Int | `Real]
 val print : 'a symbol -> Format.formatter -> 'a t -> unit
 val print_typ : Format.formatter -> [> typ] -> unit
 
+val of_texpr0 : 'a symbol -> Apron.Environment.t -> Apron.Texpr0.t -> 'a t
+val of_texpr1 : 'a symbol -> Apron.Texpr1.t -> 'a t
 val to_texpr0 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Texpr0.t
 val to_texpr1 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Texpr1.t
 val to_apron :
@@ -179,6 +184,8 @@ module Condition :
     val support : 'a symbol -> 'a t -> 'a PSette.t
     val print : 'a symbol -> Format.formatter -> 'a t -> unit
     val compare : 'a symbol -> 'a t -> 'a t -> int
+    val of_tcons0 : 'a symbol -> ('a,'b) typ_of_var -> Apron.Environment.t -> Apron.Tcons0.t -> [ `Cond of 'a t | `Bool of bool ]
+    val of_tcons1 : 'a symbol -> ('a,'b) typ_of_var -> Apron.Tcons1.t -> [ `Cond of 'a t | `Bool of bool ]
     val to_tcons0 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Tcons0.t
     val to_tcons1 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Tcons1.t
     val to_apron :

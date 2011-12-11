@@ -21,6 +21,14 @@ type ('a,'b) typ_of_var = 'a -> 'b constraint 'b = [> typ]
 
 exception Constant of int
 
+let mpqf_of_coeff coeff =
+  match coeff with
+  | Apron.Coeff.Scalar (Apron.Scalar.Float x) -> Mpqf.of_float x
+  | Apron.Coeff.Scalar (Apron.Scalar.Mpfrf x) -> Mpfrf.to_mpqf x
+  | Apron.Coeff.Scalar (Apron.Scalar.Mpqf x) -> x
+  | Apron.Coeff.Interval _ -> raise (Invalid_argument ("unable to convert an APRON interval coefficient into a Bddapron.Apronexpr scalar coefficient"))
+
+
 (*  ********************************************************************** *)
 (** {3 Expressions} *)
 (*  ********************************************************************** *)
@@ -282,6 +290,23 @@ module Lin = struct
 	Some(Apron.Coeff.s_of_mpqf e.cst))
     ;
     res
+
+  let of_linexpr1 man (env:Apron.Environment.t) (e:Apron.Linexpr1.t) =
+    let cst =
+      let coeff = Apron.Linexpr1.get_cst e in
+      mpqf_of_coeff coeff
+    in
+    let lterm = ref [] in
+    Apron.Linexpr1.iter
+      (begin fun coeff avar ->
+	let mpqf = mpqf_of_coeff coeff in
+	let var = man.unmarshal (Apron.Var.to_string avar) in
+	lterm := (mpqf,var)::(!lterm)
+      end)
+      e
+    ;
+    lterm := List.sort (fun (_,v1) (_,v2) -> man.compare v1 v2) !lterm;
+    { cst=cst; lterm = !lterm }
 
 end
 
@@ -643,6 +668,15 @@ module Tree = struct
     in
     parcours e
 
+  let rec of_expr man = function
+    | Apron.Texpr1.Cst x -> Cst x
+    | Apron.Texpr1.Var(var) ->
+	Var(man.unmarshal (Apron.Var.to_string var))
+    | Apron.Texpr1.Unop(op,e,t,r) ->
+	Unop(op,(of_expr man e), t,r)
+    | Apron.Texpr1.Binop(op,e1,e2,t,r) ->
+	Binop(op,(of_expr man e1),(of_expr man e2), t,r)
+
   let rec to_expr man = function
     | Cst x -> Apron.Texpr1.Cst x
     | Var(var) ->
@@ -662,29 +696,29 @@ module Tree = struct
     match expr with
     | Cst x -> Apron.Coeff.print fmt x
     | Var x -> man.print fmt x
-  | Unop(op,e,typ,round) ->
-      let prec = Apron.Texpr0.print_precedence_of_unop op in
-      let prec1 = precedence_of_expr e in
-      let par = prec1<=prec in
-      Format.fprintf fmt "%s%s%a%s"
-	(Apron.Texpr0.print_sprint_unop op typ round)
-	(if par then "(" else "")
-	(print man) e
-	(if par then ")" else "")
-  | Binop(op,e1,e2,typ,round) ->
-      let prec = Apron.Texpr0.print_precedence_of_binop op in
-      let prec1 = precedence_of_expr e1 in
-      let prec2 = precedence_of_expr e2 in
-      let par1 = prec1<prec in
-      let par2 = prec2<=prec in
-      Format.fprintf fmt "%s%a%s %s %s%a%s"
-	(if par1 then "(" else "")
-	(print man) e1
-	(if par1 then ")" else "")
-	(Apron.Texpr0.print_sprint_binop op typ round)
-	(if par2 then "(" else "")
-	(print man) e2
-	(if par2 then ")" else "")
+    | Unop(op,e,typ,round) ->
+	let prec = Apron.Texpr0.print_precedence_of_unop op in
+	let prec1 = precedence_of_expr e in
+	let par = prec1<=prec in
+	Format.fprintf fmt "%s%s%a%s"
+	  (Apron.Texpr0.print_sprint_unop op typ round)
+	  (if par then "(" else "")
+	  (print man) e
+	  (if par then ")" else "")
+    | Binop(op,e1,e2,typ,round) ->
+	let prec = Apron.Texpr0.print_precedence_of_binop op in
+	let prec1 = precedence_of_expr e1 in
+	let prec2 = precedence_of_expr e2 in
+	let par1 = prec1<prec in
+	let par2 = prec2<=prec in
+	Format.fprintf fmt "%s%a%s %s %s%a%s"
+	  (if par1 then "(" else "")
+	  (print man) e1
+	  (if par1 then ")" else "")
+	  (Apron.Texpr0.print_sprint_binop op typ round)
+	  (if par2 then "(" else "")
+	  (print man) e2
+	  (if par2 then ")" else "")
 
   let rec compare man x y =
     let rec compare x y =
@@ -1014,6 +1048,11 @@ let normalize_as_constraint expr = match expr with
 let typ_of_expr typ_of_var expr =
   if is_dependent_on_integer_only typ_of_var expr then `Int else `Real
 
+let of_texpr1 man texpr1 =
+  normalize man (Tree(Tree.of_expr man (Apron.Texpr1.to_expr texpr1)))
+let of_texpr0 man env texpr0 =
+  of_texpr1 man { Apron.Texpr1.texpr0 = texpr0; Apron.Texpr1.env=env }
+
 let to_texpr1 man (env:Apron.Environment.t) expr =
   Apron.Texpr1.of_expr env (Tree.to_expr man (to_tree expr))
 
@@ -1233,6 +1272,15 @@ module Condition = struct
 	    | _ -> assert(t1=t2); 0
 	    end
 	end
+
+  let of_tcons1 man typ_of_var tcons1 =
+    let typ = Apron.Tcons1.get_typ tcons1 in
+    let texpr1 = Apron.Tcons1.get_texpr1 tcons1 in
+    let expr = of_texpr1 man texpr1 in
+    make typ_of_var typ expr
+  let of_tcons0 man typ_of_var env tcons0 =
+    of_tcons1 man typ_of_var
+      { Apron.Tcons1.tcons0=tcons0; Apron.Tcons1.env=env }
 
   let to_tcons1 man env (typ,expr) =
     Apron.Tcons1.make (to_texpr1 man env expr) typ

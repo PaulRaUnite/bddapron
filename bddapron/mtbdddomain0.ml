@@ -97,16 +97,47 @@ module O = struct
   (** {4 Meet with Boolean formula} *)
   (*  ==================================================================== *)
 
+  let meet_cube man env cond (t:'b t) (condition:'a Expr0.Bool.t) : 'b t =
+    let (cubebool,cubecond) = Common.cube_split cond condition in
+    let tcons0_array = Common.tcons0_array_of_cubecond env cond cubecond in
+    let nt = Cudd.Mtbddc.cofactor t cubebool in
+    ApronDD.meet_tcons_array man nt tcons0_array
+
   let meet_condition man env cond (t:'b t) (condition:'a Expr0.Bool.t) : 'b t =
     let bottom = bottom man env in
-    Descend.descend_mtbdd man env cond
-      (begin fun t texpr ->
-	match texpr.(0) with
-	| `Bool bdd ->
-	    Cudd.Mtbddc.ite bdd t bottom
-	| _ -> failwith ""
-      end)
-      t [| `Bool condition |]
+    let res =
+      Descend.descend
+      ~cudd:env.cudd
+      ~maxdepth:max_int
+      ~nocare:(fun (careset,condition,abs) ->
+	Cudd.Bdd.is_false careset || is_bottom man abs
+      )
+      ~cube_of_down:(fun (careset,condition,abs) -> Cudd.Bdd.cube_of_bdd condition)
+      ~cofactor:(fun (careset,condition,abs) cube ->
+	let ncareset = Cudd.Bdd.cofactor careset cube in
+	let ncondition = Cudd.Bdd.cofactor condition cube in
+	let nabs = meet_cube man env cond abs cube in
+	(ncareset,ncondition,nabs)
+      )
+      ~select:(fun (careset,condition,elt) ->
+	let supp = Descend.texpr_support cond [|`Bool condition|] in
+	if Cudd.Bdd.is_cst supp then -1 else Cudd.Bdd.topvar supp)
+      ~terminal:(fun ~depth ~newcube ~cube ~down ->
+	let (careset,condition,abs) = down in
+	let res = Cudd.Mtbddc.ite condition abs bottom in
+	if is_bottom man res then None else Some res
+      )
+      ~ite:(fun ~depth ~newcube ~cond ~dthen ~delse ->
+	match (dthen,delse) with
+	| None,None -> None
+	| ox,None | None,ox -> ox
+	| (Some x),(Some y) -> Some (join man x y)
+      )
+      ~down:(cond.Bdd.Cond.careset, condition, t)
+    in
+    match res with
+    | None -> bottom
+    | Some x -> x
 
   (*  ==================================================================== *)
   (** {4 Assignement/Substitution} *)
@@ -191,27 +222,10 @@ module O = struct
   let forget_list (man:('a,'b) man) env (t:'b t) (lvar:'a list) =
     if lvar=[] then t
     else begin
-      let eapron = env.ext.eapron in
-      let (lbvar,ladim) =
-	List.fold_left
-	  (begin fun (lbvar,ladim) var ->
-	    match Env.typ_of_var env var with
-	    | #Bdd.Env.typ -> (var::lbvar,ladim)
-	    | _ ->
-		(
-		  lbvar,
-		  (Apron.Environment.dim_of_var eapron
-		    (Apron.Var.of_string (env.symbol.marshal var)))::ladim
-		)
-	  end)
-	  ([],[])
-	  lvar
-      in
-      let tadim = Array.of_list ladim in
-      if lbvar=[] then
+      let (supp,tadim) = Common.lvar_split env lvar in
+      if Cudd.Bdd.is_true supp then
 	ApronDD.forget_array man t tadim
       else begin
-	let supp = Bdd.Expr0.O.bddsupport env lbvar in
 	if tadim=[||] then
 	  ApronDD.exist man ~supp t
 	else begin

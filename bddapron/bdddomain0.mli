@@ -129,6 +129,14 @@ val apply_permutation :
 (*  ********************************************************************** *)
 
 module O : sig
+  module L : sig
+    val is_bottom : 'a Apron.Manager.t -> 'a elt -> bool
+    val meet_cube :
+      'a Apron.Manager.t -> 'c -> ('b,'c) Cond.O.t ->
+      'a elt -> Cudd.Bdd.vt -> 'a elt
+    val forget :
+      'a Apron.Manager.t -> 'a elt -> Cudd.Bdd.vt -> Apron.Dim.t array -> 'a elt
+  end
   val check_wellformed : ('a,'b) man -> 'b t -> bool
   val canonicalize : ?apron:bool -> ?unique:bool -> ?disjoint:bool -> ('a,'b) man -> 'b t -> unit
 
