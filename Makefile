@@ -24,10 +24,10 @@ OCAMLINC =
 BDDMOD = output reg env int enum cond expr0 expr1 domain0 domain1
 BDDMOD := $(BDDMOD:%=bdd/%)
 BDDAPRONMOD = \
-	apronexpr env cond apronexprDD apronDD \
+	apronexpr env cond common apronexprDD apronDD \
 	expr0 expr1 expr2 \
 	descend mtbdddomain0 bddleaf bdddomain0 domain0 \
-	domainlevel1 mtbdddomain1 bdddomain1 domain1 \
+	domainlevel1 mtbdddomain1 bdddomain1 domain1 formula \
 	syntax yacc lex parser
 BDDAPRONMOD := $(BDDAPRONMOD:%=bddapron/%)
 
@@ -155,9 +155,9 @@ BDDAPRONDOCOCAMLINC = $(BDDDOCOCAMLINC) \
 -I $(shell $(OCAMLFIND) query apron)
 
 bdd_ocamldoc.mli: bdd/introduction.odoc $(BDDMOD:%=%.mli)
-	(cd bdd; ocamlpack -o ../bdd_ocamldoc -title "Finite-type expressions/properties on top of CUDD" -intro introduction.odoc -intf $(BDDMOD:bdd/%=%))
+	(cd bdd; $(OCAMLPACK) -o ../bdd_ocamldoc -title "Finite-type expressions/properties on top of CUDD" -intro introduction.odoc -intf $(BDDMOD:bdd/%=%))
 bddapron_ocamldoc.mli: bddapron/introduction.odoc $(BDDAPRONMOD:%=%.mli)
-	(cd bddapron; ocamlpack -o ../bddapron_ocamldoc -title "Finite \& numerical expressions/properties on top of CUDD \& APRON" -intro introduction.odoc -intf $(BDDAPRONMOD:bddapron/%=%))
+	(cd bddapron; $(OCAMLPACK) -o ../bddapron_ocamldoc -title "Finite \& numerical expressions/properties on top of CUDD \& APRON" -intro introduction.odoc -intf $(BDDAPRONMOD:bddapron/%=%))
 
 bddapron.pdf: bddapron.dvi
 	$(DVIPDF) bddapron.dvi bddapron.pdf

@@ -21,6 +21,9 @@ CAMLIDL_PREFIX = $(dir $(shell which camlidl))/..
 
 OCAMLFIND = ocamlfind
 
+# optional, internal use O
+#OCAMLPACK=ocamlpack
+
 OCAMLC = $(CAML_PREFIX)/bin/ocamlc.opt
 OCAMLOPT = $(CAML_PREFIX)/bin/ocamlopt.opt
 OCAMLDEP = $(CAML_PREFIX)/bin/ocamldep
