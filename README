@@ -17,17 +17,16 @@ This package contains two sublibraries/modules:
 Required
 ========
 
-1)
-OCaml 3.12.x
+1) OCaml stuff
+OCaml 3.12.1 or up (http://caml.inria.fr/)
 Camlidl (http://caml.inria.fr/pub/old_caml_site/camlidl/)
 FINDLIB (http://projects.camlcity.org/projects/findlib.html)
 C/OCaml  libraries and interfaces
   MLCUDDIDL (http://pop-art.inrialpes.fr/~bjeannet/mlxxxidl-forge/mlcuddidl/index.html)
   camllib (http://http://pop-art.inrialpes.fr/~bjeannet/bjeannet-forge/camllib/)
-2) Same as above plus
-C  libraries and interfaces
-  GMP (http://gmplib.org)
-  MPFR (http://www.mpfr.org/)
+2) C  libraries and interfaces
+  GMP 3.x.y (http://gmplib.org)
+  MPFR 5.x.y (http://www.mpfr.org/)
   MLGMPIDL (http://pop-art.inrialpes.fr/~bjeannet/mlxxxidl-forge/mlgmpidl/index.html)
   APRON (http://apron.cri.ensmp.fr/library/)
 
