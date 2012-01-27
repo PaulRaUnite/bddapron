@@ -210,6 +210,7 @@ let man_get_apron = Domain0.man_get_apron
 (** {3 Implementation based on {!Mtbdddomain1}} *)
 (*  ********************************************************************** *)
 
+let mtbdd_of_mtbdddomain = Domain0.mtbdd_of_mtbdddomain
 let make_mtbdd = Domain0.make_mtbdd
 
 let man_is_mtbdd = Domain0.man_is_mtbdd
@@ -233,6 +234,7 @@ let to_mtbdd (manabs:('a,'b,'c,'d) man * ('a,'d) t)
 (** {3 Implementation based on {!Bdddomain1}} *)
 (*  ********************************************************************** *)
 
+let bdd_of_bdddomain = Domain0.bdd_of_bdddomain
 let make_bdd = Domain0.make_bdd
 
 let man_is_bdd = Domain0.man_is_bdd

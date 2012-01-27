@@ -97,8 +97,10 @@ val man_get_apron : ('a,'b,'c,'d) man -> 'b Apron.Manager.t
 (** {3 Implementation based on {!Mtbdddomain0}} *)
 (*  ********************************************************************** *)
 
-val make_mtbdd : ?global:bool -> 'b Apron.Manager.t -> ('a,'b) Domain0.mtbdd
-  (** Make a mtbdd manager *)
+val mtbdd_of_mtbdddomain : ('a,'b) Mtbdddomain0.man -> ('a,'b) mtbdd
+  (** Make a mtbdd manager from an underlying BDDAPRON manager *)
+val make_mtbdd : ?global:bool -> 'b Apron.Manager.t -> ('a,'b) mtbdd
+  (** Make a mtbdd manager from an APRON manager *)
 
 (*  ====================================================================== *)
 (** {4 Type conversion functions} *)
@@ -126,7 +128,10 @@ val to_mtbdd :
 (** {3 Implementation based on {!Bdddomain0}} *)
 (*  ********************************************************************** *)
 
+val bdd_of_bdddomain : ('a,'b) Bdddomain0.man -> ('a,'b) bdd
+  (** Make a bdd manager from an underlying BDDAPRON manager *)
 val make_bdd : 'b Apron.Manager.t -> ('a,'b) bdd
+  (** Make a bdd manager from an APRON manager *)
 
 (*  ====================================================================== *)
 (** {4 Type conversion functions} *)
