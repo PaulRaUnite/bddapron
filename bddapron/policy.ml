@@ -95,7 +95,7 @@ module DDDnf = struct
       :
       'a t
       =
-    let lboolcond = Bdd.Decompose.decompose_boolcond env cond expr in
+    let lboolcond = Bdd.Decompose.decompose_bdd_boolcond env cond expr in
     let lbooldnf =
       List.rev_map
 	(begin fun (boolexpr,condexpr) ->

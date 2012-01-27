@@ -28,15 +28,15 @@ val descend_mtbdd :
   ('a ApronDD.t -> 'b Expr0.t array -> 'a ApronDD.t) ->
   'a ApronDD.t -> 'b Expr0.t array -> 'a ApronDD.t
 val descend :
-  cudd:Cudd.Man.vt ->
+  cudd:'c Cudd.Man.t ->
   maxdepth:int ->
   nocare:('a -> bool) ->
-  cube_of_down:('a -> Cudd.Bdd.vt) ->
-  cofactor:('a -> Cudd.Bdd.vt -> 'a) ->
+  cube_of_down:('a -> 'c Cudd.Bdd.t) ->
+  cofactor:('a -> 'c Cudd.Bdd.t -> 'a) ->
   select:('a -> int) ->
   terminal:(depth:int ->
-	    newcube:Cudd.Bdd.vt -> cube:Cudd.Bdd.vt -> down:'a -> 'b option) ->
+	    newcube:'c Cudd.Bdd.t -> cube:'c Cudd.Bdd.t -> down:'a -> 'b option) ->
   ite:(depth:int ->
-       newcube:Cudd.Bdd.vt ->
+       newcube:'c Cudd.Bdd.t ->
        cond:int -> dthen:'b option -> delse:'b option -> 'b option) ->
   down:'a -> 'b option

@@ -170,49 +170,6 @@ let rec descend_mtbdd
     res
   end
 
-let descend
-    ~(cudd: Cudd.Man.vt)
-    ~(maxdepth:int)
-    ~(nocare:('a -> bool))
-    ~(cube_of_down:('a -> Cudd.Bdd.vt))
-    ~(cofactor:('a -> Cudd.Bdd.vt -> 'a))
-    ~(select:('a -> int))
-    ~(terminal:(depth:int -> newcube:Cudd.Bdd.vt -> cube:Cudd.Bdd.vt ->
-		 down:'a -> 'b option))
-    ~(ite:(depth:int -> newcube:Cudd.Bdd.vt ->
-	    cond:int -> dthen:'b option -> delse:'b option -> 'b option))
-    ~(down:'a)
-    :
-    'b option
-    =
-  let rec map depth cube down =
-    if nocare down then None
-    else begin
-      let newcube = cube_of_down down in
-      let (cube,down) =
-	if Cudd.Bdd.is_true newcube
-	then (cube,down)
-	else (Cudd.Bdd.dand cube newcube, cofactor down newcube)
-      in
-      if nocare down then None
-      else begin
-	let cond = select down in
-	if (cond<0) then (* End case *)
-	  terminal ~depth:max_int ~newcube ~cube ~down
-	else if depth>=maxdepth then (* End case *)
-	  terminal ~depth ~newcube ~cube ~down
-	else begin (* Recursive case *)
-	  let var = Cudd.Bdd.ithvar cudd cond in
-	  let nvar = Cudd.Bdd.dnot var in
-	  let dthen =
-	    map (depth+1) (Cudd.Bdd.dand cube var) (cofactor down var)
-	  and delse =
-	    map (depth+1) (Cudd.Bdd.dand cube nvar) (cofactor down nvar)
-	  in
-	  ite ~depth ~newcube ~cond ~dthen ~delse
-	end
-      end
-    end
-  in
-  map 0 (Cudd.Bdd.dtrue cudd) down
+let select_cond = Bdd.Decompose.select_cond
 
+let descend = Bdd.Decompose.descend

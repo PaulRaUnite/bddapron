@@ -25,6 +25,11 @@ type 'a cnf = 'a disjunction conjunction
 (** DNF *)
 type 'a dnf = 'a conjunction disjunction
 
+(** Decision tree *)
+type ('a,'b) tree =
+  | Leaf of 'b
+  | Ite of 'a * ('a,'b) tree * ('a,'b) tree
+
 (*  ********************************************************************** *)
 (** {3 Constants} *)
 (*  ********************************************************************** *)
@@ -50,6 +55,19 @@ val disjunction_or :
   ?merge:('a list -> 'a list -> 'a list) ->
   'a disjunction -> 'a disjunction -> 'a disjunction
   (** Default merge is [List.rev_append] *)
+val conjunction_and_term: 'a conjunction -> 'a -> 'a conjunction
+  (** "Merge" is list cons *)
+val disjunction_or_term: 'a disjunction -> 'a -> 'a disjunction
+  (** "Merge" is list cons *)
+
+val minterm_of_tree :
+  ?compare:'b PHashhe.compare ->
+  ('a,'b) tree -> (('a * bool) dnf * 'b) list
+  (** Decompose a decision tree into a disjunction of pairs of a
+      formula and a leaf. It is assumed that leaves can be put in
+      hashtables using [compare] (default value:
+      {!PHashhe.compare}).  There is no identical leaves
+      (according to [compare]) in the resulting list.  *)
 
 (** {4 Map functions} *)
 
@@ -61,6 +79,7 @@ val map_conjunction : ('a -> 'b) -> 'a conjunction -> 'b conjunction
 val map_disjunction : ('a -> 'b) -> 'a disjunction -> 'b disjunction
 val map_cnf : ('a -> 'b) -> 'a cnf -> 'b cnf
 val map_dnf : ('a -> 'b) -> 'a dnf -> 'b dnf
+val map_tree : ('a -> 'c) -> ('b -> 'd) -> ('a,'b) tree -> ('c,'d) tree
 
 (*  ********************************************************************** *)
 (** {3 Printing functions} *)
@@ -96,3 +115,12 @@ val print_dnf :
   ?lastconj:(unit,Format.formatter,unit) format ->
   (Format.formatter -> 'a -> unit) ->
   Format.formatter -> 'a dnf -> unit
+val print_tree_minterm :
+  ?compare:'a PHashhe.compare ->
+  (Format.formatter -> ('b * bool) dnf -> unit) ->
+  (Format.formatter -> 'a -> unit) ->
+  Format.formatter -> ('b, 'a) tree -> unit
+val print_tree :
+  (Format.formatter -> 'a -> unit) ->
+  (Format.formatter -> 'b -> unit) ->
+  Format.formatter -> ('a, 'b) tree -> unit
