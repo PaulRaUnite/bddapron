@@ -1,0 +1,154 @@
+#/bin/sh
+
+# command line (very primitive...)
+if test $1 != "-o"; then
+    echo "ocamlpack: usage: ocamlpack -o outputmodule -title <str> (-intro file.odoc) (-intf|-impl) module1 module2 ..."
+    exit -1
+fi
+shift
+out=$1
+shift
+if test $1 != "-title"; then
+    echo "ocamlpack: usage: ocamlpack -o outputmodule -title <str>  (-intro file.odoc) (-intf|-impl) module1 module2 ..."
+    exit -1
+fi
+shift
+outtitle=$1
+shift
+outintro=0
+if test $1 == "-intro"; then
+    shift
+    outintro=$1
+    shift
+fi
+intf=1
+impl=1
+if test $1 == "-intf"; then
+    impl=0
+    shift
+fi
+if test $1 == "-impl"; then
+    intf=0
+    shift
+fi
+
+# prepare output
+
+if test $intf == 1; then
+    /bin/rm -f $out.mli
+    echo "(** $outtitle *)">$out.mli
+    if test $outintro != 0; then
+        echo "" >>$out.mli
+        echo "(**" >>$out.mli
+        cat $outintro >>$out.mli
+        echo "*)" >>$out.mli
+    fi
+fi
+if test $impl == 1; then
+    /bin/rm -f $out.ml
+    echo "(** $outtitle *)">$out.ml
+fi
+
+# iterate on input module,
+for i in $*; do
+    name=$i
+    if test $intf == 1; then
+# 2.A Look for the first (** *) comment, and output it to out.mli
+	/usr/bin/awk -v name=$name '
+BEGIN {
+  start=1
+  nb = split(name, dirname, "/")
+  name = dirname[nb]
+  hd = toupper(substr(name,1,1))
+  tl = substr(name,2,length(name)-1)
+}
+{
+  if (start==1) {
+    match($0, /\(\*\*([ ]+)([^*]*)([ ]+)\*\)/ )
+    if (RLENGTH>0){
+      start=0
+      title=substr($0,RSTART+4,RLENGTH-7)
+      print "\n(** {2 Module [" hd tl "]:",title "} *)\n"
+      print "module",hd tl,": sig"
+    }
+  }
+}
+END {
+  if (start==1) {
+    print "\n(** {2 Module [" hd tl "]} *)\n"
+    print "module",hd tl,": sig"
+  }
+}
+'	$i.mli >>$out.mli
+# 2.B Output the rest of name.mli to out.mli
+	/usr/bin/awk -v name=$name '
+BEGIN {
+  start=1
+}
+{
+  if (start==1) {
+    match($0, /\(\*\*([ ]+)([^*]*)([ ]+)\*\)/ )
+    if (RLENGTH>0){
+      start=0
+    } else {
+      print $0
+    }
+  }
+  else
+    print " ",$0
+}
+END { print "end\n" }
+'	$i.mli >>$out.mli
+    fi
+    if test $impl == 1; then
+# 1.A Look for the first (** *) comment, and output it to out.ml
+# (see ocamldoc convention)
+	/usr/bin/awk -v name=$name '
+BEGIN {
+  start=1
+  # isolate module name from path/modulename
+  nb = split(name, dirname, "/")
+  name = dirname[nb]
+  # Capitalize the module name
+  hd = toupper(substr(name,1,1))
+  tl = substr(name,2,length(name)-1)
+}
+# Look for the first (** *) comment, and output it
+{
+  if (start==1) {
+    match($0, /\(\*\*([ ]+)([^*]*)([ ]+)\*\)/ )
+    if (RLENGTH>0){
+      start=0
+      title=substr($0,RSTART+4,RLENGTH-7)
+      print "\n(** {2 Module [" hd tl "]:",title "} *)\n"
+      print "module",hd tl,"= struct"
+    }
+  }
+}
+END {
+  if (start==1) {
+    print "\n(** {2 Module [" hd tl "]} *)\n"
+    print "module",hd tl,"= struct"
+  }
+}
+'	$i.ml >>$out.ml
+# 1.B Output the rest of name.ml to out.ml
+	/usr/bin/awk -v name=$name '
+BEGIN {
+  start=1
+}
+{
+  if (start==1) {
+    match($0, /\(\*\*([ ]+)([^*]*)([ ]+)\*\)/ )
+    if (RLENGTH>0)
+      start=0
+    else
+      print $0
+  }
+  else
+    print " ",$0
+}
+END { print "end\n" }
+'	$i.ml >>$out.ml
+    fi
+done

@@ -21,13 +21,14 @@ BDDAPRON_REQ_PKG = "camllib cudd gmp apron"
 
 OCAMLINC = 
 
-BDDMOD = output reg env int enum cond expr0 expr1 domain0 domain1
+BDDMOD = output normalform reg env int enum cond decompose expr0 expr1 domain0 domain1
 BDDMOD := $(BDDMOD:%=bdd/%)
 BDDAPRONMOD = \
-	apronexpr env cond common apronexprDD apronDD \
+	apronexpr env cond apronexprDD common apronDD \
 	expr0 expr1 expr2 \
 	descend mtbdddomain0 bddleaf bdddomain0 domain0 \
 	domainlevel1 mtbdddomain1 bdddomain1 domain1 formula \
+	policy \
 	syntax yacc lex parser
 BDDAPRONMOD := $(BDDAPRONMOD:%=bddapron/%)
 
@@ -90,7 +91,6 @@ bdd.cmx: $(BDDMOD:%=%.cmx)
 bdd.p.cmx: $(BDDMOD:%=%.p.cmx)
 	$(OCAMLFIND) ocamlopt -p $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDD_REQ_PKG) -pack -o $@ $^
 
-
 META: Makefile
 	/bin/rm -f META
 	echo "description = \"Logico-numerical domain(s) based on BDDs and APRON\"" >META
@@ -128,7 +128,6 @@ clean:
 		/bin/rm -f *.[aoc] *.cm[ioxa] *.cmxa *.annot; \
 	done
 	(cd bddapron; /bin/rm -f yacc.ml yacc.mli lex.ml)
-
 
 # TEX rules
 .PHONY: bddapron.dvi bddapron.pdf bdd.dvi bdd.pdf html html_bdd html_bddapron depend
@@ -287,7 +286,11 @@ bddapron/%.ml: bddapron/%.mll
 bddapron/%.ml bddapron/%.mli: bddapron/%.mly
 	$(OCAMLYACC) $^
 
-depend Makefile.depend: bddapron/yacc.ml bddapron/yacc.mli bddapron/lex.ml
+depend: bddapron/yacc.ml bddapron/yacc.mli bddapron/lex.ml
+	$(OCAMLFIND) ocamldep $(OCAMLINC) -I bdd $(BDDMOD:%=%.mli) $(BDDMOD:%=%.ml) >Makefile.depend
+	$(OCAMLFIND) ocamldep $(OCAMLINC) -I bddapron $(BDDAPRONMOD:%=%.mli) $(BDDAPRONMOD:%=%.ml) >>Makefile.depend
+
+Makefile.depend: bddapron/yacc.ml bddapron/yacc.mli bddapron/lex.ml
 	$(OCAMLFIND) ocamldep $(OCAMLINC) -I bdd $(BDDMOD:%=%.mli) $(BDDMOD:%=%.ml) >Makefile.depend
 	$(OCAMLFIND) ocamldep $(OCAMLINC) -I bddapron $(BDDAPRONMOD:%=%.mli) $(BDDAPRONMOD:%=%.ml) >>Makefile.depend
 
