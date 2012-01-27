@@ -56,18 +56,9 @@ let condition_of_tcons0 (env:('a,'b,'c,'d) Env.O.t) tcons0 =
     env.ext.Env.eapron
     tcons0
 
-let bdd_of_condition (env:('a,'b,'c,'d) Env.O.t) (cond:('a,'e) Cond.O.t) condition = 
-  match condition with
-  | `Bool b ->
-      if b then Cudd.Bdd.dtrue env.cudd else Cudd.Bdd.dfalse env.cudd
-  | `Cond x ->
-      let (id,b) = Bdd.Cond.idb_of_cond env cond (`Apron x) in
-      let bdd = Cudd.Bdd.ithvar env.cudd id in
-      if b then bdd else Cudd.Bdd.dnot bdd
-        
 let bdd_of_tcons0 env cond tcons0 =
   let condition = condition_of_tcons0 env tcons0 in
-  bdd_of_condition env cond condition
+  ApronexprDD.Condition.of_condition env cond condition
 
 let bdd_of_tcons0_array env cond tcons0_array =
   Array.fold_left

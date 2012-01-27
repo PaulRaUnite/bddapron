@@ -6,6 +6,8 @@
 type 'a t = 'a Apronexpr.t Cudd.Mtbdd.t
 val of_expr : [> `Apron of 'a t] -> 'a t
 val to_expr : 'a t -> [> `Apron of 'a t]
+val of_apronexpr :  ('a,'b,'c,'d) Env.O.t -> 'a Apronexpr.t -> 'a t
+
 val print :
   (Format.formatter -> Cudd.Bdd.vt -> unit) ->
   'a Apronexpr.symbol ->
@@ -71,6 +73,13 @@ val substitute :
   ('a,'b,'c,'d) Env.O.t ->
   'a Apronexpr.t -> ('a, [> `Apron of 'a t ]) PMappe.t -> 'a t
 module Condition :  sig
+  val of_apronexpr :
+    'b -> ('a,'b) Cond.O.t -> 'a Apronexpr.Condition.t -> Cudd.Bdd.vt
+  val of_condition :
+    'b -> ('a,'b) Cond.O.t ->
+    [< `Bool of bool | `Cond of 'a Apronexpr.Condition.t] ->
+    Cudd.Bdd.vt
+
   val make : 'b -> ('a,'b) Cond.O.t -> Apronexpr.Condition.typ -> 'a t -> Cudd.Bdd.vt
   val supeq : 'b -> ('a,'b) Cond.O.t -> 'a t -> Cudd.Bdd.vt
   val sup : 'b -> ('a,'b) Cond.O.t -> 'a t -> Cudd.Bdd.vt

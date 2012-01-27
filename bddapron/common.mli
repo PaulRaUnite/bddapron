@@ -20,10 +20,7 @@ val lvar_split :
 val condition_of_tcons0 :
   ('a, 'b, 'c, 'd) Env.O.t ->
   Apron.Tcons0.t -> [ `Bool of bool | `Cond of 'a Apronexpr.Condition.t ]
-val bdd_of_condition :
-  (('a, 'b, 'c, 'd) Env.O.t as 'e) ->
-  ('a,'e) Cond.O.t ->
-  [< `Bool of bool | `Cond of 'a Apronexpr.Condition.t] -> Cudd.Bdd.vt
+
 val bdd_of_tcons0 :
   (('a, 'b, 'c, 'd) Env.O.t as 'e) ->
   ('a,'e) Cond.O.t ->

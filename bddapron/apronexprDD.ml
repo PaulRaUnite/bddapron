@@ -38,10 +38,12 @@ let absorbant_one env expr =
   then Some expr
   else None
 
+let of_apronexpr env apronexpr =
+  Cudd.Mtbdd.cst env.cudd env.ext.table apronexpr
 let cst env coeff =
-  Cudd.Mtbdd.cst env.cudd env.ext.table (Apronexpr.cst coeff)
+  of_apronexpr env (Apronexpr.cst coeff)
 let var env v =
-  Cudd.Mtbdd.cst env.cudd env.ext.table
+  of_apronexpr env
     (Apronexpr.var env.symbol (Env.typ_of_var env) v)
 let add env ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
   Cudd.User.map_op2
@@ -147,7 +149,7 @@ let substitute_linexpr
     let (mpqf,var) = term in
     let expr = of_expr (PMappe.find var substitution) in
     let coeffexpr =
-      Cudd.Mtbdd.cst env.cudd env.ext.table
+      of_apronexpr env
 	(Apronexpr.cst (Apron.Coeff.s_of_mpqf mpqf))
     in
     mul env coeffexpr expr
@@ -159,7 +161,7 @@ let substitute_linexpr
       linexpr.Apronexpr.Lin.lterm
   in
   if lterm1=[] then
-    Cudd.Mtbdd.cst env.cudd env.ext.table (Apronexpr.Lin linexpr)
+    of_apronexpr env (Apronexpr.Lin linexpr)
   else begin
     let linexpr2 = {
       Apronexpr.Lin.cst = linexpr.Apronexpr.Lin.cst;
@@ -167,7 +169,7 @@ let substitute_linexpr
     }
     in
     let expr2 =
-      Cudd.Mtbdd.cst env.cudd env.ext.table (Apronexpr.Lin linexpr2)
+      of_apronexpr env (Apronexpr.Lin linexpr2)
     in
     let expr =
       List.fold_left
@@ -200,7 +202,7 @@ let substitute_polyexpr
       let monomial = [varexp] in
       let term = ((Mpqf.of_int 1), monomial) in
       let polyexpr = [term] in
-      Cudd.Mtbdd.cst env.cudd env.ext.table (Apronexpr.Poly polyexpr)
+      of_apronexpr env (Apronexpr.Poly polyexpr)
   in
   let substitute_monomial (res:'a t) (monomial:'a Apronexpr.Poly.monomial) : 'a t
     =
@@ -209,12 +211,12 @@ let substitute_polyexpr
   let substitute_term (term:'a Apronexpr.Poly.term) : 'a t
     =
     let (mpqf,monomial) = term in
-    let res = Cudd.Mtbdd.cst env.cudd env.ext.table
+    let res = of_apronexpr env
 	(Apronexpr.cst (Apron.Coeff.s_of_mpqf mpqf))
     in
     substitute_monomial res monomial
   in
-  let res = Cudd.Mtbdd.cst env.cudd env.ext.table
+  let res = of_apronexpr env
     (Apronexpr.cst (Apron.Coeff.s_of_int 0))
   in
   List.fold_left
@@ -232,12 +234,12 @@ let substitute_treeexpr
   =
   let rec parcours = function
     | Apronexpr.Tree.Cst coeff ->
-	Cudd.Mtbdd.cst env.cudd env.ext.table (Apronexpr.cst coeff)
+	of_apronexpr env (Apronexpr.cst coeff)
     | Apronexpr.Tree.Var var ->
 	begin
 	  try of_expr (PMappe.find var substitution)
 	  with Not_found ->
-	    Cudd.Mtbdd.cst env.cudd env.ext.table
+	    of_apronexpr env
 	      (Apronexpr.Lin(Apronexpr.Lin.var var))
 	end
     | Apronexpr.Tree.Unop(unop,e,t,r) ->
@@ -274,6 +276,17 @@ let substitute
   | Apronexpr.Tree x -> substitute_treeexpr env x substitution
 
 module Condition = struct
+  let of_apronexpr env cond condition =
+    let (id,b) = Bdd.Cond.idb_of_cond env cond (`Apron condition) in
+    let bdd = Cudd.Bdd.ithvar env.cudd id in
+    if b then bdd else Cudd.Bdd.dnot bdd
+  let of_condition (env:'b) (cond:('a,'b) Cond.O.t) condition =
+    match condition with
+    | `Bool b ->
+	if b then Cudd.Bdd.dtrue env.cudd else Cudd.Bdd.dfalse env.cudd
+    | `Cond x ->
+	of_apronexpr env cond x
+
   let make env cond typ e =
     let manager = Cudd.Mtbdd.manager e in
     let guardleafs = Cudd.Mtbdd.guardleafs e in
@@ -282,7 +295,7 @@ module Condition = struct
 	(begin fun res (guard,e) ->
 	  let atom =
 	    let condition = Apronexpr.Condition.make (Env.typ_of_var env) typ e in
-	    Common.bdd_of_condition env cond condition
+	    of_condition env cond condition
 	  in
 	  Cudd.Bdd.dor res (Cudd.Bdd.dand guard atom)
 	end)

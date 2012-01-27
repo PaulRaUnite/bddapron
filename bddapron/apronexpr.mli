@@ -51,7 +51,9 @@ module Lin :
     val normalize_as_constraint : 'a t -> 'a t
     val print : 'a symbol -> Format.formatter -> 'a t -> unit
 
-    val of_linexpr1 : 'a symbol -> Apron.Environment.t -> Apron.Linexpr1.t -> 'a t
+    val of_linexpr0 : 'a symbol -> Apron.Environment.t -> Apron.Linexpr0.t -> 'a t
+    val of_linexpr1 : 'a symbol -> Apron.Linexpr1.t -> 'a t
+    val to_linexpr0 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Linexpr0.t
     val to_linexpr1 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Linexpr1.t
   end
 
@@ -159,16 +161,26 @@ val typ_of_expr : ('a,'b) typ_of_var -> 'a t -> [`Int | `Real]
 val print : 'a symbol -> Format.formatter -> 'a t -> unit
 val print_typ : Format.formatter -> [> typ] -> unit
 
+val of_linexpr0 : 'a symbol -> Apron.Environment.t -> Apron.Linexpr0.t -> 'a t
+val of_linexpr1 : 'a symbol -> Apron.Linexpr1.t -> 'a t
+val to_linexpr0 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Linexpr0.t
+val to_linexpr1 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Linexpr1.t
 val of_texpr0 : 'a symbol -> Apron.Environment.t -> Apron.Texpr0.t -> 'a t
 val of_texpr1 : 'a symbol -> Apron.Texpr1.t -> 'a t
 val to_texpr0 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Texpr0.t
 val to_texpr1 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Texpr1.t
-val to_apron :
+val to_apron0 :
   'a symbol -> Apron.Environment.t -> 'a t ->
-      [
-	| `Linexpr1 of Apron.Linexpr1.t
-	| `Texpr1 of Apron.Texpr1.t
-      ]
+  [
+  | `Lin of Apron.Linexpr0.t
+  | `Tree of Apron.Texpr0.t
+  ]
+val to_apron1 :
+  'a symbol -> Apron.Environment.t -> 'a t ->
+  [
+  | `Lin of Apron.Linexpr1.t
+  | `Tree of Apron.Texpr1.t
+  ]
 
 (*  ********************************************************************** *)
 (** {3 Constraints} *)
@@ -184,14 +196,22 @@ module Condition :
     val support : 'a symbol -> 'a t -> 'a PSette.t
     val print : 'a symbol -> Format.formatter -> 'a t -> unit
     val compare : 'a symbol -> 'a t -> 'a t -> int
+    val of_lincons0 : 'a symbol -> ('a,'b) typ_of_var -> Apron.Environment.t -> Apron.Lincons0.t -> [ `Cond of 'a t | `Bool of bool ]
+    val of_lincons1 : 'a symbol -> ('a,'b) typ_of_var -> Apron.Lincons1.t -> [ `Cond of 'a t | `Bool of bool ]
     val of_tcons0 : 'a symbol -> ('a,'b) typ_of_var -> Apron.Environment.t -> Apron.Tcons0.t -> [ `Cond of 'a t | `Bool of bool ]
     val of_tcons1 : 'a symbol -> ('a,'b) typ_of_var -> Apron.Tcons1.t -> [ `Cond of 'a t | `Bool of bool ]
     val to_tcons0 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Tcons0.t
     val to_tcons1 : 'a symbol -> Apron.Environment.t -> 'a t -> Apron.Tcons1.t
-    val to_apron :
+    val to_apron0 :
       'a symbol -> Apron.Environment.t -> 'a t ->
 	[
-	  | `Lincons1 of Apron.Lincons1.t
-	  | `Tcons1 of Apron.Tcons1.t
+	  | `Lin of Apron.Lincons0.t
+	  | `Tree of Apron.Tcons0.t
+	]
+    val to_apron1 :
+      'a symbol -> Apron.Environment.t -> 'a t ->
+	[
+	  | `Lin of Apron.Lincons1.t
+	  | `Tree of Apron.Tcons1.t
 	]
   end

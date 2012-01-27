@@ -140,19 +140,18 @@ module Lin = struct
       List.iter
 	(begin fun (coeff,var) ->
 	  let sgn = Mpqf.sgn coeff in
-	  if sgn <> 0 then begin
-	    if sgn>0 then begin
-	      if not !first then Format.pp_print_string fmt "+";
-	    end;
-	    if not !first then Format.fprintf fmt "@,";
-	    if Mpqf.cmp_int coeff (-1) = 0 then
-	      Format.pp_print_string fmt "-"
-	    else if Mpqf.cmp_int coeff 1 <> 0 then
-	      Mpqf.print fmt coeff
-	    ;
-	    man.print fmt var;
-	    first := false;
-	  end
+	  assert(sgn<>0);
+	  if sgn>0 then begin
+	    if not !first then Format.pp_print_string fmt "+";
+	  end;
+	  if not !first then Format.fprintf fmt "@,";
+	  if Mpqf.cmp_int coeff (-1) = 0 then
+	    Format.pp_print_string fmt "-"
+	  else if Mpqf.cmp_int coeff 1 <> 0 then
+	    Mpqf.print fmt coeff
+	  ;
+	  man.print fmt var;
+	  first := false;
 	end)
 	expr.lterm;
     end;
@@ -290,8 +289,11 @@ module Lin = struct
 	Some(Apron.Coeff.s_of_mpqf e.cst))
     ;
     res
+  let to_linexpr0 man env e =
+    let linexpr1 = to_linexpr1 man env e in
+    linexpr1.Apron.Linexpr1.linexpr0
 
-  let of_linexpr1 man (env:Apron.Environment.t) (e:Apron.Linexpr1.t) =
+  let of_linexpr1 man (e:Apron.Linexpr1.t) =
     let cst =
       let coeff = Apron.Linexpr1.get_cst e in
       mpqf_of_coeff coeff
@@ -300,13 +302,18 @@ module Lin = struct
     Apron.Linexpr1.iter
       (begin fun coeff avar ->
 	let mpqf = mpqf_of_coeff coeff in
-	let var = man.unmarshal (Apron.Var.to_string avar) in
-	lterm := (mpqf,var)::(!lterm)
+	if (Mpqf.sgn mpqf) <> 0 then begin
+	  let var = man.unmarshal (Apron.Var.to_string avar) in
+	  lterm := (mpqf,var)::(!lterm)
+	end;
       end)
       e
     ;
     lterm := List.sort (fun (_,v1) (_,v2) -> man.compare v1 v2) !lterm;
     { cst=cst; lterm = !lterm }
+
+  let of_linexpr0 man env e =
+    of_linexpr1 man { Apron.Linexpr1.linexpr0 = e; Apron.Linexpr1.env = env }
 
 end
 
@@ -1048,6 +1055,18 @@ let normalize_as_constraint expr = match expr with
 let typ_of_expr typ_of_var expr =
   if is_dependent_on_integer_only typ_of_var expr then `Int else `Real
 
+let of_linexpr1 man linexpr1 =
+  Lin(Lin.of_linexpr1 man linexpr1)
+let of_linexpr0 man env linexpr0 =
+  of_linexpr1 man { Apron.Linexpr1.linexpr0 = linexpr0; Apron.Linexpr1.env=env }
+let to_linexpr1 man env expr =
+  match expr with
+  | Lin e -> Lin.to_linexpr1 man env e
+  | _ -> raise (Invalid_argument "Linear expression expected")
+let to_linexpr0 man env expr =
+  let linexpr1 = to_linexpr1 man env expr in
+  linexpr1.Apron.Linexpr1.linexpr0
+
 let of_texpr1 man texpr1 =
   normalize man (Tree(Tree.of_expr man (Apron.Texpr1.to_expr texpr1)))
 let of_texpr0 man env texpr0 =
@@ -1060,9 +1079,12 @@ let to_texpr0 man (env:Apron.Environment.t) expr =
   let texpr1 = to_texpr1 man env expr in
   texpr1.Apron.Texpr1.texpr0
 
-let to_apron man (env:Apron.Environment.t) expr = match expr with
-   | Lin e -> `Linexpr1 (Lin.to_linexpr1 man env e)
-   | _ -> `Texpr1 (to_texpr1 man env expr)
+let to_apron1 man (env:Apron.Environment.t) (expr:'a t) = match expr with
+  | Lin e -> `Lin (Lin.to_linexpr1 man env e)
+  | _ -> `Tree (to_texpr1 man env expr)
+let to_apron0 man (env:Apron.Environment.t) expr = match expr with
+  | Lin e -> `Lin (Lin.to_linexpr0 man env e)
+  | _ -> `Tree (to_texpr0 man env expr)
 
 let extract_cst expr =
   match expr with
@@ -1273,6 +1295,14 @@ module Condition = struct
 	    end
 	end
 
+  let of_lincons1 man typ_of_var lincons1 =
+    let typ = Apron.Lincons1.get_typ lincons1 in
+    let linexpr1 = Apron.Lincons1.get_linexpr1 lincons1 in
+    let expr = of_linexpr1 man linexpr1 in
+    make typ_of_var typ expr
+  let of_lincons0 man typ_of_var env lincons0 =
+    of_lincons1 man typ_of_var
+      { Apron.Lincons1.lincons0=lincons0; Apron.Lincons1.env=env }
   let of_tcons1 man typ_of_var tcons1 =
     let typ = Apron.Tcons1.get_typ tcons1 in
     let texpr1 = Apron.Tcons1.get_texpr1 tcons1 in
@@ -1282,15 +1312,22 @@ module Condition = struct
     of_tcons1 man typ_of_var
       { Apron.Tcons1.tcons0=tcons0; Apron.Tcons1.env=env }
 
+  let to_lincons1 man env (typ,expr) =
+    Apron.Lincons1.make (to_linexpr1 man env expr) typ
+  let to_lincons0 man env (typ,expr) =
+    Apron.Lincons0.make (to_linexpr0 man env expr) typ
   let to_tcons1 man env (typ,expr) =
     Apron.Tcons1.make (to_texpr1 man env expr) typ
-
   let to_tcons0 man env (typ,expr) =
     Apron.Tcons0.make (to_texpr0 man env expr) typ
 
-  let to_apron man env (typ,expr) =
+  let to_apron1 man env (typ,expr) =
     match expr with
-    | Lin e -> `Lincons1 (Apron.Lincons1.make (Lin.to_linexpr1 man env e) typ)
-    | _ -> `Tcons1 (to_tcons1 man env (typ,expr))
+    | Lin e -> `Lin (to_lincons1 man env (typ,expr))
+    | _ -> `Tree (to_tcons1 man env (typ,expr))
+  let to_apron0 man env (typ,expr) =
+    match expr with
+    | Lin e -> `Lin (to_lincons0 man env (typ,expr))
+    | _ -> `Tree (to_tcons0 man env (typ,expr))
 
 end
