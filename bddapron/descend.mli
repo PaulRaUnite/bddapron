@@ -27,6 +27,7 @@ val descend_mtbdd :
   'a ApronDD.man -> 'c -> ('b,'c) Cond.O.t ->
   ('a ApronDD.t -> 'b Expr0.t array -> 'a ApronDD.t) ->
   'a ApronDD.t -> 'b Expr0.t array -> 'a ApronDD.t
+
 val descend :
   cudd:'c Cudd.Man.t ->
   maxdepth:int ->
@@ -40,3 +41,4 @@ val descend :
        newcube:'c Cudd.Bdd.t ->
        cond:int -> dthen:'b option -> delse:'b option -> 'b option) ->
   down:'a -> 'b option
+  (** Obsolete, moved in {!Bdd.Decompose} *)

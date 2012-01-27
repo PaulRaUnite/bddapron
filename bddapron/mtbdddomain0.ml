@@ -106,34 +106,34 @@ module O = struct
   let meet_condition man env cond (t:'b t) (condition:'a Expr0.Bool.t) : 'b t =
     let bottom = bottom man env in
     let res =
-      Descend.descend
-      ~cudd:env.cudd
-      ~maxdepth:max_int
-      ~nocare:(fun (careset,condition,abs) ->
-	Cudd.Bdd.is_false careset || is_bottom man abs
-      )
-      ~cube_of_down:(fun (careset,condition,abs) -> Cudd.Bdd.cube_of_bdd condition)
-      ~cofactor:(fun (careset,condition,abs) cube ->
-	let ncareset = Cudd.Bdd.cofactor careset cube in
-	let ncondition = Cudd.Bdd.cofactor condition cube in
-	let nabs = meet_cube man env cond abs cube in
-	(ncareset,ncondition,nabs)
-      )
-      ~select:(fun (careset,condition,elt) ->
-	let supp = Descend.texpr_support cond [|`Bool condition|] in
-	if Cudd.Bdd.is_cst supp then -1 else Cudd.Bdd.topvar supp)
-      ~terminal:(fun ~depth ~newcube ~cube ~down ->
-	let (careset,condition,abs) = down in
-	let res = Cudd.Mtbddc.ite condition abs bottom in
-	if is_bottom man res then None else Some res
-      )
-      ~ite:(fun ~depth ~newcube ~cond ~dthen ~delse ->
-	match (dthen,delse) with
-	| None,None -> None
-	| ox,None | None,ox -> ox
-	| (Some x),(Some y) -> Some (join man x y)
-      )
-      ~down:(cond.Bdd.Cond.careset, condition, t)
+      Bdd.Decompose.descend
+        ~cudd:env.cudd
+        ~maxdepth:max_int
+        ~nocare:(fun (careset,condition,abs) ->
+	  Cudd.Bdd.is_false careset || is_bottom man abs
+        )
+        ~cube_of_down:(fun (careset,condition,abs) -> Cudd.Bdd.cube_of_bdd condition)
+        ~cofactor:(fun (careset,condition,abs) cube ->
+	  let ncareset = Cudd.Bdd.cofactor careset cube in
+	  let ncondition = Cudd.Bdd.cofactor condition cube in
+	  let nabs = meet_cube man env cond abs cube in
+	  (ncareset,ncondition,nabs)
+        )
+	~select:(fun (careset,condition,elt) ->
+          Bdd.Decompose.select_cond cond (Cudd.Bdd.support condition)
+        )
+        ~terminal:(fun ~depth ~newcube ~cube ~down ->
+	  let (careset,condition,abs) = down in
+	  let res = Cudd.Mtbddc.ite condition abs bottom in
+	  if is_bottom man res then None else Some res
+        )
+        ~ite:(fun ~depth ~newcube ~cond ~dthen ~delse ->
+	  match (dthen,delse) with
+	  | None,None -> None
+	  | ox,None | None,ox -> ox
+	  | (Some x),(Some y) -> Some (join man x y)
+        )
+        ~down:(cond.Bdd.Cond.careset, condition, t)
     in
     match res with
     | None -> bottom

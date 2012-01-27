@@ -597,7 +597,7 @@ module O = struct
   (** bdd may contain constraints. *)
   let elt_descend_bdd ~merge ~maxdepth apron env cond =
     let cudd = env.cudd in
-    Descend.descend
+    Bdd.Decompose.descend
       ~cudd ~maxdepth
       ~nocare:(begin fun (elt,bdd) ->
 	let res =
@@ -611,14 +611,7 @@ module O = struct
 	(nelt, Cudd.Bdd.cofactor bdd cube)
       )
       ~select:(fun (elt,bdd) ->
-	let supp = Cudd.Bdd.support bdd in
-	let suppcond = Cudd.Bdd.support_inter supp cond.supp in
-	if Cudd.Bdd.is_cst suppcond
-	then -1
-	else begin
-	  let id = Cudd.Bdd.topvar suppcond in
-	  id
-	end
+        Bdd.Decompose.select_cond cond (Cudd.Bdd.support bdd)
       )
       ~ite:(fun ~depth ~newcube ~cond ~dthen ~delse ->
 	let res =
@@ -735,7 +728,7 @@ module O = struct
     let (lbvar,tavar) = Descend.split_lvar env.symbol lvar lexpr in
     let tadim = Array.map (Apron.Environment.dim_of_var eapron) tavar in
     let ores =
-      Descend.descend
+      Bdd.Decompose.descend
 	~cudd ~maxdepth
 	~nocare:(fun (elt,texpr) -> L.is_bottom apron elt)
 	~cube_of_down:(fun (elt,texpr) -> dtrue)
