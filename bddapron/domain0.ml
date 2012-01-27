@@ -85,8 +85,7 @@ type ('a,'b) mtbdd =
     'b Mtbdddomain0.t
   ) man
 
-let make_mtbdd ?global (apron:'b Apron.Manager.t) : ('a,'b) mtbdd =
-  let man = Mtbdddomain0.make_man ?global apron in
+let mtbdd_of_mtbdddomain (man:('a,'b) Mtbdddomain0.man) : ('a,'b) mtbdd =
   {
     typ = "mtbdd";
     man = man;
@@ -114,6 +113,9 @@ let make_mtbdd ?global (apron:'b Apron.Manager.t) : ('a,'b) mtbdd =
     apply_permutation = Mtbdddomain0.apply_permutation;
   }
 
+let make_mtbdd ?global (apron:'b Apron.Manager.t) : ('a,'b) mtbdd =
+  let man = Mtbdddomain0.make_man ?global apron in
+  mtbdd_of_mtbdddomain man
 
 let man_of_mtbdd (man:('a,'b) mtbdd) : ('a,'b,'c,'d) man =
   Obj.magic man
@@ -146,8 +148,7 @@ type ('a,'b) bdd =
     'b Bdddomain0.t
   ) man
 
-let make_bdd (apron:'b Apron.Manager.t) : ('a,'b) bdd =
-  let man = Bdddomain0.make_man apron in
+let bdd_of_bdddomain (man:('a,'b) Bdddomain0.man) : ('a,'b) bdd =
   {
     typ = "bdd";
     man = man;
@@ -174,6 +175,9 @@ let make_bdd (apron:'b Apron.Manager.t) : ('a,'b) bdd =
     apply_change = Bdddomain0.apply_change;
     apply_permutation = Bdddomain0.apply_permutation;
   }
+let make_bdd (apron:'b Apron.Manager.t) : ('a,'b) bdd =
+  let man = Bdddomain0.make_man apron in
+  bdd_of_bdddomain man
 
 let man_of_bdd (man:('a,'b) bdd) : ('a,'b,'c,'d) man =
   Obj.magic man

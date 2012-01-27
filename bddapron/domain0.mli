@@ -107,8 +107,10 @@ type ('a,'b) mtbdd =
     'b Mtbdddomain0.t
   ) man
 
+val mtbdd_of_mtbdddomain : ('a,'b) Mtbdddomain0.man -> ('a,'b) mtbdd
+  (** Make a mtbdd manager from an underlying BDDAPRON manager *)
 val make_mtbdd : ?global:bool -> 'b Apron.Manager.t -> ('a,'b) mtbdd
-  (** Make a mtbdd manager *)
+  (** Make a mtbdd manager from an APRON manager *)
 
 (*  ====================================================================== *)
 (** {4 Type conversion functions} *)
@@ -140,8 +142,10 @@ type ('a,'b) bdd =
     'b Bdddomain0.t
   ) man
 
+val bdd_of_bdddomain : ('a,'b) Bdddomain0.man -> ('a,'b) bdd
+  (** Make a bdd manager from an underlying BDDAPRON manager *)
 val make_bdd : 'b Apron.Manager.t -> ('a,'b) bdd
-  (** Make a bdd manager *)
+  (** Make a bdd manager from an APRON manager *)
 
 (*  ====================================================================== *)
 (** {4 Type conversion functions} *)
