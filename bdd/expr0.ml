@@ -115,18 +115,6 @@ module O = struct
       | Tcst of bool
 	(** Boolean constant *)
 
-    (** Conjunction *)
-    type 'a conjunction =
-      | Conjunction of 'a term list
-       (** Conjunction of terms. Empty list means true. *)
-      | Cfalse
-
-    (** Disjunction *)
-    type 'a disjunction =
-      | Disjunction of 'a conjunction list
-      (** Disjunction of conjunctions. Empty list means false *)
-      | Dtrue
-
     let map_atom f = function
       | Tbool(n,b) -> Tbool(f n,b)
       | Tint(n,l) -> Tint(f n,l)
@@ -136,14 +124,6 @@ module O = struct
       | Tatom atom -> Tatom (map_atom f atom)
       | Texternal _ as x -> x
       | Tcst _ as x -> x
-
-    let map_conjunction f = function
-      | Conjunction lterm -> Conjunction (List.map (map_term f) lterm)
-      | Cfalse -> Cfalse
-
-    let map_disjunction f = function
-      | Disjunction l -> Disjunction (List.map (map_conjunction f) l)
-      | Dtrue -> Dtrue
 
     (*  -------------------------------------------------------------------- *)
     (** {5 Internal conversion functions} *)
@@ -254,7 +234,7 @@ module O = struct
 	(env:('a,'b,'c,'d,'e) Env.O.t)
 	(gminterm:Cudd.Man.tbool array)
 	:
-	'a conjunction
+	'a term Normalform.conjunction
 	=
       try
 	let res = ref [] in
@@ -302,24 +282,24 @@ module O = struct
 	  end)
 	  gminterm
 	;
-	Conjunction(List.rev !res)
+	Normalform.Conjunction(List.rev !res)
       with Exit ->
-	Cfalse
+	Normalform.Cfalse
 
     (*  -------------------------------------------------------------------- *)
     (** {5 Converts a full BDD} *)
     (*  -------------------------------------------------------------------- *)
 
-    let disjunction_of_bdd
+    let dnf_of_bdd
 	(env:('a,'b,'c,'d,'e) Env.O.t)
 	(bdd:'d Cudd.Bdd.t)
 	:
-	'a disjunction
+	'a term Normalform.dnf
 	=
       if Cudd.Bdd.is_true bdd then
-	Dtrue
+	Normalform.Dtrue
       else if Cudd.Bdd.is_false bdd then
-	Disjunction([])
+	Normalform.Disjunction([])
       else begin
 	try
 	  let res = ref [] in
@@ -327,14 +307,14 @@ module O = struct
 	    (begin fun cube ->
 	      let conjunction = conjunction_of_minterm env cube in
 	      match conjunction with
-	      | Cfalse -> ()
-	      | Conjunction([]) -> raise Exit
+	      | Normalform.Cfalse -> ()
+	      | Normalform.Conjunction([]) -> raise Exit
 	      | _ -> res := conjunction :: !res
 	    end)
 	    bdd;
-	  Disjunction(List.rev !res)
+	  Normalform.Disjunction(List.rev !res)
 	with Exit ->
-	  Dtrue
+	  Normalform.Dtrue
       end
 
     (*  -------------------------------------------------------------------- *)
@@ -382,30 +362,17 @@ module O = struct
       | Tcst(b) ->
 	  pp_print_bool fmt b
 
-    let print_conjunction ?print_external_idcondb env fmt (conjunction:'a conjunction) =
-      match conjunction with
-      | Cfalse -> pp_print_string fmt "false"
-      | Conjunction([]) -> pp_print_string fmt "true"
-      | Conjunction(conjunction) ->
-	  Print.list
-	    ~first:"@[<hov>" ~sep:" and@ " ~last:"@]"
-	    (print_term ?print_external_idcondb env)
-	    fmt
-	    conjunction
+    let print_conjunction ?print_external_idcondb env fmt (conjunction:'a term Normalform.conjunction) =
+      Normalform.print_conjunction
+	(print_term ?print_external_idcondb env)
+	fmt conjunction
 
-    let print_disjunction ?print_external_idcondb env fmt (disjunction:'a disjunction) =
-      match disjunction with
-      | Dtrue -> pp_print_string fmt "true"
-      | Disjunction([]) -> pp_print_string fmt "false"
-      | Disjunction(disjunction) ->
-	  Print.list
-	    ~first:"@[<hov>" ~sep:" or@ " ~last:"@]"
-	    (print_conjunction ?print_external_idcondb env)
-	    fmt
-	    disjunction
+    let print_dnf ?print_external_idcondb env fmt (disjunction:'a term Normalform.dnf) =
+      Normalform.print_dnf
+	(print_term ?print_external_idcondb env)
+	fmt disjunction
 
   end
-
 
   (*  ====================================================================== *)
   (** {4 Printing} *)
@@ -446,7 +413,7 @@ module O = struct
 	Cudd.Bdd.iter_cube
 	  (begin fun cube ->
 	    let conjunction = Expr.conjunction_of_minterm env cube in
-	    if conjunction<>Expr.Cfalse then begin
+	    if conjunction<>Normalform.Cfalse then begin
 	      if !first then first := false else fprintf fmt "@ or ";
 	      Expr.print_conjunction
 		?print_external_idcondb env fmt conjunction

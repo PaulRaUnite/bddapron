@@ -67,6 +67,7 @@ module Bool : sig
   val ite : ('a,'b) Env.t -> 'b t -> 'b t -> 'b t -> 'b t
     (** If-then-else *)
 
+
   val is_true : ('a,'b) Env.t -> 'b t -> bool
   val is_false : ('a,'b) Env.t -> 'b t -> bool
   val is_cst : ('a,'b) Env.t -> 'b t -> bool
@@ -541,22 +542,8 @@ module O : sig
       | Tcst of bool
 	(** Boolean constant *)
 
-    (** Conjunction *)
-    type 'a conjunction =
-      | Conjunction of 'a term list
-       (** Conjunction of terms. Empty list means true. *)
-      | Cfalse
-
-    (** Disjunction *)
-    type 'a disjunction =
-      | Disjunction of 'a conjunction list
-      (** Disjunction of conjunctions. Empty list means false *)
-      | Dtrue
-
     val map_atom : ('a -> 'b) -> 'a atom -> 'b atom
     val map_term : ('a -> 'b) -> 'a term -> 'b term
-    val map_conjunction : ('a -> 'b) -> 'a conjunction -> 'b conjunction
-    val map_disjunction : ('a -> 'b) -> 'a disjunction -> 'b disjunction
 
     val term_of_vint : 'a -> 'd Int.t -> Reg.Minterm.t -> 'a term
 
@@ -568,18 +555,18 @@ module O : sig
     val bool_of_tbool : Cudd.Man.tbool -> bool
     val mand : 'a term list ref -> 'a term -> unit
     val conjunction_of_minterm :
-      ('a,'b,'c,'d,'e) Env.O.t -> Cudd.Man.tbool array -> 'a conjunction
-    val disjunction_of_bdd :
-      ('a,'b,'c,'d,'e) Env.O.t -> 'd Cudd.Bdd.t -> 'a disjunction
+      ('a,'b,'c,'d,'e) Env.O.t -> Cudd.Man.tbool array -> 'a term Normalform.conjunction
+    val dnf_of_bdd :
+      ('a,'b,'c,'d,'e) Env.O.t -> 'd Cudd.Bdd.t -> 'a term Normalform.dnf
     val print_term :
       ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
       ('a,'b,'c,'d,'e) Env.O.t -> Format.formatter -> 'a term -> unit
     val print_conjunction :
       ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-      ('a,'b,'c,'d,'e) Env.O.t -> Format.formatter -> 'a conjunction -> unit
-    val print_disjunction :
+      ('a,'b,'c,'d,'e) Env.O.t -> Format.formatter -> 'a term Normalform.conjunction -> unit
+    val print_dnf :
       ?print_external_idcondb:(Format.formatter -> int * bool -> unit) ->
-      ('a,'b,'c,'d,'e) Env.O.t -> Format.formatter -> 'a disjunction -> unit
+      ('a,'b,'c,'d,'e) Env.O.t -> Format.formatter -> 'a term Normalform.dnf -> unit
 
   end
 end
