@@ -110,7 +110,7 @@ let split_lvarlexpr
 
 
 (*  ********************************************************************** *)
-(** {3 Recursive descend} *)
+(** {3 Recursive descend to eliminate conditions} *)
 (*  ********************************************************************** *)
 
 let cofactors
@@ -215,3 +215,4 @@ let descend
     end
   in
   map 0 (Cudd.Bdd.dtrue cudd) down
+
