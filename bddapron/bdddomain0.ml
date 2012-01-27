@@ -611,7 +611,7 @@ module O = struct
 	(nelt, Cudd.Bdd.cofactor bdd cube)
       )
       ~select:(fun (elt,bdd) ->
-        Bdd.Decompose.select_cond cond (Cudd.Bdd.support bdd)
+	Bdd.Decompose.select_cond cond (Cudd.Bdd.support bdd)
       )
       ~ite:(fun ~depth ~newcube ~cond ~dthen ~delse ->
 	let res =

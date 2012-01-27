@@ -170,6 +170,4 @@ let rec descend_mtbdd
     res
   end
 
-let select_cond = Bdd.Decompose.select_cond
-
 let descend = Bdd.Decompose.descend

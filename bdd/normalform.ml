@@ -189,7 +189,7 @@ let print_tree_minterm
     ~first:"[@[<v>" ~sep:"@ " ~last:"@]]"
     (fun fmt (dnf,leaf) ->
       fprintf fmt "%a IF %a"
-        print_leaf leaf print_dnf dnf)
+	print_leaf leaf print_dnf dnf)
     fmt
     (minterm_of_tree ?compare tree)
 
@@ -197,8 +197,8 @@ let print_tree print_cond print_leaf fmt tree =
   let rec print fmt = function
     | Leaf leaf -> print_leaf fmt leaf
     | Ite(cond,dthen,delse) ->
-        fprintf fmt "@[<hv 1>ITE(%a,@ %a,@ %a)@]"
-          print_cond cond 
-          print dthen print delse
+	fprintf fmt "@[<hv 1>ITE(%a,@ %a,@ %a)@]"
+	  print_cond cond
+	  print dthen print delse
   in
   print fmt tree

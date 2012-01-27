@@ -30,8 +30,8 @@ module O = struct
 	    (ncareset,ncondition)
 	  )
 	  ~select:(fun (careset,condition) ->
-            Bdd.Decompose.select_cond cond (Cudd.Bdd.support condition)
-          )
+	    Bdd.Decompose.select_cond cond (Cudd.Bdd.support condition)
+	  )
 	  ~down:(cond.Bdd.Cond.careset, condition)
 
     let to_lconjunction env cond (condition:'a Expr0.Bool.t) : ('a Expr0.Bool.t * 'a Expr0.Bool.t) list
@@ -76,8 +76,8 @@ module O = struct
 	    (ncareset,ncondition,nelt)
 	  )
 	  ~select:(fun (careset,condition,elt) ->
-            Bdd.Decompose.select_cond cond (Cudd.Bdd.support condition)
-          )
+	    Bdd.Decompose.select_cond cond (Cudd.Bdd.support condition)
+	  )
 	  ~terminal:(fun ~depth ~newcube ~cube ~down ->
 	    let (careset,condition,elt) = down in
 	    let nguard = Cudd.Bdd.existand bsupp cube elt.Bddleaf.guard in
