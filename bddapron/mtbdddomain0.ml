@@ -97,11 +97,11 @@ module O = struct
   (** {4 Meet with Boolean formula} *)
   (*  ==================================================================== *)
 
-  let meet_cube man env cond (t:'b t) (condition:'a Expr0.Bool.t) : 'b t =
+  let meet_cube man env cond bottom (t:'b t) (condition:'a Expr0.Bool.t) : 'b t =
     let (cubebool,cubecond) = Common.cube_split cond condition in
     let tcons0_array = Common.tcons0_array_of_cubecond env cond cubecond in
-    let nt = Cudd.Mtbddc.cofactor t cubebool in
-    ApronDD.meet_tcons_array man nt tcons0_array
+    let nt = ApronDD.meet_tcons_array man t tcons0_array in
+    Cudd.Mtbddc.ite cubebool nt bottom
 
   let meet_condition man env cond (t:'b t) (condition:'a Expr0.Bool.t) : 'b t =
     let bottom = bottom man env in
@@ -116,7 +116,7 @@ module O = struct
 	~cofactor:(fun (careset,condition,abs) cube ->
 	  let ncareset = Cudd.Bdd.cofactor careset cube in
 	  let ncondition = Cudd.Bdd.cofactor condition cube in
-	  let nabs = meet_cube man env cond abs cube in
+	  let nabs = meet_cube man env cond bottom abs cube in
 	  (ncareset,ncondition,nabs)
 	)
 	~select:(fun (careset,condition,elt) ->

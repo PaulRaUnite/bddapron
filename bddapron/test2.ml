@@ -14,17 +14,18 @@ let cudd = Cudd.Man.make_v ();;
 let env = Env.make ~bddindex0:0 ~bddsize:10 ~symbol:Env.string_symbol cudd;;
 let cond = Cond.make ~bddindex0:10 ~bddsize:10 ~symbol:Env.string_symbol cudd;;
 (*
-#install_printer p;;
 #install_printer Apron.Abstract1.print;;
 #install_printer Cudd.Bdd.print__minterm;;
 let print fmt x = Apron.Environment.print fmt x;;
 #install_printer print;;
-#install_printer Apronexpr.print;;
-let print fmt x = Cudd.Weakke.print Apronexpr.print fmt x;;
+let print fmt x = Apronexpr.print Env.string_symbol fmt x;;
+#install_printer print;;
+let print fmt x = Cudd.Weakke.print print fmt x;;
 #install_printer print;;
 let print fmt x = Cudd.Weakke.print Apron.Abstract1.print fmt x ;;
 #install_printer print;;
-#install_printer Domain1.print;;
+let print fmt x = Mtbdddomain1.print fmt x;;
+#install_printer print;;
 #install_printer Env.print;;
 #install_printer Expr2.Bool.print;;
 let p = Cond.print env;;
@@ -41,7 +42,7 @@ let p = Expr0.Bool.print env cond;;
 #install_printer p;;
 let p = Expr0.Apron.print env cond;;
 #install_printer p;;
-let p fmt x = Domain0.print env fmt x;;
+let p fmt x = Mtbdddomain0.print env fmt x;;
 #install_printer p;;
 let p fmt (x: Polka.loose Polka.t ApronDD.table) = Cudd.Mtbdd.print_table (fun x -> Apron.Abstract0.print string_of_int x) fmt x;;
 #install_printer p;;
@@ -61,6 +62,13 @@ Env.add_vars_with env [
   ("x2",`Real);
 ];;
 
+
+(* ********************************************************************** *)
+
+let condition = Expr1.Bool.of_expr (Parser.expr1_of_string env cond "b0 and x0>=0");;
+
+let top = Mtbdddomain1.top man env;;
+let abs = Mtbdddomain1.meet_condition man cond top condition;;
 
 (* ********************************************************************** *)
 

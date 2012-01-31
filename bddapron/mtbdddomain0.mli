@@ -109,7 +109,6 @@ val apply_permutation :
 module O : sig
   val meet_idcondb :
     ('a,'b) man -> 'c -> ('a,'c) Cond.O.t -> 'b t -> int * bool -> 'b t
-
   val size : ('a,'b) man -> 'b t -> int
   val print :
     ?print_apron:(

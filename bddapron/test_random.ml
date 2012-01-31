@@ -434,7 +434,7 @@ let check
   abs
 
 let condition man env =
-  let cond = Cond.make ~symbol:Env.string_symbol env.cudd in
+  let cond = Cond.make ~bddindex0:0 ~bddsize:200 ~symbol:Env.string_symbol env.cudd in
   let condition = Expr.bool env cond !depthcond in
   let res =
     Expr2.Bool.of_expr1 ~normalize:true ~reduce:true ~careset:true
@@ -454,7 +454,7 @@ let test_meet man env =
   printf "Testing meet@.  @[<v>";
   let i = ref 0 in
   while !i < !nbiterations do
-    printf "%2i " !i;
+    if false then printf "%2i " !i;
     let abs1 = abs_rand man env in
     let abs2 = abs_rand man env in
     let abs =
@@ -475,7 +475,7 @@ let test_meet man env =
 	D.is_cst man abs
     )
     then begin
-      printf "@ abs1 = %a;@ abs2 = %a;@ abs = %a;@ "
+      if false then printf "@ abs1 = %a;@ abs2 = %a;@ abs = %a;@ "
 	(D.print man) abs1
 	(D.print man) abs2
 	(D.print man) abs
@@ -490,7 +490,7 @@ let test_join man env =
   printf "Testing join@.  @[<v>";
   let i = ref 0 in
   while !i < !nbiterations do
-    printf "%2i " !i;
+    if false then printf "%2i " !i;
     let abs1 = abs_rand man env in
     let abs2 = abs_rand man env in
     let abs =
@@ -510,7 +510,7 @@ let test_join man env =
 	D.is_cst man abs
     )
     then begin
-      printf "@ abs1 = %a;@ abs2 = %a;@ abs = %a;@ "
+      if false then printf "@ abs1 = %a;@ abs2 = %a;@ abs = %a;@ "
 	(D.print man) abs1
 	(D.print man) abs2
 	(D.print man) abs
@@ -525,7 +525,7 @@ let test_widening man env =
   printf "Testing widening@.  @[<v>";
   let i = ref 0 in
   while !i < !nbiterations do
-    printf "%2i " !i;
+    if false then printf "%2i " !i;
     let abs1 = abs_rand man env in
     let abs2 = abs_rand man env in
     let abs2 = D.join check man abs1 abs2 in
@@ -546,7 +546,7 @@ let test_widening man env =
 	D.is_cst man abs
     )
     then begin
-      printf "@ abs1 = %a;@ abs2 = %a;@ abs = %a;@ "
+      if false then printf "@ abs1 = %a;@ abs2 = %a;@ abs = %a;@ "
 	(D.print man) abs1
 	(D.print man) abs2
 	(D.print man) abs
@@ -565,9 +565,9 @@ let test_asssub asssub man env =
   let vars = Env.vars env in
   let i = ref 0 in
   while !i < !nbiterations do
-    printf "%2i " !i;
+    if true then printf "%2i " !i;
     let absorg = abs_rand man env in
-    let cond = Bddapron.Cond.make ~symbol:string_symbol env.cudd in
+    let cond = Bddapron.Cond.make ~bddindex0:0 ~bddsize:200 ~symbol:string_symbol env.cudd in
     let lvar = multipick_set !nbasssub (fun _ -> true) vars in
     let ltyp = List.map (Env.typ_of_var env) lvar in
     let lexpr = List.map (fun typ -> Expr.expr ~lin:true env cond typ !depthexpr) ltyp in
@@ -597,7 +597,7 @@ let test_asssub asssub man env =
 	D.is_cst man abs
     )
     then begin
-      printf "lvar = %a@ lexpr=%a@ absorg = %a;@ absdest = %a;@ abs = %a;@ "
+      if true then printf "lvar = %a@ lexpr=%a@ absorg = %a;@ absdest = %a;@ abs = %a;@ "
 	(Print.list pp_print_string) lvar
 	(Print.list (Expr1.print cond)) lexpr
 	(D.print man) absorg
@@ -609,14 +609,13 @@ let test_asssub asssub man env =
     begin match asssub with
     | `Assign ->
 	let abs2 = D.substitute_lexpr check man cond abs lvar lexpr None in
-	printf "abs2 = %a@."
-	  (D.print man) abs2;
+	if false then printf "abs2 = %a@." (D.print man) abs2;
 	assert(if oabsdest=None then D.is_leq man absorg abs2 else true);
 	let abs2 = D.substitute_lexpr check man cond abs lvar lexpr (Some absorg) in
 	assert(if oabsdest=None then D.is_eq man absorg abs2 else true);
     | `Substitute ->
 	let abs2 = D.assign_lexpr check man cond abs lvar lexpr (Some absorg) in
-	if true then printf "@.lvar = %a@.lexpr=%a@.absorg = %a;@.absdest = %a;@.abs = %a@.abs2=%a@."
+	if false then printf "@.lvar = %a@.lexpr=%a@.absorg = %a;@.absdest = %a;@.abs = %a@.abs2=%a@."
 	  (Print.list pp_print_string) lvar
 	  (Print.list (Expr1.print cond)) lexpr
 	  (D.print man) absorg
@@ -636,7 +635,7 @@ let test_forget man env =
   let vars = Env.vars env in
   let i = ref 0 in
   while !i < !nbiterations do
-    printf "%2i " !i;
+    if false then printf "%2i " !i;
     let absorg = abs_rand man env in
     let lvar = multipick_set !nbasssub (fun _ -> true) vars in
     let abs =
@@ -654,9 +653,9 @@ let test_forget man env =
 	D.is_cst man abs
     )
     then begin
-      printf "@.absorg = %a;@.lvar=%a@.abs = %a;@."
+      if false then printf "@.absorg = %a;@.lvar=%a@.abs = %a;@."
 	(D.print man) absorg
-	(Print.list pp_print_string) lvar	
+	(Print.list pp_print_string) lvar
 	(D.print man) abs
       ;
       incr i
@@ -672,18 +671,18 @@ let make_man apron =
 
 let test apron env =
   let man = make_man apron in
-  test_forget man env;
 (*
+  test_forget man env;
   test_meet man env;
   test_join man env;
   test_widening man env;
   test_assign man env;
-  test_substitute man env;
 *)
+  test_substitute man env;
   ()
 
 let make_env ~bool ~bint ~real cudd =
-  let env = Env.make ~relational:!assign_relational ~symbol:string_symbol cudd in
+  let env = Env.make ~bddindex0:200 ~bddsize:100 ~relational:!assign_relational ~symbol:string_symbol cudd in
   Env.add_typ_with env "e0" (`Benum [| "e0_0" |]);
   Env.add_typ_with env "e1" (`Benum [| "e1_0"; "e1_1"; "e1_2" |]);
 (*
