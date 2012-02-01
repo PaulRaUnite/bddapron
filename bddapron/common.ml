@@ -24,13 +24,6 @@ let tcons0_array_of_cubecond env cond cubecond =
   in
   ttcons0
 
-let cube_split cond cube =
-  let supp = Cudd.Bdd.support cube in
-  let suppbool = Cudd.Bdd.support_diff supp cond.Bdd.Cond.supp in
-  let cubecond = Cudd.Bdd.exist suppbool cube in
-  let cubebool = Cudd.Bdd.cofactor cube cubecond in
-  (cubebool,cubecond)
-
 let lvar_split env lvar =
   let eapron = env.Bdd.Env.ext.Env.eapron in
   let (lbvar,ladim) =

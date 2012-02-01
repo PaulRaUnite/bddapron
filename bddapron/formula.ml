@@ -41,7 +41,7 @@ module O = struct
 	  env cond condition
 	  ~terminal:(fun ~depth ~newcube ~cube ~down ->
 	    let (careset,condition) = down in
-	    let (cubebool,cubecond) = Common.cube_split cond cube in
+	    let (cubebool,cubecond) = Bdd.Decompose.cube_split cond cube in
 	    Some [(Cudd.Bdd.dand cubebool condition, cubecond)]
 	  )
 	  ~ite:(fun ~depth ~newcube ~cond ~dthen ~delse ->

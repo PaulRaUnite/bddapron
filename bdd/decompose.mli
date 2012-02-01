@@ -48,6 +48,10 @@ val split_bdd :
   int * (int array * int array) option ->
   Cudd.Bdd.vt -> (Cudd.Bdd.vt * Cudd.Bdd.vt) list
 
+val cube_split :
+  ('a, 'b, 'c, 'd) Cond.t -> 'd Cudd.Bdd.t -> 'd Cudd.Bdd.t * 'd Cudd.Bdd.t
+    (** Split a cube into a cube of Booleans and a cube of conditions *)
+
 val decompose_bdd_boolcond :
   ('a, 'b, 'c, 'd, 'e) Env.t0 -> ('f, 'g, 'h, 'i) Cond.t ->
   Cudd.Bdd.vt -> (Cudd.Bdd.vt * Cudd.Bdd.vt) list

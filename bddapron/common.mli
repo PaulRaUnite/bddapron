@@ -9,9 +9,6 @@ val tcons0_array_of_cubecond :
   Cudd.Bdd.vt -> Apron.Tcons0.t array
     (** Converts a cube of conditions into an array of APRON constraints *)
 
-val cube_split :
-  ('a, 'b) Cond.O.t -> Cudd.Bdd.vt -> Cudd.Bdd.vt * Cudd.Bdd.vt
-    (** Split a cube into a cube of Booleans and a cube of conditions *)
 val lvar_split :
     ('a,'c,'d,'e) Env.O.t -> 'a list -> Cudd.Man.v Cudd.Bdd.t * Apron.Dim.t array
     (** Split the list of variable into a positive cube (support)

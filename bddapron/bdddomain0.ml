@@ -145,7 +145,7 @@ module O = struct
 
     (** Intersection of an element with a general cube *)
     let meet_cube apron env cond (elt:'a elt) cube =
-      let (cubebool,cubecond) = Common.cube_split cond cube in
+      let (cubebool,cubecond) = Bdd.Decompose.cube_split cond cube in
       let nguard = Cudd.Bdd.dand elt.guard cubebool in
       let nelt = {
 	guard = nguard;

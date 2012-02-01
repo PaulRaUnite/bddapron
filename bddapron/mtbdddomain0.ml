@@ -98,7 +98,7 @@ module O = struct
   (*  ==================================================================== *)
 
   let meet_cube man env cond bottom (t:'b t) (condition:'a Expr0.Bool.t) : 'b t =
-    let (cubebool,cubecond) = Common.cube_split cond condition in
+    let (cubebool,cubecond) = Bdd.Decompose.cube_split cond condition in
     let tcons0_array = Common.tcons0_array_of_cubecond env cond cubecond in
     let nt = ApronDD.meet_tcons_array man t tcons0_array in
     Cudd.Mtbddc.ite cubebool nt bottom

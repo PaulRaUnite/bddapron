@@ -148,6 +148,13 @@ let split_bdd
       if memo2=None then Memo.clear memo;
       res
 
+let cube_split cond cube =
+  let supp = Cudd.Bdd.support cube in
+  let suppbool = Cudd.Bdd.support_diff supp cond.Cond.supp in
+  let cubecond = Cudd.Bdd.exist suppbool cube in
+  let cubebool = Cudd.Bdd.cofactor cube cubecond in
+  (cubebool,cubecond)
+
 let decompose_bdd_boolcond
     env cond
     (bexpr:'a Bdd.t)
