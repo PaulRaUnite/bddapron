@@ -26,7 +26,8 @@ type 'a cnf = 'a disjunction conjunction
 type 'a dnf = 'a conjunction disjunction
 
 (** Decision tree *)
-type ('a,'b) tree =
+type ('a,'b) tree = ('a * bool) list * ('a,'b) decision
+and ('a,'b) decision =
   | Leaf of 'b
   | Ite of 'a * ('a,'b) tree * ('a,'b) tree
 

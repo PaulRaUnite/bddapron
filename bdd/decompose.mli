@@ -4,8 +4,8 @@
    Please read the COPYING file packaged in the distribution  *)
 
 type vdd = bool Cudd.Vdd.t
-val vdd_of_bdd : Cudd.Man.v Cudd.Bdd.t -> bool Cudd.Vdd.t
-val bdd_of_vdd : bool Cudd.Vdd.t -> Cudd.Man.v Cudd.Bdd.t
+val vdd_of_bdd : Cudd.Bdd.vt -> bool Cudd.Vdd.t
+val bdd_of_vdd : bool Cudd.Vdd.t -> Cudd.Bdd.vt
 
 type typ = Bool | Cond | Other
 type info = {
@@ -65,11 +65,33 @@ val decompose_bdd_condbool :
   Cudd.Bdd.vt -> (Cudd.Bdd.vt * Cudd.Bdd.vt) list
   (** Dual version *)
 
+val decompose_dd_treecondbool :
+  ?careset:'a Cudd.Bdd.t ->
+  topvar:('b -> int) ->
+  support:('b -> 'c Cudd.Bdd.t) ->
+  cofactor:('b -> 'a Cudd.Bdd.t -> 'b) ->
+  ('d, 'e, 'f, 'g, 'h) Env.t0 ->
+  ('i, 'j, 'k, 'a) Cond.t -> 'b -> (int, 'b) Normalform.tree
+  (** Internal use, look at the code.
+      Be cautious: support is supposed to return a support intersected with conditions *)
+
 val decompose_bdd_treecondbool :
-  ('a, 'b, 'c, 'd, 'e) Env.t0 -> ('f, 'g, 'h, 'i) Cond.t ->
+   ('a, 'b, 'c, 'd, 'e) Env.t0 -> ('f, 'g, 'h, 'i) Cond.t ->
   'i Cudd.Bdd.t -> (int,'i Cudd.Bdd.t) Normalform.tree
-  (** Decompose a BDD into a tree with decisions on conditions,
+val decompose_vdd_treecondbool :
+  ?careset:Cudd.Bdd.vt ->
+  ('a, 'b, 'c, 'd, 'e) Env.t0 -> ('f, 'g, 'h, Cudd.Man.v) Cond.t ->
+  'i Cudd.Vdd.t -> (int,'i Cudd.Vdd.t) Normalform.tree
+  (** Decompose a BDD/MTBDD into a tree with decisions on conditions,
       and purely Boolean BDDs on leaves *)
+
+val decompose_tbdd_tvdd_treecondbool :
+  ?careset:Cudd.Bdd.vt ->
+  ('a, 'b, 'c, 'd, 'e) Env.t0 ->
+  ('f, 'g, 'h, Cudd.Man.v) Cond.t ->
+  Cudd.Bdd.vt array * 'i Cudd.Vdd.t array ->
+  (int, Cudd.Bdd.vt array * 'i Cudd.Vdd.t array) Normalform.tree
+    (** Same for an array of BDDs/VDDs *)
 
 val conjunction_of_minterm :
   ?first:int -> ?last:int ->
@@ -104,4 +126,15 @@ val descend :
        cond:int -> dthen:'b option -> delse:'b option -> 'b option) ->
   down:'a -> 'b option
 
-val select_cond : ('a,'b,'c,'d) Cond.t -> 'd Cudd.Bdd.t -> int
+val select_cond: 'd Cudd.Bdd.t -> int
+val select_cond_bdd : ('a,'b,'c,'d) Cond.t -> 'd Cudd.Bdd.t -> int
+val bdd_support_cond :
+  ('a, 'b, 'c, 'd) Cond.t -> 'd Cudd.Bdd.t -> 'd Cudd.Bdd.t
+val vdd_support_cond :
+  ('a, 'b, 'c, Cudd.Man.v) Cond.t -> 'd Cudd.Vdd.t -> Cudd.Bdd.vt
+val tbdd_tvdd_support_cond :
+  ('a, 'b, 'c, Cudd.Man.v) Cond.t -> Cudd.Bdd.vt array * 'd Cudd.Vdd.t array -> 
+  Cudd.Bdd.vt
+val tbdd_tvdd_cofactor :
+  Cudd.Bdd.vt array * 'a Cudd.Vdd.t array -> Cudd.Bdd.vt -> 
+  Cudd.Bdd.vt array * 'a Cudd.Vdd.t array

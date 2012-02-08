@@ -27,7 +27,8 @@ type 'a cnf = 'a disjunction conjunction
 type 'a dnf = 'a conjunction disjunction
 
 (** Decision tree *)
-type ('a,'b) tree =
+type ('a,'b) tree = ('a*bool) list * ('a,'b) decision
+and ('a,'b) decision =
   | Leaf of 'b
   | Ite of 'a * ('a,'b) tree * ('a,'b) tree
 
@@ -75,9 +76,11 @@ let minterm_of_tree
     tree
     =
   let res = PHashhe.create_compare compare 11 in
-  let rec parcours lidb = function
-    | Leaf leaf ->
-	let conj = Conjunction(List.rev lidb) in
+  let rec parcours lidb (lidb2,decision) =
+    let lidb =List.rev_append lidb2 lidb in
+    match decision with
+    | Leaf(leaf) ->
+	let conj = Conjunction(lidb) in
 	let guard =
 	  try PHashhe.find res leaf
 	  with Not_found ->
@@ -121,9 +124,13 @@ let map_cnf f cnf =
   map_conjunction (map_disjunction f) cnf
 let map_dnf f dnf =
   map_disjunction (map_conjunction f) dnf
-let rec map_tree f g = function
-  | Leaf l -> Leaf(g l)
-  | Ite(id,t1,t2) -> Ite(f id, (map_tree f g t1), (map_tree f g t2))
+let rec map_tree f g (lidb,dec) =
+  let nlidb = List.map (fun (id,b) -> (f id, b)) lidb in
+  let ndec = match dec with
+    | Leaf l -> Leaf(g l)
+    | Ite(id,t1,t2) -> Ite(f id, (map_tree f g t1), (map_tree f g t2))
+  in
+  (nlidb,ndec)
 
 (*  ********************************************************************** *)
 (** {3 Printing functions} *)
@@ -194,11 +201,19 @@ let print_tree_minterm
     (minterm_of_tree ?compare tree)
 
 let print_tree print_cond print_leaf fmt tree =
-  let rec print fmt = function
+  let rec print_dec fmt = function
     | Leaf leaf -> print_leaf fmt leaf
     | Ite(cond,dthen,delse) ->
 	fprintf fmt "@[<hv 1>ITE(%a,@ %a,@ %a)@]"
 	  print_cond cond
-	  print dthen print delse
+	  print_tree dthen print_tree delse
+  and print_tree fmt (lidb,dec) = 
+    if lidb<>[] then begin
+      fprintf fmt "@[<hv>%a ->@ %a@]"
+        (Print.list
+          (Print.pair print_cond pp_print_bool))
+        lidb 
+        print_dec dec
+    end
   in
-  print fmt tree
+  print_tree fmt tree

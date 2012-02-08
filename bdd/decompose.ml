@@ -183,11 +183,38 @@ let decompose_bdd_condbool
     let splitperm = splitpermutation_of_envcond env cond `CondBool in
     split_bdd splitperm bexpr
 
-let select_cond cond supp =
-  let inter = Bdd.support_inter cond.Cond.supp supp in
-  if Bdd.is_true inter
-  then -1
-  else Bdd.topvar inter
+let select_cond supp =
+  try Bdd.topvar supp
+  with Invalid_argument _ -> -1
+
+let select_cond_bdd cond bdd =
+  let inter = Bdd.support_inter cond.Cond.supp (Bdd.support bdd) in
+  select_cond inter
+
+let bdd_support_cond cond bdd =
+  Bdd.support_inter cond.Cond.supp (Bdd.support bdd)
+let vdd_support_cond cond vdd =
+  Bdd.support_inter cond.Cond.supp (Vdd.support vdd)
+
+let tbdd_tvdd_support_cond cond (tbdd,tvdd) =
+ let cudd = cond.Cond.cudd in
+ let supp = ref (Bdd.dtrue cudd)
+ in
+  Array.iter
+    (fun bdd ->
+      supp := Bdd.support_union !supp (bdd_support_cond cond bdd))
+    tbdd;
+  Array.iter
+    (fun vdd ->
+      supp := Bdd.support_union !supp (vdd_support_cond cond vdd))
+    tvdd;
+  !supp
+
+let tbdd_tvdd_cofactor (tbdd,tvdd) c =
+  (
+    Array.map (fun x -> Bdd.cofactor x c) tbdd,
+    Array.map (fun x -> Vdd.cofactor x c) tvdd
+  )
 
 let descend
     ~(cudd:'c Cudd.Man.t)
@@ -235,11 +262,15 @@ let descend
   in
   map 0 (Cudd.Bdd.dtrue cudd) down
 
-let decompose_bdd_treecondbool
+let decompose_dd_treecondbool
+    ?careset
+    ~topvar
+    ~support
+    ~cofactor
     env cond
-    (bexpr:'a Bdd.t)
+    (dd:'a)
     :
-    (int, 'a Bdd.t) Normalform.tree
+    (int, 'a) Normalform.tree
     =
   let cudd = cond.Cond.cudd in
   let dtrue = Bdd.dtrue cudd in
@@ -247,39 +278,115 @@ let decompose_bdd_treecondbool
   let select =
     let r = make_info env cond in
     if r.maxlevelcond < r.minlevelbool then begin
-      fun bdd ->
-	let id = Bdd.topvar bdd in
+      fun dd ->
+	let id = topvar dd in
 	if id >= cond.Cond.bddindex then -1 else id
     end else begin
-      fun bdd -> select_cond cond (Bdd.support bdd)
+      fun dd -> select_cond (support dd)
     end
   in
 
-  let otree =
-    descend
-      ~cudd:cudd
-      ~maxdepth:max_int
-      ~nocare:(fun _ -> false)
-      ~cube_of_down:(fun _ -> dtrue)
-      ~cofactor:Bdd.cofactor
-      ~select
-      ~terminal:(fun ~depth ~newcube ~cube ~down ->
-	Some(Normalform.Leaf(down))
-      )
-      ~ite:(fun ~depth ~newcube ~cond ~dthen ~delse ->
-	match (dthen,delse) with
-	| (Some t1),(Some t2) -> Some(Normalform.Ite(cond,t1,t2))
-	| _ -> failwith ""
-      )
-      ~down:bexpr
+  let otree = match careset with
+    | None ->
+	descend
+	  ~cudd:cudd
+	  ~maxdepth:max_int
+	  ~nocare:(fun _ -> false)
+	  ~cube_of_down:(fun _ -> dtrue)
+	  ~cofactor
+	  ~select
+	  ~terminal:(fun ~depth ~newcube ~cube ~down ->
+	    let lidb = Cudd.Bdd.list_of_cube newcube in
+	    Some(lidb,Normalform.Leaf(down))
+	  )
+	  ~ite:(fun ~depth ~newcube ~cond ~dthen ~delse ->
+	    let lidb = Cudd.Bdd.list_of_cube newcube in
+	    match (dthen,delse) with
+	    | (Some t1),(Some t2) -> Some(lidb,Normalform.Ite(cond,t1,t2))
+	    | _ -> failwith ""
+	  )
+	  ~down:dd
+    | Some(careset) ->
+	descend
+	  ~cudd:cudd
+	  ~maxdepth:max_int
+	  ~nocare:(fun (dd,careset) -> not (Bdd.is_false careset))
+	  ~cube_of_down:(fun _ -> dtrue)
+	  ~cofactor:(fun (dd,careset) cube -> (cofactor dd cube, Bdd.cofactor careset cube))
+	  ~select:(fun (dd,careset) -> select dd)
+	  ~terminal:(fun ~depth ~newcube ~cube ~down ->
+	    let (dd,careset) = down in
+	    let lidb = Cudd.Bdd.list_of_cube newcube in
+	    Some(lidb,Normalform.Leaf(dd))
+	  )
+	  ~ite:(fun ~depth ~newcube ~cond ~dthen ~delse ->
+	    let lidb = Cudd.Bdd.list_of_cube newcube in
+	    match (dthen,delse) with
+	    | (Some t1),(Some t2) -> Some(lidb,Normalform.Ite(cond,t1,t2))
+	    | (Some t1),None ->
+		let (lidb1,d1) = t1 in
+		Some((cond,true)::(List.rev_append lidb1 lidb),d1)
+	    | None,(Some t2) ->
+		let (lidb2,d2) = t2 in
+		Some((cond,true)::(List.rev_append lidb2 lidb),d2)
+	    | None,None -> failwith ""
+	  )
+	  ~down:(dd,careset)
   in
   match otree with
   | Some t -> t
   | None -> failwith ""
 
+let decompose_bdd_treecondbool
+    env cond
+    (bdd:'a Bdd.t)
+    :
+    (int, 'a Bdd.t) Normalform.tree
+    =
+  decompose_dd_treecondbool
+    ~careset:bdd
+    ~topvar:Bdd.topvar
+    ~support:(bdd_support_cond cond)
+    ~cofactor:Bdd.cofactor
+    env cond bdd
 
+let decompose_vdd_treecondbool
+    ?careset
+    env cond
+    (vdd:'a Vdd.t)
+    :
+    (int, 'a Vdd.t) Normalform.tree
+    =
+  decompose_dd_treecondbool
+    ?careset
+    ~topvar:Vdd.topvar
+    ~support:(vdd_support_cond cond)
+    ~cofactor:Vdd.cofactor
+    env cond vdd
 
-
+let decompose_tbdd_tvdd_treecondbool
+    ?careset
+    env cond
+    ddarray
+    =
+  let cudd = cond.Cond.cudd in
+  decompose_dd_treecondbool
+    ?careset
+    ~topvar:(fun (tbdd,tvdd) ->
+      let minlevel topvar dd minlevel =
+	try
+	  let var = topvar dd in
+	  let level = Man.level_of_var cudd var in
+	  min minlevel level
+	with Invalid_argument _ -> minlevel
+      in
+      let toplevel = Array.fold_right (minlevel Bdd.topvar) tbdd max_int in
+      let toplevel = Array.fold_right (minlevel Vdd.topvar) tvdd toplevel in
+      if toplevel=max_int then -1 else Man.var_of_level cudd toplevel
+    )
+    ~support:(tbdd_tvdd_support_cond cond)
+    ~cofactor:tbdd_tvdd_cofactor
+    env cond ddarray
 
 let conjunction_of_minterm ?first ?last of_idb minterm =
   let first = match first with

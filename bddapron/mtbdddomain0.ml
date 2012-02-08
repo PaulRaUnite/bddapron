@@ -120,7 +120,7 @@ module O = struct
 	  (ncareset,ncondition,nabs)
 	)
 	~select:(fun (careset,condition,elt) ->
-	  Bdd.Decompose.select_cond cond (Cudd.Bdd.support condition)
+	  Bdd.Decompose.select_cond_bdd cond condition
 	)
 	~terminal:(fun ~depth ~newcube ~cube ~down ->
 	  let (careset,condition,abs) = down in
