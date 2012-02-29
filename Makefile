@@ -241,8 +241,8 @@ example2.opt: bddapron/example2.ml bddapron.cmxa
 
 test2.opt: bddapron/test2.ml
 	$(OCAMLFIND) ocamlopt -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ $< -package "bddapron.bddapron apron.boxMPQ apron.polkaMPQ" -linkpkg -predicates debug
-test2.byte: bddapron/test2.ml
-	$(OCAMLFIND) ocamlc -verbose -g $(OCAMLFLAGS) $(OCAMLINC) -o $@ $< -package "bddapron.bddapron apron.boxMPQ apron.polkaMPQ" -linkpkg -predicates debug
+test2.byte: bddapron/test2.ml bdd.cma bddapron.cma
+	$(OCAMLFIND) ocamlc -verbose -g $(OCAMLFLAGS) $(OCAMLINC) -o $@ bdd.cma bddapron.cma $< -package "apron.boxMPQ apron.polkaMPQ camllib cudd" -linkpkg -predicates debug
 
 test_random.opt: bddapron/test_random.ml bddapron.cmxa
 	$(OCAMLFIND) ocamlopt -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ $< -package "bddapron.bddapron apron.boxMPQ apron.polkaMPQ" -linkpkg

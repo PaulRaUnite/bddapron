@@ -183,9 +183,10 @@ let decompose_bdd_condbool
     let splitperm = splitpermutation_of_envcond env cond `CondBool in
     split_bdd splitperm bexpr
 
-let select_cond supp =
-  try Bdd.topvar supp
-  with Invalid_argument _ -> -1
+let bdd_topvar dd = if Bdd.is_cst dd then -1 else Bdd.topvar dd
+let vdd_topvar dd = if Vdd.is_cst dd then -1 else Vdd.topvar dd
+
+let select_cond = bdd_topvar
 
 let select_cond_bdd cond bdd =
   let inter = Bdd.support_inter cond.Cond.supp (Bdd.support bdd) in
@@ -278,9 +279,7 @@ let decompose_dd_treecondbool
   let select =
     let r = make_info env cond in
     if r.maxlevelcond < r.minlevelbool then begin
-      fun dd ->
-	let id = topvar dd in
-	if id >= cond.Cond.bddindex then -1 else id
+      fun dd -> topvar dd
     end else begin
       fun dd -> select_cond (support dd)
     end
@@ -345,7 +344,7 @@ let decompose_bdd_treecondbool
     =
   decompose_dd_treecondbool
     ~careset:bdd
-    ~topvar:Bdd.topvar
+    ~topvar:bdd_topvar
     ~support:(bdd_support_cond cond)
     ~cofactor:Bdd.cofactor
     env cond bdd
@@ -359,7 +358,7 @@ let decompose_vdd_treecondbool
     =
   decompose_dd_treecondbool
     ?careset
-    ~topvar:Vdd.topvar
+    ~topvar:vdd_topvar
     ~support:(vdd_support_cond cond)
     ~cofactor:Vdd.cofactor
     env cond vdd
@@ -374,14 +373,15 @@ let decompose_tbdd_tvdd_treecondbool
     ?careset
     ~topvar:(fun (tbdd,tvdd) ->
       let minlevel topvar dd minlevel =
-	try
-	  let var = topvar dd in
+	let var = topvar dd in
+        if var<0 then
+          minlevel
+        else
 	  let level = Man.level_of_var cudd var in
 	  min minlevel level
-	with Invalid_argument _ -> minlevel
       in
-      let toplevel = Array.fold_right (minlevel Bdd.topvar) tbdd max_int in
-      let toplevel = Array.fold_right (minlevel Vdd.topvar) tvdd toplevel in
+      let toplevel = Array.fold_right (minlevel bdd_topvar) tbdd max_int in
+      let toplevel = Array.fold_right (minlevel vdd_topvar) tvdd toplevel in
       if toplevel=max_int then -1 else Man.var_of_level cudd toplevel
     )
     ~support:(tbdd_tvdd_support_cond cond)

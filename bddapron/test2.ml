@@ -63,6 +63,15 @@ Env.add_vars_with env [
 ];;
 
 
+let _ =
+  let domain = Bdddomain0.make_man apron in
+  let s = Bdddomain0.top domain env in
+  let c = Expr0.Bool.of_expr
+	    (Parser.expr0_of_string env cond "x0>=0") in
+  let res = Bdddomain0.meet_condition domain env cond s c in
+  exit 0;
+  ()
+
 (* ********************************************************************** *)
 
 let condition = Expr1.Bool.of_expr (Parser.expr1_of_string env cond "b0 and x0>=0");;

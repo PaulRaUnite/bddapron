@@ -40,7 +40,6 @@ type ('a,'b) man = {
 
 module O = struct
 
-(*
   let myprint_elt fmt elt =
     fprintf fmt "@[<hv>(%a) and@ %a@]"
       (Cudd.Bdd.print_minterm pp_print_int)
@@ -54,7 +53,6 @@ module O = struct
   let myprint_oglist fmt = function
     | None -> pp_print_string fmt "None"
     | Some glist -> myprint_glist fmt glist
-*)
 
   (*  ******************************************************************** *)
   (** {3 Functions on lists of elements} *)
@@ -145,8 +143,14 @@ module O = struct
 
     (** Intersection of an element with a general cube *)
     let meet_cube apron env cond (elt:'a elt) cube =
+      if false then printf "meet_cube elt=%a cube=%a@."
+	myprint_elt elt
+	(Cudd.Bdd.print_minterm pp_print_int) cube
+      ;
       let (cubebool,cubecond) = Bdd.Decompose.cube_split cond cube in
+      if false then printf "Here 10@.";
       let nguard = Cudd.Bdd.dand elt.guard cubebool in
+      if false then printf "Here 10@.";
       let nelt = {
 	guard = nguard;
 	leaf =
@@ -157,6 +161,7 @@ module O = struct
 	    Apron.Abstract0.meet_tcons_array apron elt.leaf tcons0_array
       }
       in
+      if false then printf "Here 10@.";
       nelt
 
     let forget apron elt bsupp tadim =
@@ -607,11 +612,27 @@ module O = struct
       end)
       ~cube_of_down:(fun (elt,bdd) -> Cudd.Bdd.cube_of_bdd bdd)
       ~cofactor:(fun (elt,bdd) cube ->
+	if false then printf "cofactor elt=%a, bdd=%a, cube=%a@."
+	  myprint_elt elt
+	  (Cudd.Bdd.print_minterm pp_print_int) bdd
+	  (Cudd.Bdd.print_minterm pp_print_int) cube
+	;
+	let nelt = L.meet_cube apron env cond elt cube in
+	if false then printf "cofactor => %a@."
+	  myprint_elt nelt
+	;
 	let nelt = L.meet_cube apron env cond elt cube in
 	(nelt, Cudd.Bdd.cofactor bdd cube)
       )
       ~select:(fun (elt,bdd) ->
-	Bdd.Decompose.select_cond_bdd cond bdd
+	if false then printf "select bdd=%a@."
+	  (Cudd.Bdd.print_minterm pp_print_int) bdd
+	;
+	let res = Bdd.Decompose.select_cond_bdd cond bdd in
+	if false then printf "select => %i@."
+	  res
+	;
+	res
       )
       ~ite:(fun ~depth ~newcube ~cond ~dthen ~delse ->
 	let res =
@@ -629,9 +650,11 @@ module O = struct
       (man:('a,'b) man) env cond (t:'b t) (bdd:Cudd.Bdd.vt)
       =
     assert(if disjoint then unique else true);
+    if false then printf "Here 1@.";
     let cudd = Cudd.Bdd.manager t.bottom.guard in
     let dtrue = Cudd.Bdd.dtrue cudd in
     let supp = Cudd.Bdd.support_inter (Cudd.Bdd.support bdd) cond.supp in
+    if false then printf "Here 2@.";
     if Cudd.Bdd.is_true supp then begin
       let nlist =
 	List.fold_left
@@ -653,9 +676,13 @@ module O = struct
       }
     end
     else begin
+      if false then printf "Here 3@.";
       let nlist =
 	List.fold_left
 	  (begin fun res elt ->
+	    if false then printf "nlist elt=%a@."
+	      myprint_elt elt
+	    ;
 	    if Cudd.Bdd.is_inter_empty elt.guard bdd then
 	      res
 	    else begin
@@ -699,6 +726,7 @@ module O = struct
 	unique = unique;
       }
     end
+
   let meet_condition man env cond t bdd =
     let res =
       meet_cond_internal
