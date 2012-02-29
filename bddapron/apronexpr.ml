@@ -779,12 +779,7 @@ let rec lin_of_poly man (p:'a Poly.t) : 'a Lin.t = match p with
 let rec lin_of_tree man (x:'a Tree.t) : 'a Lin.t =
   if not (Tree.is_exact x) then raise Exit;
   match x with
-  | Tree.Cst x ->
-      begin match x with
-      | Apron.Coeff.Scalar (Apron.Scalar.Mpqf x) ->
-	  Lin.cst x
-      | _ -> raise Exit
-      end
+  | Tree.Cst x -> Lin.cst (mpqf_of_coeff x)
   | Tree.Var x -> Lin.var x
   | Tree.Binop(op,e1,e2,t,r) ->
       let l1 = lin_of_tree man e1 in
@@ -821,12 +816,7 @@ let rec lin_of_tree man (x:'a Tree.t) : 'a Lin.t =
 let rec poly_of_tree man (x:'a Tree.t) : 'a Poly.t =
   if not (Tree.is_exact x) then raise Exit;
   match x with
-  | Tree.Cst x ->
-      begin match x with
-      | Apron.Coeff.Scalar (Apron.Scalar.Mpqf x) ->
-	  Poly.cst x
-      | _ -> raise Exit
-      end
+  | Tree.Cst x -> Poly.cst (mpqf_of_coeff x)
   | Tree.Var x -> Poly.var x
   | Tree.Binop(op,e1,e2,t,r) ->
       let l1 = poly_of_tree man e1 in
@@ -938,12 +928,7 @@ let zero = Lin(Lin.zero)
 let one = Lin(Lin.one)
 
 let cst (x:Apron.Coeff.t) =
-  match x with
-  | Apron.Coeff.Scalar (Apron.Scalar.Mpqf x) ->
-      Lin(Lin.cst x)
-  | _ ->
-      Tree(Tree.Cst x)
-
+  Lin(Lin.cst (mpqf_of_coeff x))
 
 let to_tree = function
   | Lin l -> tree_of_lin l

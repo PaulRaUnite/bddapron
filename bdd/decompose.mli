@@ -133,8 +133,8 @@ val bdd_support_cond :
 val vdd_support_cond :
   ('a, 'b, 'c, Cudd.Man.v) Cond.t -> 'd Cudd.Vdd.t -> Cudd.Bdd.vt
 val tbdd_tvdd_support_cond :
-  ('a, 'b, 'c, Cudd.Man.v) Cond.t -> Cudd.Bdd.vt array * 'd Cudd.Vdd.t array -> 
+  ('a, 'b, 'c, Cudd.Man.v) Cond.t -> Cudd.Bdd.vt array * 'd Cudd.Vdd.t array ->
   Cudd.Bdd.vt
 val tbdd_tvdd_cofactor :
-  Cudd.Bdd.vt array * 'a Cudd.Vdd.t array -> Cudd.Bdd.vt -> 
+  Cudd.Bdd.vt array * 'a Cudd.Vdd.t array -> Cudd.Bdd.vt ->
   Cudd.Bdd.vt array * 'a Cudd.Vdd.t array
