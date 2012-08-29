@@ -30,7 +30,7 @@ type info = {
 }
 
 let make_info env cond =
-  let cudd = env.Env.cudd in
+  let cudd = env.cudd in
   let nb = Man.get_bddvar_nb cudd in
   let r = {
     minlevelbool = max_int;
@@ -149,10 +149,10 @@ let split_bdd
       res
 
 let cube_split cond cube =
-  let supp = Cudd.Bdd.support cube in
-  let suppbool = Cudd.Bdd.support_diff supp cond.Cond.supp in
-  let cubecond = Cudd.Bdd.exist suppbool cube in
-  let cubebool = Cudd.Bdd.cofactor cube cubecond in
+  let supp = Bdd.support cube in
+  let suppbool = Bdd.support_diff supp cond.supp in
+  let cubecond = Bdd.exist suppbool cube in
+  let cubebool = Bdd.cofactor cube cubecond in
   (cubebool,cubecond)
 
 let decompose_bdd_boolcond
@@ -189,13 +189,13 @@ let vdd_topvar dd = if Vdd.is_cst dd then -1 else Vdd.topvar dd
 let select_cond = bdd_topvar
 
 let select_cond_bdd cond bdd =
-  let inter = Bdd.support_inter cond.Cond.supp (Bdd.support bdd) in
+  let inter = Bdd.support_inter cond.supp (Bdd.support bdd) in
   select_cond inter
 
 let bdd_support_cond cond bdd =
-  Bdd.support_inter cond.Cond.supp (Bdd.support bdd)
+  Bdd.support_inter cond.supp (Bdd.support bdd)
 let vdd_support_cond cond vdd =
-  Bdd.support_inter cond.Cond.supp (Vdd.support vdd)
+  Bdd.support_inter cond.supp (Vdd.support vdd)
 
 let tbdd_tvdd_support_cond cond (tbdd,tvdd) =
  let cudd = cond.Cond.cudd in
@@ -218,15 +218,15 @@ let tbdd_tvdd_cofactor (tbdd,tvdd) c =
   )
 
 let descend
-    ~(cudd:'c Cudd.Man.t)
+    ~(cudd:'c Man.t)
     ~(maxdepth:int)
     ~(nocare:('a -> bool))
-    ~(cube_of_down:('a -> 'c Cudd.Bdd.t))
-    ~(cofactor:('a -> 'c Cudd.Bdd.t -> 'a))
+    ~(cube_of_down:('a -> 'c Bdd.t))
+    ~(cofactor:('a -> 'c Bdd.t -> 'a))
     ~(select:('a -> int))
-    ~(terminal:(depth:int -> newcube:'c Cudd.Bdd.t -> cube:'c Cudd.Bdd.t ->
+    ~(terminal:(depth:int -> newcube:'c Bdd.t -> cube:'c Bdd.t ->
 		 down:'a -> 'b option))
-    ~(ite:(depth:int -> newcube:'c Cudd.Bdd.t ->
+    ~(ite:(depth:int -> newcube:'c Bdd.t ->
 	    cond:int -> dthen:'b option -> delse:'b option -> 'b option))
     ~(down:'a)
     :
@@ -237,9 +237,9 @@ let descend
     else begin
       let newcube = cube_of_down down in
       let (cube,down) =
-	if Cudd.Bdd.is_true newcube
+	if Bdd.is_true newcube
 	then (cube,down)
-	else (Cudd.Bdd.dand cube newcube, cofactor down newcube)
+	else (Bdd.dand cube newcube, cofactor down newcube)
       in
       if nocare down then None
       else begin
@@ -249,19 +249,19 @@ let descend
 	else if depth>=maxdepth then (* End case *)
 	  terminal ~depth ~newcube ~cube ~down
 	else begin (* Recursive case *)
-	  let var = Cudd.Bdd.ithvar cudd cond in
-	  let nvar = Cudd.Bdd.dnot var in
+	  let var = Bdd.ithvar cudd cond in
+	  let nvar = Bdd.dnot var in
 	  let dthen =
-	    map (depth+1) (Cudd.Bdd.dand cube var) (cofactor down var)
+	    map (depth+1) (Bdd.dand cube var) (cofactor down var)
 	  and delse =
-	    map (depth+1) (Cudd.Bdd.dand cube nvar) (cofactor down nvar)
+	    map (depth+1) (Bdd.dand cube nvar) (cofactor down nvar)
 	  in
 	  ite ~depth ~newcube ~cond ~dthen ~delse
 	end
       end
     end
   in
-  map 0 (Cudd.Bdd.dtrue cudd) down
+  map 0 (Bdd.dtrue cudd) down
 
 let decompose_dd_treecondbool
     ?careset
@@ -295,11 +295,11 @@ let decompose_dd_treecondbool
 	  ~cofactor
 	  ~select
 	  ~terminal:(fun ~depth ~newcube ~cube ~down ->
-	    let lidb = Cudd.Bdd.list_of_cube newcube in
+	    let lidb = Bdd.list_of_cube newcube in
 	    Some(lidb,Normalform.Leaf(down))
 	  )
 	  ~ite:(fun ~depth ~newcube ~cond ~dthen ~delse ->
-	    let lidb = Cudd.Bdd.list_of_cube newcube in
+	    let lidb = Bdd.list_of_cube newcube in
 	    match (dthen,delse) with
 	    | (Some t1),(Some t2) -> Some(lidb,Normalform.Ite(cond,t1,t2))
 	    | _ -> failwith ""
@@ -315,11 +315,11 @@ let decompose_dd_treecondbool
 	  ~select:(fun (dd,careset) -> select dd)
 	  ~terminal:(fun ~depth ~newcube ~cube ~down ->
 	    let (dd,careset) = down in
-	    let lidb = Cudd.Bdd.list_of_cube newcube in
+	    let lidb = Bdd.list_of_cube newcube in
 	    Some(lidb,Normalform.Leaf(dd))
 	  )
 	  ~ite:(fun ~depth ~newcube ~cond ~dthen ~delse ->
-	    let lidb = Cudd.Bdd.list_of_cube newcube in
+	    let lidb = Bdd.list_of_cube newcube in
 	    match (dthen,delse) with
 	    | (Some t1),(Some t2) -> Some(lidb,Normalform.Ite(cond,t1,t2))
 	    | (Some t1),None ->
@@ -374,9 +374,9 @@ let decompose_tbdd_tvdd_treecondbool
     ~topvar:(fun (tbdd,tvdd) ->
       let minlevel topvar dd minlevel =
 	let var = topvar dd in
-        if var<0 then
-          minlevel
-        else
+	if var<0 then
+	  minlevel
+	else
 	  let level = Man.level_of_var cudd var in
 	  min minlevel level
       in

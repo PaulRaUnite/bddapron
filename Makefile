@@ -43,15 +43,20 @@ ifneq ($(OCAMLPACK),)
 FILES_TOINSTALL += bdd_ocamldoc.mli bddapron_ocamldoc.mli
 endif
 
+ifneq ($(HAS_TYPEREX),)
+FILES_TOINSTALL += bdd.cmt bddapron.cmt
+endif
+
 #---------------------------------------
 # Rules
 #---------------------------------------
 
 # Global rules
-all: $(FILES_TOINSTALL)
+all: byte opt prof 
 
 byte: bdd.cma bddapron.cma
 opt: bdd.cmxa bddapron.cmxa
+prof: bdd.p.cmxa bddapron.p.cmxa
 
 bddapron.cma: bddapron.cmo 
 	$(OCAMLFIND) ocamlc $(OCAMLFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) \
@@ -125,7 +130,7 @@ clean:
 	/bin/rm -f bddtop bddaprontop *.byte *.opt bdd_ocamldoc.mli bddapron_ocamldoc.mli
 	for i in . bdd bddapron; do \
 		cd $(SRCDIR)/$$i; \
-		/bin/rm -f *.[aoc] *.cm[ioxa] *.cmxa *.annot; \
+		/bin/rm -f *.[aoc] *.cm[tioxa] *.cmti *.cmxa *.annot; \
 	done
 	(cd bddapron; /bin/rm -f yacc.ml yacc.mli lex.ml)
 
