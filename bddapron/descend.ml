@@ -9,6 +9,16 @@ open Cond
 open Bdd.Env
 open Env
 
+let print_bdd env cond fmt bdd
+    =
+  Bdd.Expr0.O.print_bdd
+    ~print_external_idcondb:begin fun fmt idb ->
+      let condition = Bdd.Cond.cond_of_idb cond idb in
+      Cond.print_cond env fmt condition
+    end
+    env fmt bdd
+
+
 (*  ********************************************************************** *)
 (** {3 Arrays of expressions} *)
 (*  ********************************************************************** *)

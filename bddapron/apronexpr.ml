@@ -587,7 +587,7 @@ module Tree = struct
 	       | Mul
 	       | Div
 	       | Mod
-
+	       | Pow
   (** Destination type for rounding *)
   type typ = Apron.Texpr1.typ =
 	     | Real

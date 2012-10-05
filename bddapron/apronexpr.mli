@@ -94,7 +94,7 @@ module Poly :
 module Tree :
   sig
     type unop = Apron.Texpr1.unop = Neg | Cast | Sqrt
-    type binop = Apron.Texpr1.binop = Add | Sub | Mul | Div | Mod
+    type binop = Apron.Texpr1.binop = Add | Sub | Mul | Div | Mod | Pow
     type typ =
       Apron.Texpr1.typ =
       | Real

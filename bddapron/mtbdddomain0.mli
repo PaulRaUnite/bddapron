@@ -127,6 +127,7 @@ module O : sig
   val to_bddapron : ('a,'b) man -> 'b t -> ('a Expr0.Bool.t * 'b Apron.Abstract0.t) list
   val meet : ('a,'b) man -> 'b t -> 'b t -> 'b t
   val join : ('a,'b) man -> 'b t -> 'b t -> 'b t
+  val meet_cube : ('a,'b) man -> 'c -> ('a,'c) Cond.O.t -> 'b t -> 'b t -> 'a Expr0.Bool.t -> 'b t
   val meet_condition : ('a,'b) man -> 'c -> ('a,'c) Cond.O.t -> 'b t -> 'a Expr0.Bool.t -> 'b t
   val assign_lexpr :
     ?relational:bool -> ?nodependency:bool ->
