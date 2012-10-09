@@ -1,5 +1,13 @@
 
 -------------
+BDDAPRON 2.2.0:
+-------------
+
+General:
+  * Adaptation to new version of APRON including policies, and pow operation in tree expressions (texpr).
+
+
+-------------
 BDDAPRON 2.1.0:
 -------------
 
@@ -8,4 +16,3 @@ Distribution:
 
 General:
   * Adaptation to new version mlcuddidl 2.2.0 and mlgmpidl 1.2.0
-

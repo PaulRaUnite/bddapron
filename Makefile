@@ -19,7 +19,7 @@ SITE-LIB-PKG = $(SITE-LIB)/$(PKG-NAME)
 BDD_REQ_PKG = "camllib cudd"
 BDDAPRON_REQ_PKG = "camllib cudd gmp apron"
 
-OCAMLINC = 
+OCAMLINC =
 
 BDDMOD = output normalform reg env int enum cond decompose expr0 expr1 domain0 domain1
 BDDMOD := $(BDDMOD:%=bdd/%)
@@ -52,20 +52,20 @@ endif
 #---------------------------------------
 
 # Global rules
-all: byte opt prof 
+all: byte opt prof
 
 byte: bdd.cma bddapron.cma
 opt: bdd.cmxa bddapron.cmxa
 prof: bdd.p.cmxa bddapron.p.cmxa
 
-bddapron.cma: bddapron.cmo 
+bddapron.cma: bddapron.cmo
 	$(OCAMLFIND) ocamlc $(OCAMLFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) \
 	-a -o $@ $<
-bddapron.cmxa: bddapron.cmx 
+bddapron.cmxa: bddapron.cmx
 	$(OCAMLFIND) ocamlopt $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) \
 	-a -o $@ $<
 	$(RANLIB) bddapron.a
-bddapron.p.cmxa: bddapron.p.cmx 
+bddapron.p.cmxa: bddapron.p.cmx
 	$(OCAMLFIND) ocamlopt $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) \
 	-a -o $@ $<
 	$(RANLIB) bddapron.p.a
@@ -81,7 +81,7 @@ bdd.p.cmxa: bdd.p.cmx
 bddapron.cmo bddapron.cmi: $(BDDAPRONMOD:%=%.cmo)
 	$(OCAMLFIND) ocamlc $(OCAMLFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) -pack -o bddapron.cmo $(BDDAPRONMOD:%=%.cmo)
 
-bddapron.cmx: $(BDDAPRONMOD:%=%.cmx) 
+bddapron.cmx: $(BDDAPRONMOD:%=%.cmx)
 	$(OCAMLFIND) ocamlopt $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDDAPRON_REQ_PKG) -pack -o $@ $(BDDAPRONMOD:%=%.cmx)
 
 bddapron.p.cmx: $(BDDAPRONMOD:%=%.p.cmx)
@@ -99,7 +99,7 @@ bdd.p.cmx: $(BDDMOD:%=%.p.cmx)
 META: Makefile
 	/bin/rm -f META
 	echo "description = \"Logico-numerical domain(s) based on BDDs and APRON\"" >META
-	echo "version = \"2.1.0\"" >>META
+	echo "version = \"2.2.0\"" >>META
 	echo "requires = \"bddapron.bdd\"" >>META
 	echo "package \"bdd\" (" >>META
 	echo "requires = \"camllib cudd\"" >>META
@@ -136,9 +136,9 @@ clean:
 
 # TEX rules
 .PHONY: bddapron.dvi bddapron.pdf bdd.dvi bdd.pdf html html_bdd html_bddapron depend
-.PRECIOUS: %.cma %.cmo %.cmi %.cmx 
-.PRECIOUS: bdd.cma bdd.cmi bdd.cmo bdd.cmx bdd/%.cmi bdd/%.cmo bdd/%.cmx 
-.PRECIOUS: bddapron.cma bddapron.cmi bddapron.cmo bddapron.cmx bddapron/%.cmi bddapron/%.cmo bddapron/%.cmx 
+.PRECIOUS: %.cma %.cmo %.cmi %.cmx
+.PRECIOUS: bdd.cma bdd.cmi bdd.cmo bdd.cmx bdd/%.cmi bdd/%.cmo bdd/%.cmx
+.PRECIOUS: bddapron.cma bddapron.cmi bddapron.cmo bddapron.cmx bddapron/%.cmi bddapron/%.cmo bddapron/%.cmx
 .PRECIOUS: bddapron/yacc.ml bddapron/yacc.mli bddapron/lex.ml
 
 DOCLATEX =\
@@ -175,7 +175,7 @@ bddapron.dvi: bdd_ocamldoc.mli bddapron_ocamldoc.mli bdd.cmi bddapron.cmi
 -I $(shell $(OCAMLFIND) query cudd) \
 -I $(shell $(OCAMLFIND) query apron) \
 -I $(shell $(OCAMLFIND) query camllib) \
--t "BDDAPRON, version 2.1.0, 01/02/11" \
+-t "BDDAPRON, version 2.2.0, 30/08/12" \
 -latextitle 1,part -latextitle 2,chapter -latextitle 3,section -latextitle 4,subsection -latextitle 5,subsubsection -latextitle 6,paragraph -latextitle 7,subparagraph \
 -latex -o ocamldoc.tex tmp/bdd.mli tmp/bddapron.mli
 	$(SED) -e 's/\\documentclass\[11pt\]{article}/\\documentclass[10pt,twoside,a4paper]{book}\\usepackage{ae,fullpage,makeidx,fancyhdr}\\usepackage[ps2pdf]{hyperref}\\pagestyle{fancy}\\setlength{\\headheight}{2.8ex}\\setlength{\\footskip}{5ex}\\renewcommand{\\chaptermark}[1]{\\markboth{\\MakeUppercase{\\chaptername}\\ \\thechapter.\\ #1}{}}\\renewcommand{\\sectionmark}[1]{}\\setcounter{tocdepth}{2}\\setcounter{secnumdepth}{4}\\setlength{\\parindent}{0em}\\setlength{\\parskip}{0.5ex}\\sloppy\\makeindex\\author{Bertrand Jeannet}/' -e 's/\\end{document}/\\appendix\\printindex\\end{document}/' ocamldoc.tex >bddapron.tex
@@ -222,14 +222,14 @@ tmp/bdd.mli tmp/bddapron.mli
 
 homepage: html bddapron.pdf
 	hyperlatex index
-	scp -r index.html html bddapron.pdf presentation-bddapron.pdf Changes avedon:/home/wwwpop-art/people/bjeannet/bjeannet-forge/bddapron
-	ssh avedon chmod -R ugoa+rx /home/wwwpop-art/people/bjeannet/bjeannet-forge/bddapron
+	scp -r index.html html bddapron.pdf presentation-bddapron.pdf Changes salgado:/home/wwwpop-art/people/bjeannet/bjeannet-forge/bddapron
+	ssh salgado chmod -R ugoa+rx /home/wwwpop-art/people/bjeannet/bjeannet-forge/bddapron
 
 #---------------------------------------
 # Test
 #---------------------------------------
 
-example1.byte: bdd/example1.ml 
+example1.byte: bdd/example1.ml
 	$(OCAMLFIND) ocamlc -g $(OCAMLFLAGS) $(OCAMLINC) -o $@ $< -package bddapron.bdd -linkpkg
 
 example2.byte: bddapron/example2.ml bddapron.cma
@@ -239,7 +239,7 @@ test_random.byte: bddapron/test_random.ml bddapron.cma
 	$(OCAMLFIND) ocamlc -g $(OCAMLFLAGS) $(OCAMLINC) -o $@ $< -package "bddapron.bddapron apron.boxMPQ apron.polkaMPQ" -linkpkg
 
 example1.opt: bdd/example1.ml bdd.cmxa
-	$(OCAMLFIND) ocamlopt -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ $< -package bddapron.bdd -linkpkg 
+	$(OCAMLFIND) ocamlopt -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ $< -package bddapron.bdd -linkpkg
 
 example2.opt: bddapron/example2.ml bddapron.cmxa
 	$(OCAMLFIND) ocamlopt -verbose -g $(OCAMLOPTFLAGS) $(OCAMLINC) -o $@ $< -package "bddapron.bddapron apron.boxMPQ apron.polkaMPQ" -linkpkg
@@ -294,12 +294,12 @@ bddapron/%.ml bddapron/%.mli: bddapron/%.mly
 	$(OCAMLYACC) $^
 
 depend: bddapron/yacc.ml bddapron/yacc.mli bddapron/lex.ml
-	$(OCAMLFIND) ocamldep $(OCAMLINC) -I bdd $(BDDMOD:%=%.mli) $(BDDMOD:%=%.ml) >Makefile.depend
-	$(OCAMLFIND) ocamldep $(OCAMLINC) -I bddapron $(BDDAPRONMOD:%=%.mli) $(BDDAPRONMOD:%=%.ml) >>Makefile.depend
+	$(OCAMLDEP) $(OCAMLINC) -I bdd $(BDDMOD:%=%.mli) $(BDDMOD:%=%.ml) >Makefile.depend
+	$(OCAMLDEP) $(OCAMLINC) -I bddapron $(BDDAPRONMOD:%=%.mli) $(BDDAPRONMOD:%=%.ml) >>Makefile.depend
 
 Makefile.depend: bddapron/yacc.ml bddapron/yacc.mli bddapron/lex.ml
-	$(OCAMLFIND) ocamldep $(OCAMLINC) -I bdd $(BDDMOD:%=%.mli) $(BDDMOD:%=%.ml) >Makefile.depend
-	$(OCAMLFIND) ocamldep $(OCAMLINC) -I bddapron $(BDDAPRONMOD:%=%.mli) $(BDDAPRONMOD:%=%.ml) >>Makefile.depend
+	$(OCAMLDEP) $(OCAMLINC) -I bdd $(BDDMOD:%=%.mli) $(BDDMOD:%=%.ml) >Makefile.depend
+	$(OCAMLDEP) $(OCAMLINC) -I bddapron $(BDDAPRONMOD:%=%.mli) $(BDDAPRONMOD:%=%.ml) >>Makefile.depend
 
 .PHONY: tags TAGS
 tags: TAGS
