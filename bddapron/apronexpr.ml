@@ -781,6 +781,9 @@ let rec lin_of_tree man (x:'a Tree.t) : 'a Lin.t =
   match x with
   | Tree.Cst x -> Lin.cst (mpqf_of_coeff x)
   | Tree.Var x -> Lin.var x
+  | Tree.Unop(Tree.Neg,e,t,r) ->
+      let l = lin_of_tree man e in
+      Lin.negate l
   | Tree.Binop(op,e1,e2,t,r) ->
       let l1 = lin_of_tree man e1 in
       let l2 = lin_of_tree man e2 in
@@ -818,6 +821,9 @@ let rec poly_of_tree man (x:'a Tree.t) : 'a Poly.t =
   match x with
   | Tree.Cst x -> Poly.cst (mpqf_of_coeff x)
   | Tree.Var x -> Poly.var x
+  | Tree.Unop(Tree.Neg,e,t,r) ->
+      let l = poly_of_tree man e in
+      Poly.negate l
   | Tree.Binop(op,e1,e2,t,r) ->
       let l1 = poly_of_tree man e1 in
       let l2 = poly_of_tree man e2 in
