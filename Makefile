@@ -37,11 +37,8 @@ MLMODULES = $(BDDMOD) $(BDDAPRONMOD)
 FILES_TOINSTALL = META \
 	bdd.cmi bdd.cma bddapron.cmi bddapron.cma \
 	bdd.cmx bdd.cmxa bdd.a bddapron.cmx bddapron.cmxa bddapron.a \
-	bdd.p.cmx bdd.p.cmxa bdd.p.a bddapron.p.cmx bddapron.p.cmxa bddapron.p.a
-
-ifneq ($(OCAMLPACK),)
-FILES_TOINSTALL += bdd_ocamldoc.mli bddapron_ocamldoc.mli
-endif
+	bdd.p.cmx bdd.p.cmxa bdd.p.a bddapron.p.cmx bddapron.p.cmxa bddapron.p.a \
+	bdd_ocamldoc.mli bddapron_ocamldoc.mli
 
 ifneq ($(HAS_TYPEREX),)
 FILES_TOINSTALL += bdd.cmt bddapron.cmt
@@ -96,24 +93,6 @@ bdd.cmx: $(BDDMOD:%=%.cmx)
 bdd.p.cmx: $(BDDMOD:%=%.p.cmx)
 	$(OCAMLFIND) ocamlopt -p $(OCAMLOPTFLAGS) $(OCAMLINC) -package $(BDD_REQ_PKG) -pack -o $@ $^
 
-META: Makefile
-	/bin/rm -f META
-	echo "description = \"Logico-numerical domain(s) based on BDDs and APRON\"" >META
-	echo "version = \"2.2.0\"" >>META
-	echo "requires = \"bddapron.bdd\"" >>META
-	echo "package \"bdd\" (" >>META
-	echo "requires = \"camllib cudd\"" >>META
-	echo "archive(byte) = \"bdd.cma\"" >>META
-	echo "archive(native) = \"bdd.cmxa\"" >>META
-	echo "archive(native,gprof) = \"bdd.p.cmxa\"" >>META
-	echo ")" >>META
-	echo "package \"bddapron\" (" >>META
-	echo "requires = \"bddapron.bdd gmp apron\"" >>META
-	echo "archive(byte) = \"bddapron.cma\"" >>META
-	echo "archive(native) = \"bddapron.cmxa\"" >>META
-	echo "archive(native,gprof) = \"bddapron.p.cmxa\"" >>META
-	echo ")" >>META
-
 install: $(FILES_TOINSTALL)
 	$(OCAMLFIND) remove $(PKG-NAME)
 	$(OCAMLFIND) install $(PKG-NAME) $^
@@ -125,9 +104,9 @@ distclean: clean
 	/bin/rm -f Makefile.depend TAGS
 
 clean:
-	/bin/rm -f *.log *.aux *.bbl *.blg *.toc **.idx *.ilg *.ind ocamldoc*.tex ocamldoc.sty *.dvi *.pdf *.out bddapron.tex
-	/bin/rm -fr tmp html index.html
-	/bin/rm -f bddtop bddaprontop *.byte *.opt bdd_ocamldoc.mli bddapron_ocamldoc.mli
+	/bin/rm -f *.log *.aux *.bbl *.blg *.toc **.idx *.ilg *.ind ocamldoc*.tex ocamldoc.sty *.dvi *.pdf *.out
+	/bin/rm -fr tmp _build html index.html
+	/bin/rm -f bddtop bddaprontop *.byte *.opt bdd_ocamldoc.* bddapron_ocamldoc.* bddapron.dot
 	for i in . bdd bddapron; do \
 		cd $(SRCDIR)/$$i; \
 		/bin/rm -f *.[aoc] *.cm[tioxa] *.cmti *.cmxa *.annot; \
@@ -158,10 +137,10 @@ BDDAPRONDOCOCAMLINC = $(BDDDOCOCAMLINC) \
 -I $(shell $(OCAMLFIND) query gmp) \
 -I $(shell $(OCAMLFIND) query apron)
 
-bdd_ocamldoc.mli: bdd/introduction.odoc $(BDDMOD:%=%.mli)
-	(cd bdd; $(OCAMLPACK) -o ../bdd_ocamldoc -title "Finite-type expressions/properties on top of CUDD" -intro introduction.odoc -intf $(BDDMOD:bdd/%=%))
-bddapron_ocamldoc.mli: bddapron/introduction.odoc $(BDDAPRONMOD:%=%.mli)
-	(cd bddapron; $(OCAMLPACK) -o ../bddapron_ocamldoc -title "Finite \& numerical expressions/properties on top of CUDD \& APRON" -intro introduction.odoc -intf $(BDDAPRONMOD:bddapron/%=%))
+bdd_ocamldoc.mli: bdd.mlpacki $(BDDMOD:%=%.mli)
+	sh ocamlpack -o bdd_ocamldoc.mli -intro bdd.mlpacki -level 2 $(BDDMOD:%=%.mli)
+bddapron_ocamldoc.mli: bddapron.mlpacki $(BDDAPRONMOD:%=%.mli)
+	sh ocamlpack -o bddapron_ocamldoc.mli -intro bddapron.mlpacki -level 2 $(BDDAPRONMOD:%=%.mli)
 
 bddapron.pdf: bddapron.dvi
 	$(DVIPDF) bddapron.dvi bddapron.pdf
@@ -177,21 +156,20 @@ bddapron.dvi: bdd_ocamldoc.mli bddapron_ocamldoc.mli bdd.cmi bddapron.cmi
 -I $(shell $(OCAMLFIND) query camllib) \
 -t "BDDAPRON, version 2.2.0, 30/08/12" \
 -latextitle 1,part -latextitle 2,chapter -latextitle 3,section -latextitle 4,subsection -latextitle 5,subsubsection -latextitle 6,paragraph -latextitle 7,subparagraph \
--latex -o ocamldoc.tex tmp/bdd.mli tmp/bddapron.mli
-	$(SED) -e 's/\\documentclass\[11pt\]{article}/\\documentclass[10pt,twoside,a4paper]{book}\\usepackage{ae,fullpage,makeidx,fancyhdr}\\usepackage[ps2pdf]{hyperref}\\pagestyle{fancy}\\setlength{\\headheight}{2.8ex}\\setlength{\\footskip}{5ex}\\renewcommand{\\chaptermark}[1]{\\markboth{\\MakeUppercase{\\chaptername}\\ \\thechapter.\\ #1}{}}\\renewcommand{\\sectionmark}[1]{}\\setcounter{tocdepth}{2}\\setcounter{secnumdepth}{4}\\setlength{\\parindent}{0em}\\setlength{\\parskip}{0.5ex}\\sloppy\\makeindex\\author{Bertrand Jeannet}/' -e 's/\\end{document}/\\appendix\\printindex\\end{document}/' ocamldoc.tex >bddapron.tex
+-noheader -notrailer -latex -o bddapron_ocamldoc.tex tmp/bdd.mli tmp/bddapron.mli
 	$(LATEX) bddapron
 	$(MAKEINDEX) bddapron
 	$(LATEX) bddapron
 	$(LATEX) bddapron
 
-html: bdd_ocamldoc.mli bddapron_ocamldoc.mli bdd.cmi bddapron.cmi bddapron.odoc
+html: bdd_ocamldoc.mli bddapron_ocamldoc.mli bdd.cmi bddapron.cmi bddapron.odoci
 	mkdir -p html
 	mkdir -p tmp
 	cp bdd_ocamldoc.mli tmp/bdd.mli
 	cp bddapron_ocamldoc.mli tmp/bddapron.mli
 	cp $(shell $(OCAMLFIND) query cudd)/cudd_ocamldoc.mli tmp/cudd.mli
 	cp $(shell $(OCAMLFIND) query apron)/apron_ocamldoc.mli tmp/apron.mli
-	$(OCAMLDOC) -html -d html -colorize-code -intro bddapron.odoc \
+	$(OCAMLDOC) -html -d html -colorize-code -intro bddapron.odoci \
 -I $(shell $(OCAMLFIND) query gmp) \
 -I $(shell $(OCAMLFIND) query cudd) \
 -I $(shell $(OCAMLFIND) query apron) \
@@ -202,7 +180,7 @@ $(patsubst %,$(shell $(OCAMLFIND) query apron)/%, box.mli oct.mli polka.mli ppl.
 $(shell $(OCAMLFIND) query camllib)/*.mli \
 tmp/bdd.mli tmp/bddapron.mli
 
-dot: bdd_ocamldoc.mli bddapron_ocamldoc.mli bdd.cmi bddapron.cmi bddapron.odoc
+dot: bdd_ocamldoc.mli bddapron_ocamldoc.mli bdd.cmi bddapron.cmi bddapron.odoci
 	mkdir -p html
 	mkdir -p tmp
 	cp bdd_ocamldoc.mli tmp/bdd.mli

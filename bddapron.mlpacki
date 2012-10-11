@@ -1,5 +1,6 @@
-{2 Introduction}
+(** Finite & numerical expressions/properties on top of CUDD & APRON *)
 
+(**
 Expressions and abstract domains combining finite-type and numerical types.
 - {!Env}: environment defining finite-type variables and user-defined
   enumerated types, and mapping them to BDDs indices;
@@ -11,7 +12,7 @@ Expressions and abstract domains combining finite-type and numerical types.
 - {!Expr1}, {!Domain1}, {!Bdddomain1}, {!Mtbdddomain1}: incorporate normalized environments;
 - {!Expr2}: incorporates in addition normalized condition environment
 - {!Syntax}: Abstract Syntax Tree for expressions
-- {!Parser}: converting strings to expressions 
+- {!Parser}: converting strings to expressions
 
 {!Bddapron} extends {!Bdd} (manipulation of finite-type formula using BDDs)
 and {!Apron} (numerical abstract domain library). It enables formula of
@@ -20,3 +21,7 @@ numerical type, and it allows decisions on numerical constraints in formula.
 It can be seen as an extension of the
 {{:http://apron.cri.ensmp.fr/library/}APRON} abstract domain for dealing with
 Boolean and finite-type variables, in addition to numerical variables.
+
+*)
+
+(* *)

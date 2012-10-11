@@ -2,153 +2,66 @@
 
 # command line (very primitive...)
 if test $1 != "-o"; then
-    echo "ocamlpack: usage: ocamlpack -o outputmodule -title <str> (-intro file.odoc) (-intf|-impl) module1 module2 ..."
+    echo "ocamlpack: usage: ocamlpack -o file.ml* (-intro file.odoc) (-level <n>) file1.ml* file2.ml* ..."
     exit -1
 fi
 shift
 out=$1
 shift
-if test $1 != "-title"; then
-    echo "ocamlpack: usage: ocamlpack -o outputmodule -title <str>  (-intro file.odoc) (-intf|-impl) module1 module2 ..."
-    exit -1
-fi
-shift
-outtitle=$1
-shift
-outintro=0
+introfile=0
 if test $1 == "-intro"; then
     shift
-    outintro=$1
+    introfile=$1
     shift
 fi
-intf=1
-impl=1
-if test $1 == "-intf"; then
-    impl=0
+level=-1
+if test $1 == "-level"; then
+    shift
+    level=$1
     shift
 fi
-if test $1 == "-impl"; then
-    intf=0
-    shift
+suffix=`echo "$out" | sed -e 's/.*[.]\(ml\|mli\)$/\1/g'`
+if test $suffix != "ml" && test $suffix != "mli"; then
+    echo "suffix of output file should be .ml or .mli";
+    exit -1
 fi
 
 # prepare output
-
-if test $intf == 1; then
-    /bin/rm -f $out.mli
-    echo "(** $outtitle *)">$out.mli
-    if test $outintro != 0; then
-        echo "" >>$out.mli
-        echo "(**" >>$out.mli
-        cat $outintro >>$out.mli
-        echo "*)" >>$out.mli
-    fi
+rm -f $out
+if test $introfile != 0; then
+    cat $introfile >>$out
 fi
-if test $impl == 1; then
-    /bin/rm -f $out.ml
-    echo "(** $outtitle *)">$out.ml
-fi
-
+echo "" >>$out
 # iterate on input module,
-for i in $*; do
-    name=$i
-    if test $intf == 1; then
-# 2.A Look for the first (** *) comment, and output it to out.mli
-	/usr/bin/awk -v name=$name '
-BEGIN {
-  start=1
-  nb = split(name, dirname, "/")
-  name = dirname[nb]
-  hd = toupper(substr(name,1,1))
-  tl = substr(name,2,length(name)-1)
-}
-{
-  if (start==1) {
-    match($0, /\(\*\*([ ]+)([^*]*)([ ]+)\*\)/ )
-    if (RLENGTH>0){
-      start=0
-      title=substr($0,RSTART+4,RLENGTH-7)
-      print "\n(** {2 Module [" hd tl "]:",title "} *)\n"
-      print "module",hd tl,": sig"
-    }
-  }
-}
-END {
-  if (start==1) {
-    print "\n(** {2 Module [" hd tl "]} *)\n"
-    print "module",hd tl,": sig"
-  }
-}
-'	$i.mli >>$out.mli
-# 2.B Output the rest of name.mli to out.mli
-	/usr/bin/awk -v name=$name '
-BEGIN {
-  start=1
-}
-{
-  if (start==1) {
-    match($0, /\(\*\*([ ]+)([^*]*)([ ]+)\*\)/ )
-    if (RLENGTH>0){
-      start=0
-    } else {
-      print $0
-    }
-  }
-  else
-    print " ",$0
-}
-END { print "end\n" }
-'	$i.mli >>$out.mli
+for file in $*; do
+    echo "" >>$out
+    suffixf=`echo "$file" | sed -e 's/.*[.]\(ml\|mli\)$/\1/g'`
+    if test $suffix != $suffixf; then
+	echo "ocamlpack: suffix .$suffix expected for file $file"
+	exit -1
     fi
-    if test $impl == 1; then
-# 1.A Look for the first (** *) comment, and output it to out.ml
-# (see ocamldoc convention)
-	/usr/bin/awk -v name=$name '
-BEGIN {
-  start=1
-  # isolate module name from path/modulename
-  nb = split(name, dirname, "/")
-  name = dirname[nb]
-  # Capitalize the module name
-  hd = toupper(substr(name,1,1))
-  tl = substr(name,2,length(name)-1)
-}
-# Look for the first (** *) comment, and output it
-{
-  if (start==1) {
-    match($0, /\(\*\*([ ]+)([^*]*)([ ]+)\*\)/ )
-    if (RLENGTH>0){
-      start=0
-      title=substr($0,RSTART+4,RLENGTH-7)
-      print "\n(** {2 Module [" hd tl "]:",title "} *)\n"
-      print "module",hd tl,"= struct"
-    }
-  }
-}
-END {
-  if (start==1) {
-    print "\n(** {2 Module [" hd tl "]} *)\n"
-    print "module",hd tl,"= struct"
-  }
-}
-'	$i.ml >>$out.ml
-# 1.B Output the rest of name.ml to out.ml
-	/usr/bin/awk -v name=$name '
-BEGIN {
-  start=1
-}
-{
-  if (start==1) {
-    match($0, /\(\*\*([ ]+)([^*]*)([ ]+)\*\)/ )
-    if (RLENGTH>0)
-      start=0
+    module=`echo $file | sed -e 's/\([^/]\+[/]\)*\([^/.]*\)[.]\(ml\|mli\)$/\u\2/g'`
+    firstline=`head -n 1 $file`
+    iscomment=`echo $firstline | sed -e 's/^\(([*][*]\).*/\1/g;s/^\([^(].*\)$/0/g'`
+#    echo "iscomment=$iscomment";
+    if test $iscomment == '(**'; then
+	if test $level != -1; then
+	    content=`echo $firstline | sed -e 's/.*([*][*]\(.*\)[*]).*/\1/g'`
+	    echo "(** {$level Module [$module]:$content} *)" >>$out;
+	    echo "" >>$out
+	    echo $firstline >>$out;
+	else
+	    echo $firstline >>$out;
+	fi;
+    fi
+    if test $suffix = "ml"; then
+	echo "module $module = struct" >>$out;
     else
-      print $0
-  }
-  else
-    print " ",$0
-}
-END { print "end\n" }
-'	$i.ml >>$out.ml
+	echo "module $module : sig" >>$out;
     fi
+    if test $iscomment != "(**"; then
+	echo $firstline >>$out;
+    fi
+    tail -n +2 $file >>$out
+    echo "end" >>$out;
 done

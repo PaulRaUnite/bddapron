@@ -137,9 +137,9 @@ let rec map_tree f g (lidb,dec) =
 (*  ********************************************************************** *)
 
 let print_conjunction
-    ?(firstconj=("@[<hov>":(unit,Format.formatter,unit) format))
-    ?(sepconj=("@ and ":(unit,Format.formatter,unit) format))
-    ?(lastconj=("@]":(unit,Format.formatter,unit) format))
+    ?(firstconj=("@[<hov>":(unit,formatter,unit) format))
+    ?(sepconj=("@ and ":(unit,formatter,unit) format))
+    ?(lastconj=("@]":(unit,formatter,unit) format))
     print fmt
     =
   function
@@ -148,9 +148,9 @@ let print_conjunction
     | Conjunction(l) ->
 	Print.list ~first:firstconj ~sep:sepconj ~last:lastconj print fmt l
 let print_disjunction
-    ?(firstdisj=("@[<hov>":(unit,Format.formatter,unit) format))
-    ?(sepdisj=("@ or ":(unit,Format.formatter,unit) format))
-    ?(lastdisj=("@]":(unit,Format.formatter,unit) format))
+    ?(firstdisj=("@[<hov>":(unit,formatter,unit) format))
+    ?(sepdisj=("@ or ":(unit,formatter,unit) format))
+    ?(lastdisj=("@]":(unit,formatter,unit) format))
     print fmt
     =
   function
@@ -160,7 +160,7 @@ let print_disjunction
 	Print.list ~first:firstdisj ~sep:sepdisj ~last:lastdisj print fmt l
 
 let print_cnf
-    ?(firstconj=("@[<hv>":(unit,Format.formatter,unit) format))
+    ?(firstconj=("@[<hv>":(unit,formatter,unit) format))
     ?sepconj
     ?lastconj
     ?firstdisj
@@ -174,7 +174,7 @@ let print_cnf
     fmt conjunction
 
 let print_dnf
-    ?(firstdisj=("@[<hv>":(unit,Format.formatter,unit) format))
+    ?(firstdisj=("@[<hv>":(unit,formatter,unit) format))
     ?sepdisj
     ?lastdisj
     ?firstconj

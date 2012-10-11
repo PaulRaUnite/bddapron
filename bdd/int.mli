@@ -97,6 +97,7 @@ val guardints: 'a Cudd.Man.t -> 'a t -> ('a Cudd.Bdd.t * int) list
   (** Return the list [g -> n] represented by the BDD register. *)
 
 (** {3 Evaluation} *)
+
 val cofactor : 'a t -> 'a Cudd.Bdd.t -> 'a t
 val restrict : 'a t -> 'a Cudd.Bdd.t -> 'a t
 val tdrestrict : 'a t -> 'a Cudd.Bdd.t -> 'a t

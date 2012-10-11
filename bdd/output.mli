@@ -26,8 +26,8 @@ type 'a bdd = {
 }
 
 (** MTBDD node *)
-type 'a vnode = 
-  | VIte of int * int * int 
+type 'a vnode =
+  | VIte of int * int * int
       (** VIte(idcond,idnodeThen,idnodeElse) *)
   | VCst of 'a
       (** Leaf *)
@@ -45,8 +45,8 @@ type 'a vdd = {
 }
 
 (** ADD node *)
-type anode = 
-  | AIte of int * int * int 
+type anode =
+  | AIte of int * int * int
       (** AIte(idcond,idnodeThen,idnodeElse) *)
   | ACst of float
 
@@ -62,6 +62,7 @@ type add = {
 (*  ********************************************************************** *)
 (** {3 Functions} *)
 (*  ********************************************************************** *)
+
 val make_bdd : cond:int PSette.t ref -> 'a bdd
       (** Create a database for printing BDDs
 
@@ -72,19 +73,19 @@ val signid_of_bdd : 'a bdd -> 'a Cudd.Bdd.t -> bool * int
       (** Output the BDD and return its identifier *)
 
 val make_vdd :
-  compare:'a Cudd.PWeakke.compare -> 
-  cond:int PSette.t ref -> 
+  compare:'a Cudd.PWeakke.compare ->
+  cond:int PSette.t ref ->
   'a vdd
 val make_mtbdd :
-  table:'a Cudd.Mtbdd.table -> 
-  cond:int PSette.t ref -> 
+  table:'a Cudd.Mtbdd.table ->
+  cond:int PSette.t ref ->
   'a Cudd.Mtbdd.unique vdd
 val make_mtbddc :
-  table:'a Cudd.Mtbddc.table -> 
-  cond:int PSette.t ref -> 
+  table:'a Cudd.Mtbddc.table ->
+  cond:int PSette.t ref ->
   'a Cudd.Mtbddc.unique vdd
       (** Create a database for printing MTBDDs
-	  
+
 	  [cond] allows to share the same set of conditions between
 	  BDDs and MTBDDs. *)
 

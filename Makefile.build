@@ -1,0 +1,54 @@
+# -*- mode: makefile -*-
+
+include Makefile.build.config
+
+#---------------------------------------
+# Directories
+#---------------------------------------
+
+SRCDIR = $(shell pwd)
+#
+# Installation directory
+#
+PKG-NAME = bddapron
+
+#---------------------------------------
+# Files
+#---------------------------------------
+
+MLMODULES = $(shell cat bddapron.mllib)
+
+FILES_TOINSTALL = \
+	$(MLMODULES:%=%.ml) $(MLMODULES:%=%.mli) \
+	$(MLMODULES:%=%.cmi) bddapron.cma \
+	$(MLMODULES:%=%.cmx) bddapron.cmxa bddapron.a \
+	$(MLMODULES:%=%.p.cmx) bddapron.p.cmxa bddapron.p.a
+
+all:
+	$(OCAMLBUILD) all.otarget
+doc:
+	$(OCAMLBUILD) doc.otarget
+
+install: $(FILES_TOINSTALL)
+	$(OCAMLFIND) remove $(PKG-NAME)
+	$(OCAMLFIND) install $(PKG-NAME) META $(FILES_TOINSTALL:%=_build/%)
+
+uninstall:
+	$(OCAMLFIND) remove $(PKG-NAME)
+
+clean:
+	$(OCAMLBUILD) -clean
+
+distclean: clean
+	/bin/rm -f TAGS Makefile.depend myocamlbuild
+
+homepage: doc
+	hyperlatex index
+	scp -r index.html _build/bddapron.docdir _build/bddapron.pdf \
+		avedon:/home/wwwpop-art/people/bjeannet/bjeannet-forge/bddapron
+	ssh avedon chmod -R ugoa+rx /home/wwwpop-art/people/bjeannet/bjeannet-forge/bddapron
+
+.PHONY: TAGS
+tags: TAGS
+TAGS: $(MLMODULES:%=%.mli) $(MLMODULES:%=%.ml)
+	ocamltags $^

@@ -26,6 +26,7 @@ type vt = Cudd.Man.v t
 (*  *********************************************************************** *)
 (** {3 Logical operations} *)
 (*  *********************************************************************** *)
+
 val lnot: 'a t -> 'a t
   (** Logical negation (for all bits). *)
 val shift_left: 'a Cudd.Man.t -> int -> 'a t -> 'a t * 'a Cudd.Bdd.t

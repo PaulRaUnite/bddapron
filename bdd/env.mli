@@ -79,6 +79,7 @@ type ('a,'b,'c,'d,'e) t0 = {
 }
 
 (** {4 Opened signature} *)
+
 module O : sig
   type ('a,'b,'c,'d,'e) t = ('a,'b,'c,'d,'e) t0
   constraint 'b = [>'a typ]
@@ -103,6 +104,7 @@ type ('a,'d) t = ('a,'a typ,'a typdef,'d,unit) O.t
 (*  ********************************************************************** *)
 (** {3 Printing} *)
 (*  ********************************************************************** *)
+
 val print_typ :
   (Format.formatter -> 'a -> unit) ->
   Format.formatter -> [> 'a typ] -> unit

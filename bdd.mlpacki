@@ -1,12 +1,12 @@
-{2 Introduction}
+(** Finite-type expressions/properties on top of CUDD *)
 
+(**
 Higher-level interface relying on {!Cudd} interface for manipulating
 BDDs/MTBDDs:
 - {!Reg}: manipulating arrays of BDDs as CPU register, including
   most ALU (Arithmetic and Logical Unit) operations;
 - {!Int}: signed/unsigned integers encoded as arrays of BDDs;
 - {!Enum}: enumerated types, with management of labels and types (requires {!Env});
-- {!Output}: outputing BDDs/MTBDDs (low-level)
 
 Finite-type expressions and properties:
 - {!Env}: environment defining finite-type variables and user-defined enumerated types, and mapping them to BDDs indices;
@@ -20,3 +20,7 @@ Exploits
 (ultimately {{:http://vlsi.colorado.edu/~fabio/CUDD/cuddIntro.html}CUDD}) and
 {{:http://pop-art.inrialpes.fr/~bjeannet/bjeannet-forge/camllib/html/index.html}Camllib}
 libraries.
+
+*)
+
+(* *)
