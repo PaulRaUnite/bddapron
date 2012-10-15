@@ -354,7 +354,9 @@ module Poly = struct
   let print man fmt expr =
     let first = ref true in
     fprintf fmt "@[";
-    if expr<>[] then begin
+    if expr=[] then
+      pp_print_string fmt "0"
+    else begin
       List.iter
 	(begin fun (coeff,mon) ->
 	  let sgn = Mpqf.sgn coeff in
