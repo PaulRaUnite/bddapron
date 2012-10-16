@@ -354,31 +354,26 @@ module Poly = struct
   let print man fmt expr =
     let first = ref true in
     fprintf fmt "@[";
-    if expr=[] then
-      pp_print_string fmt "0"
-    else begin
-      List.iter
-	(begin fun (coeff,mon) ->
-	  let sgn = Mpqf.sgn coeff in
-	  if sgn <> 0 then begin
-	    if sgn>0 then begin
-	      if not !first then Format.pp_print_string fmt "+";
-	    end;
-	    if not !first then Format.fprintf fmt "@,";
-	    if Mpqf.cmp_int coeff (-1) = 0 then
-	      Format.pp_print_string fmt "-"
-	    else if Mpqf.cmp_int coeff 1  <> 0 then
-	      Mpqf.print fmt coeff
-	    ;
-	    print_monomial man fmt mon;
-	    first := false;
-	  end
-	end)
-	expr
-    end
-    else
-      pp_print_string fmt "0"
+    List.iter
+      (begin fun (coeff,mon) ->
+	let sgn = Mpqf.sgn coeff in
+	if sgn <> 0 then begin
+	  if sgn>0 then begin
+	    if not !first then Format.pp_print_string fmt "+";
+	  end;
+	  if not !first then Format.fprintf fmt "@,";
+	  if Mpqf.cmp_int coeff (-1) = 0 then
+	    Format.pp_print_string fmt "-"
+	  else if Mpqf.cmp_int coeff 1  <> 0 then
+	    Mpqf.print fmt coeff
+	  ;
+	  print_monomial man fmt mon;
+	  first := false;
+	end
+       end)
+      expr
     ;
+    if !first then pp_print_string fmt "0";
     fprintf fmt "@]";
     ()
 
@@ -949,7 +944,7 @@ let add man ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
       if typ<>Apron.Texpr1.Real then raise Exit;
       match (e1,e2) with
       | (Lin e1, Lin e2) -> Lin(Lin.add man e1 e2)
-      | (Poly e1, Poly e2) -> Poly(Poly.add man e1 e2)
+      | (Poly e1, Poly e2) -> normalize man (Poly(Poly.add man e1 e2))
       | _ -> raise Exit
     end
   with Exit ->
@@ -961,7 +956,7 @@ let sub man ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
       if typ<>Apron.Texpr1.Real then raise Exit;
       match (e1,e2) with
       | (Lin e1, Lin e2) -> Lin(Lin.sub man e1 e2)
-      | (Poly e1, Poly e2) -> Poly(Poly.sub man e1 e2)
+      | (Poly e1, Poly e2) -> normalize man (Poly(Poly.sub man e1 e2))
       | _ -> raise Exit
     end
   with Exit ->
@@ -989,7 +984,7 @@ let div man ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
     if typ<>Apron.Texpr1.Real then raise Exit;
     match (e1,e2) with
     | (Lin e1, Lin e2) when e2.Lin.lterm=[] -> Lin(Lin.scale (Mpqf.inv e2.Lin.cst) e1)
-    | (Poly e1, Poly e2) -> Poly(Poly.div man e1 e2)
+    | (Poly e1, Poly e2) -> normalize man (Poly(Poly.div man e1 e2))
     | _ -> raise Exit
   end
   with Exit ->
@@ -1015,8 +1010,8 @@ let sqrt ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e =
 let substitute_by_var man e (substitution:('a,'a) PMappe.t) =
   match e with
   | Lin l -> Lin(Lin.substitute_by_var man l substitution)
-  | Poly p -> Poly(Poly.substitute_by_var man p substitution)
-  | Tree t -> Tree(Tree.substitute_by_var t substitution)
+  | Poly p -> normalize man (Poly(Poly.substitute_by_var man p substitution))
+  | Tree t -> normalize man (Tree(Tree.substitute_by_var t substitution))
 
 let support man = function
   | Lin l -> Lin.support man l
