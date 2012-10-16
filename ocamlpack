@@ -1,4 +1,5 @@
-#/bin/sh
+#!/bin/sh
+# -*- mode: sh -*-
 
 # command line (very primitive...)
 if test $1 != "-o"; then
@@ -9,17 +10,11 @@ shift
 out=$1
 shift
 introfile=0
-if test $1 == "-intro"; then
-    shift
-    introfile=$1
-    shift
-fi
+if test $1 == "-intro"; then { shift; introfile=$1; shift; }; fi
 level=-1
-if test $1 == "-level"; then
-    shift
-    level=$1
-    shift
-fi
+if test $1 == "-level"; then { shift; level=$1; shift; }; fi
+
+# extract suffix of output file
 suffix=`echo "$out" | sed -e 's/.*[.]\(ml\|mli\)$/\1/g'`
 if test $suffix != "ml" && test $suffix != "mli"; then
     echo "suffix of output file should be .ml or .mli";
@@ -32,13 +27,13 @@ if test $introfile != 0; then
     cat $introfile >>$out
 fi
 echo "" >>$out
+
 # iterate on input module,
 for file in $*; do
     echo "" >>$out
     suffixf=`echo "$file" | sed -e 's/.*[.]\(ml\|mli\)$/\1/g'`
     if test $suffix != $suffixf; then
-	echo "ocamlpack: suffix .$suffix expected for file $file"
-	exit -1
+	{ echo "ocamlpack: suffix .$suffix expected for file $file"; exit -1; };
     fi
     module=`echo $file | sed -e 's/\([^/]\+[/]\)*\([^/.]*\)[.]\(ml\|mli\)$/\u\2/g'`
     firstline=`head -n 1 $file`
@@ -47,9 +42,8 @@ for file in $*; do
     if test $iscomment == '(**'; then
 	if test $level != -1; then
 	    content=`echo $firstline | sed -e 's/.*([*][*]\(.*\)[*]).*/\1/g'`
-	    echo "(** {$level Module [$module]:$content} *)" >>$out;
-	    echo "" >>$out
-	    echo $firstline >>$out;
+	    echo '(** {% \\chapter{Module {\\tt' "$module}: $content} %} *)" >>$out;
+	    echo "" >>$out; echo $firstline >>$out;
 	else
 	    echo $firstline >>$out;
 	fi;
@@ -63,5 +57,5 @@ for file in $*; do
 	echo $firstline >>$out;
     fi
     tail -n +2 $file >>$out
-    echo "end" >>$out;
+    echo "end" >>$out
 done

@@ -20,6 +20,7 @@ MLMODULES = $(shell cat bddapron.mllib)
 
 FILES_TOINSTALL = \
 	$(MLMODULES:%=%.ml) $(MLMODULES:%=%.mli) \
+	$(MLMODULES:%=%.cmt) $(MLMODULES:%=%.cmti) \
 	$(MLMODULES:%=%.cmi) bddapron.cma \
 	$(MLMODULES:%=%.cmx) bddapron.cmxa bddapron.a \
 	$(MLMODULES:%=%.p.cmx) bddapron.p.cmxa bddapron.p.a
