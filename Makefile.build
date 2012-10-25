@@ -16,21 +16,23 @@ PKG-NAME = bddapron
 # Files
 #---------------------------------------
 
-MLMODULES = $(shell cat bddapron.mllib)
+MLLIBS = bdd bddapron
+MLMODULES = $(shell cat bdd.mllib) $(shell cat bddapron.mllib)
 
 FILES_TOINSTALL = \
-	$(MLMODULES:%=%.ml) $(MLMODULES:%=%.mli) \
-	$(MLMODULES:%=%.cmt) $(MLMODULES:%=%.cmti) \
-	$(MLMODULES:%=%.cmi) bddapron.cma \
-	$(MLMODULES:%=%.cmx) bddapron.cmxa bddapron.a \
-	$(MLMODULES:%=%.p.cmx) bddapron.p.cmxa bddapron.p.a
+	$(MLMODULES:%=%.mli) \
+	$(MLMODULES:%=%.cmi) $(MLLIBS:%=%.cma) \
+	$(MLMODULES:%=%.cmx) $(MLLIBS:%=%.cmxa) $(MLLIBS:%=%.a)
+#	$(MLMODULES:%=%.cmt) $(MLMODULES:%=%.cmti) \
+#	$(MLMODULES:%=%.p.cmx) bdd.p.cmxa bdd.p.a bddapron.p.cmxa bddapron.p.a
 
 all:
 	$(OCAMLBUILD) all.otarget
 doc:
 	$(OCAMLBUILD) doc.otarget
 
-install: $(FILES_TOINSTALL)
+install: all
+	echo $(MLMODULES)
 	$(OCAMLFIND) remove $(PKG-NAME)
 	$(OCAMLFIND) install $(PKG-NAME) META $(FILES_TOINSTALL:%=_build/%)
 
