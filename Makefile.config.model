@@ -40,7 +40,8 @@ OCAMLOPTFLAGS = -annot -inline 20
 ##################################################
 # Other
 
-AR = ar
+SED=sed
+AR=ar
 RANLIB = ranlib
 LATEX=latex
 DVIPDF=dvipdf

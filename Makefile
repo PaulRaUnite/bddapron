@@ -1,5 +1,9 @@
 include Makefile.config
 
+ifeq ($(SED),)
+SED=sed
+endif
+
 #---------------------------------------
 # Directories
 #---------------------------------------
@@ -138,9 +142,9 @@ BDDAPRONDOCOCAMLINC = $(BDDDOCOCAMLINC) \
 -I $(shell $(OCAMLFIND) query apron)
 
 bdd_ocamldoc.mli: bdd.mlpacki $(BDDMOD:%=%.mli)
-	sh ocamlpack -o bdd_ocamldoc.mli -intro bdd.mlpacki -level 2 $(BDDMOD:%=%.mli)
+	SED=$(SED) sh ocamlpack -o bdd_ocamldoc.mli -intro bdd.mlpacki -level 2 $(BDDMOD:%=%.mli)
 bddapron_ocamldoc.mli: bddapron.mlpacki $(BDDAPRONMOD:%=%.mli)
-	sh ocamlpack -o bddapron_ocamldoc.mli -intro bddapron.mlpacki -level 2 $(BDDAPRONMOD:%=%.mli)
+	SED=$(SED) sh ocamlpack -o bddapron_ocamldoc.mli -intro bddapron.mlpacki -level 2 $(BDDAPRONMOD:%=%.mli)
 
 bddapron.pdf: bddapron.dvi
 	$(DVIPDF) bddapron.dvi bddapron.pdf
