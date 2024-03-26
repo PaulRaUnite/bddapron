@@ -2,6 +2,8 @@
 
 (generate_opam_files true)
 
+(name bddapron)
+
 (package
  (name bddapron)
  (version 2.4.0)
