@@ -22,7 +22,6 @@ type ('a,'b,'c,'d) t = {
     (** Number of indices dedicated to conditions *)
   mutable bddindex : int;
     (** Next free index in BDDs used by {!idb_of_cond}. *)
-  mutable bddincr : int;
   mutable condidb : ('c,int*bool) PDMappe.t;
     (** Two-way association between a condition and a pair of a
 	BDD index and a polarity *)
@@ -32,6 +31,9 @@ type ('a,'b,'c,'d) t = {
     (** Boolean formula indicating which logical combination known
 	as true could be exploited for simplification.  For
 	instance, [x>=1 => x>=0]. *)
+  (** Maximum BDD variables used by conditions; forbids automated enlargement in
+      none. *)
+  bddmax : int option;
 }
 
 (*  ********************************************************************** *)
@@ -52,6 +54,7 @@ val make :
   print_cond:('b -> Format.formatter -> 'c -> unit) ->
   ?bddindex0:int ->
   ?bddsize:int ->
+  ?bddmax:int ->
   'd Cudd.Man.t ->
   ('a,'b,'c,'d) t
 
@@ -81,14 +84,24 @@ val check_normalized : 'b -> ('a,'b,'c,'d) t -> bool
 (*  ********************************************************************** *)
 
 val cond_of_idb : ('a,'b,'c,'d) t -> int * bool -> 'c
-val idb_of_cond : 'a -> ('b, 'a, 'c, 'd) t -> 'c -> int * bool
+val idb_of_cond : (('a, _, _, _, _) Env.O.t as 'b) -> ('a, 'b, 'c, 'd) t -> 'c -> int * bool
 val compute_careset : ('a,'b,'c,'d) t -> normalized:bool -> unit
 val is_leq : ('a,'b,'c,'d) t -> ('a,'b,'c,'d) t -> bool
 val is_eq : ('a,'b,'c,'d) t -> ('a,'b,'c,'d) t -> bool
 val shift : ('a,'b,'c,'d) t -> int -> ('a,'b,'c,'d) t
+val shift_with : ('a,'b,'c,'d) t -> int -> int array
+val extend_with : (('a, _, _, _, _) Env.O.t as 'b) -> ('a,'b,'c,'d) t -> int -> unit
 val lce : ('a,'b,'c,'d) t -> ('a,'b,'c,'d) t -> ('a,'b,'c,'d) t
 val permutation12 : ('a,'b,'c,'d) t -> ('a,'b,'c,'d) t -> int array
 val permutation21 : ('a,'b,'c,'d) t -> ('a,'b,'c,'d) t -> int array
+
+(*  ********************************************************************** *)
+(** {3 Facility for transient computations} *)
+(*  ********************************************************************** *)
+
+type ('a,'b,'c,'d) repo
+val save: ('a,'b,'c,'d) t -> ('a,'b,'c,'d) repo
+val restore_with: ('a,'b,'c,'d) repo -> ('a,'b,'c,'d) t -> unit
 
 (*  ********************************************************************** *)
 (** {3 Level 2} *)

@@ -810,6 +810,7 @@ let rec lin_of_tree man (x:'a Tree.t) : 'a Lin.t =
 		    (Mpqf.get_num l1.Lin.cst)))
 	  else
 	    raise Exit
+      | Tree.Pow -> raise Exit
       end
   | _ -> raise Exit
 
@@ -1152,9 +1153,26 @@ module Condition = struct
   let print_typ fmt typ =
     pp_print_string fmt (Apron.Lincons0.string_of_typ typ)
 
-  let print man fmt (cons:'a t) =
-    let (typ,expr) = cons in
-    fprintf fmt "%a%a0" (print man) expr print_typ typ
+  let print man fmt =
+    let revcmp = function
+      | SUPEQ -> "<=" | SUP -> "<" | (EQ | EQMOD _) -> "=" | DISEQ -> "<>"
+    and print_coeff fmt coeff =
+      if Mpqf.cmp_int coeff (-1) = 0 then
+        Format.pp_print_string fmt "-"
+      else if Mpqf.cmp_int coeff 1 <> 0 then
+        Mpqf.print fmt coeff
+    in function
+      (* XXX A very basic filter for readability of basic inequalities: *)
+      | typ, Lin { Lin.lterm = [ (coeff, var) ]; Lin.cst = cst } ->
+          let c, op, cst =
+            if Mpqf.sgn coeff > 0 then
+              coeff, Apron.Lincons0.string_of_typ typ, Mpqf.neg cst
+            else
+              Mpqf.neg coeff, revcmp typ, cst
+          in
+          fprintf fmt "%a%a%s%a" print_coeff c man.print var op Mpqf.print cst
+      | typ, expr ->
+          fprintf fmt "%a%a0" (print man) expr print_typ typ
 
   (** Assume a normalized-as-constraint expression *)
   let normalize typ_of_var (cons:'a t) : [ `Cond of 'a t | `Bool of bool ]

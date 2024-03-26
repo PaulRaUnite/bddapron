@@ -34,6 +34,8 @@ type ('a,'b) man = {
   mutable substitute_disjoint : bool;
   mutable forget_unique : bool;
   mutable forget_disjoint : bool;
+  mutable forall_bool_unique : bool;
+  mutable forall_bool_disjoint : bool;
   mutable change_environment_unique : bool;
   mutable change_environment_disjoint : bool;
 }
@@ -230,9 +232,13 @@ module O = struct
     else begin
       let string_of_dim dim = Env.string_of_aprondim env dim in
       let print_elt fmt elt =
-	fprintf fmt "@[<hv>(%a) and@ %a@]"
-	  (Bdd.Expr0.O.print_bdd env) elt.guard
-	  (print_apron string_of_dim) elt.leaf
+        if Bdd.Expr0.O.Bool.is_true env elt.guard then
+	  fprintf fmt "@[<hv>%a@]"
+	    (print_apron string_of_dim) elt.leaf
+        else
+	  fprintf fmt "@[<hv>(%a) and@ %a@]"
+	    (Bdd.Expr0.O.print_bdd env) elt.guard
+	    (print_apron string_of_dim) elt.leaf
       in
       Print.list
 	~first:"{ @[<v>" ~sep:" or@," ~last:"@] }"
@@ -1009,6 +1015,49 @@ module O = struct
       res
     end
 
+  let forall_bool_list man ({ cudd } as env) t lvar =
+    if lvar=[] then t else begin
+      let bsupp, tadim = Common.lvar_split env lvar in
+      if tadim <> [| |] then
+        failwith "Bddapron.forall_bool_list: numerical variables in universal\
+                  quantification";
+      assert (t.disjoint && t.unique);
+
+      (* Compute the universal elimination based on the disjunctions G of all
+         guards G_i, and then intersect G with each individual guards G_i and
+         meet the corresponding leaves L_i *)
+      let disj = Bddleaf.guard ~cudd t.list in                           (* G *)
+      let nguard = Cudd.Bdd.forall bsupp disj in
+      let nlist =
+        List.fold_left begin fun nlist { guard; leaf } ->            (* G_i, L_i *)
+          let guard = Cudd.Bdd.existand bsupp guard nguard in
+          Bddleaf.cons_disjoint
+            ~is_equal:(Apron.Abstract0.is_eq man.apron)
+            ~merge:(Apron.Abstract0.meet man.apron)
+            { guard; leaf }
+            nlist
+        end [] t.list
+      in
+      (* Filter bottom apron values, and compute the disjunction of all
+         guards. *)
+      let nlist, guard_disj =
+        List.fold_left begin fun (nlist, guard_disj) ({ guard; leaf } as elt) ->
+          if Apron.Abstract0.is_bottom man.apron leaf then (nlist, guard_disj)
+          else (elt :: nlist, Cudd.Bdd.dor guard_disj guard)
+        end ([], Cudd.Bdd.dfalse cudd) nlist
+      in
+      let res = {
+        list = nlist;
+        bottom = { t.bottom with guard = Cudd.Bdd.dnot guard_disj };
+        disjoint = true;
+        unique = true;
+      } in
+
+      canonicalize ~disjoint:man.forall_bool_disjoint
+        ~unique:man.forall_bool_unique man res;
+      res
+    end
+
   let apply_change ~bottom man t change =
     let notbdd =
       change.cbdd.intro = None &&
@@ -1107,6 +1156,8 @@ let make_man apron = {
   substitute_disjoint = true; (* false *)
   forget_unique = true;
   forget_disjoint = true; (* false *)
+  forall_bool_unique = true;
+  forall_bool_disjoint = true; (* false *)
   change_environment_unique = true;
   change_environment_disjoint = true; (* false *)
 }
@@ -1129,6 +1180,7 @@ let meet_condition = O.meet_condition
 let assign_lexpr = O.assign_lexpr
 let substitute_lexpr = O.substitute_lexpr
 let forget_list = O.forget_list
+let forall_bool_list = O.forall_bool_list
 let widening = O.widening
 let widening_threshold = O.widening_threshold
 let apply_change = O.apply_change

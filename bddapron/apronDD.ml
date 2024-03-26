@@ -16,6 +16,7 @@ type 'a global = {
   op_join : ('a leaf_u, 'a leaf_u, 'a leaf_u) Cudd.User.op2;
   op_meet : ('a leaf_u, 'a leaf_u, 'a leaf_u) Cudd.User.op2;
   op_exist : 'a leaf_u Cudd.User.exist;
+  op_forall : 'a leaf_u Cudd.User.exist;
 }
 type 'a man = {
   apron : 'a Apron.Manager.t;
@@ -74,38 +75,44 @@ let make_op_join man =
 	  ~special:(special_join man.apron)
 	  (fun x y -> myunique man.table (Apron.Abstract0.join man.apron (myget x) (myget y)))
 
+let make_op_meet man =
+  match man.oglobal with
+    | Some global -> global.op_meet
+    | None ->
+	Cudd.User.make_op2
+	  ~memo:(Cudd.Memo.Hash(Cudd.Hash.create 2))
+	  ~commutative:true ~idempotent:true
+	  ~special:(special_meet man.apron)
+	  (fun x y -> myunique man.table (Apron.Abstract0.meet man.apron (myget x) (myget y)))
+
 let make_global (apron:'a Apron.Manager.t) (table:'a table) : 'a global =
+  let memo = Cudd.Memo.Global in
   let op_is_leq =
-    Cudd.User.make_test2
-      ~memo:Cudd.Memo.Global
+    Cudd.User.make_test2 ~memo
       ~symetric:false ~reflexive:true
       ~special:(special_is_leq apron)
       (fun x y -> (Apron.Abstract0.is_leq apron (myget x) (myget y)))
   in
   let op_join =
-    Cudd.User.make_op2
-      ~memo:Cudd.Memo.Global
+    Cudd.User.make_op2 ~memo
       ~commutative:true ~idempotent:true
       ~special:(special_join apron)
       (fun x y -> myunique table (Apron.Abstract0.join apron (myget x) (myget y)))
   in
   let op_meet =
-    Cudd.User.make_op2
-      ~memo:Cudd.Memo.Global
+    Cudd.User.make_op2 ~memo
       ~commutative:true ~idempotent:true
       ~special:(special_meet apron)
       (fun x y -> myunique table (Apron.Abstract0.meet apron (myget x) (myget y)))
   in
-  let op_exist =
-    Cudd.User.make_exist
-      ~memo:Cudd.Memo.Global
-      op_join
-  in
+  let op_exist = Cudd.User.make_exist ~memo op_join in
+  let op_forall = Cudd.User.make_exist ~memo op_meet in
   {
     op_is_leq = op_is_leq;
     op_join = op_join;
     op_meet = op_meet;
-    op_exist = op_exist
+    op_exist = op_exist;
+    op_forall = op_forall;
   }
 
 let make_man ?(global=false) (apron:'a Apron.Manager.t) =
@@ -358,7 +365,7 @@ let asssub_texpr_array
     join man (Cudd.Mtbddc.ite bdd res1 default) res2
   in
   let absorbant x = neutral_join (myget x) in
-  let tabsorbant = Array.create (Array.length texpr) None in
+  let tabsorbant = Array.make (Array.length texpr) None in
   if (Array.length tdim) = 1 && asssub_bdd = None then
     asssub_texpr asssub symbol man env org tdim.(0) texpr.(0) odest
   else if texpr=[||] then begin
@@ -512,3 +519,18 @@ let existand
   Cudd.User.clear_op2 op2;
   Cudd.User.clear_existand existand;
   res
+
+let forall man ~(supp:Cudd.Man.v Cudd.Bdd.t) (t:'a t) : 'a t =
+  match man.oglobal with
+  | None ->
+      let op2 = make_op_meet man in
+      let forall =
+	Cudd.User.make_exist
+	  ~memo:(Cudd.Memo.Hash(Cudd.Hash.create 2)) op2
+      in
+      let res = Cudd.User.apply_exist forall ~supp t in
+      Cudd.User.clear_op2 op2;
+      Cudd.User.clear_exist forall;
+      res
+  | Some global ->
+      Cudd.User.apply_exist global.op_forall ~supp t

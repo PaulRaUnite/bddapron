@@ -7,22 +7,22 @@
 
 (** {3 From strings} *)
 
-val expr0_of_string : string Env.t -> string Cond.t -> string -> string Expr0.t
+val expr0_of_string : 'a Env.t -> 'a Cond.t -> string -> 'a Expr0.t
 
-val expr1_of_string : string Env.t -> string Cond.t -> string -> string Expr1.t
+val expr1_of_string : 'a Env.t -> 'a Cond.t -> string -> 'a Expr1.t
 val listexpr1_of_lstring :
-  string Env.t -> string Cond.t -> string list -> string Expr1.List.t
+  'a Env.t -> 'a Cond.t -> string list -> 'a Expr1.List.t
 
 val listexpr2_of_lstring :
   ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
-  string Env.t -> string Cond.t -> string list -> string Expr2.List.t
+  'a Env.t -> 'a Cond.t -> string list -> 'a Expr2.List.t
 val boolexpr2_of_string :
   ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
-  string Env.t -> string Cond.t -> string -> string Expr2.Bool.t
+  'a Env.t -> 'a Cond.t -> string -> 'a Expr2.Bool.t
 
 (** {3 Misc.} *)
 
-val expr0_of_lexbuf : string Env.t -> string Cond.t -> Lexing.lexbuf -> string Expr0.t
+val expr0_of_lexbuf : 'a Env.t -> 'a Cond.t -> Lexing.lexbuf -> 'a Expr0.t
 
 (** {3 Grammar of expressions} *)
 

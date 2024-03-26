@@ -150,18 +150,19 @@ let apron env = env.ext.eapron
 let add_typ_with = Bdd.Env.add_typ_with
 let add_typ = Bdd.Env.add_typ
 
-let add_vars_with env lvartyp : int array option =
+let add_vars_with env ?booking_factor ?packing lvartyp : int array option =
+  let operm = Bdd.Env.add_vars_with ?booking_factor ?packing env lvartyp in
   let (integer,real) =
     List.fold_left
       (begin fun ((integer,real) as acc) (var,typ) ->
+        let v var = Apron.Var.of_string (env.symbol.marshal var) in
 	match typ with
-	| `Int  -> ((Apron.Var.of_string (env.symbol.marshal var))::integer,real)
-	| `Real -> (integer,(Apron.Var.of_string (env.symbol.marshal var))::real)
-	| _ -> acc
-      end)
+	  | `Int  -> (v var::integer, real)
+	  | `Real -> (integer, v var::real)
+	  | _ -> acc
+       end)
       ([],[]) lvartyp
   in
-  let operm = Bdd.Env.add_vars_with env lvartyp in
   if integer<>[] || real<>[] then begin
     env.ext.eapron <-
       (Apron.Environment.add env.ext.eapron

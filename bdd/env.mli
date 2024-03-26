@@ -22,6 +22,8 @@ type 'a typ = [
   | `Benum of 'a          (** Named enumerated type *)
 ]
 
+type 'a group_tree
+
 (** Manager for manipulating symbols.
 
     DO NOT USE [Marshal.to_string] and [Marshal.from_string], as
@@ -67,9 +69,7 @@ type ('a,'b,'c,'d,'e) t0 = {
     (** Associates to a BDD index the variable involved by it *)
   mutable vartid : ('a, int array) PMappe.t;
     (** (Sorted) array of BDD indices associated to finite-type variables. *)
-  mutable varset : ('a, 'd Cudd.Bdd.t) PMappe.t;
-    (** Associates to enumerated variable the (care)set of
-	possibled values. *)
+  mutable groups: 'a group_tree list;
   mutable print_external_idcondb : Format.formatter -> int*bool -> unit;
     (** Printing conditions not managed by the environment..
 	By default, [pp_print_int]. *)
@@ -205,7 +205,10 @@ val labels : ('a,'b,'c,'d,'e) O.t -> 'a PSette.t
 val add_typ_with : ('a,'b,'c,'d,'e) O.t -> 'a -> 'c -> unit
     (** Declaration of a new type *)
 
-val add_vars_with : ('a,'b,'c,'d,'e) O.t -> ('a * 'b) list -> int array option
+type packing = [ `Normalize | `Pack | `None ]
+
+val add_vars_with : ('a,'b,'c,'d,'e) O.t ->
+  ?booking_factor:int -> ?packing:packing -> ('a * 'b) list -> int array option
     (** Add the set of variables, possibly normalize the
 	environment and return the applied permutation (that
 	should also be applied to expressions defined in this
@@ -221,10 +224,23 @@ val add_typ : ('a,'b,'c,'d,'e) O.t -> 'a -> 'c -> ('a,'b,'c,'d,'e) O.t
 val add_vars : ('a,'b,'c,'d,'e) O.t -> ('a * 'b) list -> ('a,'b,'c,'d,'e) O.t
 val remove_vars : ('a,'b,'c,'d,'e) O.t -> 'a list -> ('a,'b,'c,'d,'e) O.t
 val rename_vars : ('a,'b,'c,'d,'e) O.t -> ('a * 'a) list -> ('a,'b,'c,'d,'e) O.t
-  (** Functional versions of the previous functions *)
+    (** Functional versions of the previous functions *)
 
-val add_var_with : ('a,'b,'c,'d,'e) O.t -> 'a -> 'b -> unit
-    (** Addition without normalization (internal) *)
+val add_var_with : ('a,'b,'c,'d,'e) O.t -> ?booking_factor:int -> 'a -> 'b -> unit
+  (** Addition without normalization (internal) *)
+
+val extend_with: ('a,'b,'c,'d,'e) O.t -> int -> unit
+    (** Add BDD space (given in number of variables) *)
+
+
+type 'a group_tree_spec =
+  [
+  | `Var of 'a
+  | `Reord of 'a group_tree_spec list
+  | `Fixed of 'a group_tree_spec list
+  ]
+
+val group_vars_with: ('a,'b,'c,'d,'e) O.t -> 'a group_tree_spec list -> int array
 
 (* ********************************************************************** *)
 (** {3 Operations} *)
@@ -301,14 +317,11 @@ val compare_idb : int*bool -> int*bool -> int
 (** {4 Normalisation} *)
 (* ====================================================================== *)
 
-val permutation : ('a,'b,'c,'d,'e) O.t -> int array
-    (** Compute the permutation for normalizing the environment *)
-val permute_with : ('a,'b,'c,'d,'e) O.t -> int array -> unit
-    (** Apply the given permutation to the environment *)
+val pack_with : ('a,'b,'c,'d,'e) O.t -> int array
 val normalize_with : ('a,'b,'c,'d,'e) O.t -> int array
-    (** Combine the two previous functions, and return the permutation *)
+(** Combine the two previous functions, and return the permutation *)
 val check_normalized : ('a,'b,'c,'d,'e) O.t -> bool
-    (** Prints error message and returns [false] if not normalized *)
+(** Prints error message and returns [false] if not normalized *)
 
 (* ====================================================================== *)
 (** {4 Permutations} *)

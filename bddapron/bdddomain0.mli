@@ -18,6 +18,8 @@ type ('a,'b) man = {
   mutable substitute_disjoint : bool;
   mutable forget_unique : bool;
   mutable forget_disjoint : bool;
+  mutable forall_bool_unique : bool;
+  mutable forall_bool_disjoint : bool;
   mutable change_environment_unique : bool;
   mutable change_environment_disjoint : bool;
 }
@@ -114,6 +116,10 @@ val substitute_lexpr :
 val forget_list :
   ('a,'b) man -> 'a Env.t -> 'b t -> 'a list -> 'b t
   (** Forget (existential quantification) a list of variables *)
+
+val forall_bool_list :
+  ('a,'b) man -> 'a Env.t -> 'b t -> 'a list -> 'b t
+  (** Universal quantification over a list of Boolean variables *)
 
 val widening : ('a,'b) man -> 'b t -> 'b t -> 'b t
 val widening_threshold : ('a,'b) man -> 'b t -> 'b t -> Apron.Lincons0.t array -> 'b t

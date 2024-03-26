@@ -88,6 +88,10 @@ val forget_list :
   ('a,'b) man -> 'a Env.t -> 'b t -> 'a list -> 'b t
   (** Forget (existential quantification) a list of variables *)
 
+val forall_bool_list :
+  ('a,'b) man -> 'a Env.t -> 'b t -> 'a list -> 'b t
+(** Universal quantification over a list of Boolean variables *)
+
 val widening : ('a,'b) man -> 'b t -> 'b t -> 'b t
 val widening_threshold : ('a,'b) man -> 'b t -> 'b t -> Apron.Lincons0.t array -> 'b t
   (** Widening *)
@@ -137,6 +141,8 @@ module O : sig
     ('a,'b) man -> 'c -> ('a,'c) Cond.O.t ->
     'b t -> 'a list -> 'a Expr0.t list -> 'b t option -> 'b t
   val forget_list :
+    ('a,'b) man -> ('a,'c,'d,'e) Env.O.t -> 'b t -> 'a list -> 'b t
+  val forall_bool_list :
     ('a,'b) man -> ('a,'c,'d,'e) Env.O.t -> 'b t -> 'a list -> 'b t
   val widening : ('a,'b) man -> 'b t -> 'b t -> 'b t
   val widening_threshold : ('a,'b) man -> 'b t -> 'b t -> Apron.Lincons0.t array -> 'b t

@@ -1,21 +1,30 @@
-About
-=====
+# BDDApron
+Author: Bertrand Jeannet
+
+Website: https://pop-art.inrialpes.fr/people/bjeannet/bjeannet-forge/bddapron/index.html
+
+**This repository just removes the restriction on compiler version related to camllib**
+
+## About
 
 This package contains two sublibraries/modules:
 
 1. Bdd:
+   
    a) Manipulation of formula and expressions involving Boolean,
       enumerated, bounded integer variables, using BDDs
+   
    b) BDDs as an "abstract" domain
 
 2. Bddapron extends Bdd with
+   
    a) Combined finite-type and numerical expressions
+   
    b) Abstract domain for finite type and numerical types,
       implemented as MTBDDs with Boolean decisions and APRON
       abstract values as leaves.
 
-Required
-========
+## Required
 
 1) OCaml stuff
 OCaml 3.12.1 or up (http://caml.inria.fr/)
@@ -30,26 +39,6 @@ C/OCaml  libraries and interfaces
   MLGMPIDL 1.2.1 (http://pop-art.inrialpes.fr/~bjeannet/mlxxxidl-forge/mlgmpidl/index.html)
   APRON pre-0.9.11 (http://apron.cri.ensmp.fr/library/) (repository, trunk)
 
-To configure
-============
-- copy Makefile.config.model into Makefile.config
-- set properly the flags
 
-To compile and install
-========================
-make all        # for bytecode and nativecode compilation of bdd and bddapron
-make example1.byte
-make example2.byte
-make example1.opt
-make example2.opt
-		# examples
-
-make bdd.pdf bddapron.pdf # doc
-make html        # doc
-...
-
-see Makefile
-
-To install the library:
-=======================
-make install
+## To compile and install
+`dune build`

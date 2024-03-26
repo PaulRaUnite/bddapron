@@ -68,15 +68,14 @@ let split_level (bdd:Cudd.Bdd.vt) (level:int) : (Cudd.Bdd.vt * Cudd.Bdd.vt) list
     =
   let vdd = vdd_of_bdd bdd in
   let tcondexpr = Cudd.Vdd.nodes_below_level vdd (Some level) in
-  let lcondexpr = Array.to_list tcondexpr in
-  List.fold_left
+  Array.fold_left
     (begin fun res condexpr ->
       if Cudd.Vdd.is_cst condexpr && (Cudd.Vdd.dval condexpr)=false then
 	res
       else
 	(Cudd.Vdd.guard_of_node vdd condexpr, bdd_of_vdd condexpr)::res
     end)
-    [] lcondexpr
+    [] tcondexpr
 
 let splitpermutation_of_envcond
     env cond typ

@@ -414,7 +414,7 @@ module O = struct
 	  (begin fun cube ->
 	    let conjunction = Expr.conjunction_of_minterm env cube in
 	    if conjunction<>Normalform.Cfalse then begin
-	      if !first then first := false else fprintf fmt "@ or ";
+	      if !first then first := false else fprintf fmt " or@ ";
 	      Expr.print_conjunction
 		?print_external_idcondb env fmt conjunction
 	    end;
@@ -539,18 +539,14 @@ module O = struct
 
   let bddsupport (env:('a,'b,'c,'d,'e) Env.O.t) (set:'a list)  : 'd Cudd.Bdd.t
       =
-    let cudd = env.cudd in
-    let dtrue = Cudd.Bdd.dtrue cudd in
-    let res = ref dtrue in
-    List.iter
-      (begin fun var ->
-	let tid = tid_of_var env var in
-	Array.iter
-	  (fun id -> res := Cudd.Bdd.dand !res (Cudd.Bdd.ithvar cudd id))
-	  tid;
-      end)
-      set;
-    !res
+    List.fold_left
+      (fun supp var ->
+        let tid = tid_of_var env var in
+        Array.fold_left
+          (fun acc id -> Cudd.Bdd.dand acc (Cudd.Bdd.ithvar env.cudd id))
+          supp tid)
+      (Cudd.Bdd.dtrue env.cudd)
+      set
 
   let typ_of_expr (env:('a, 'b, 'c, 'd, 'e) Env.O.t) (expr:'d expr) : [>'a Env.typ]
       =

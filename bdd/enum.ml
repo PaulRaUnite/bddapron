@@ -228,7 +228,7 @@ let print_minterm
     let lguardlabels = guardlabels env x in
     Print.list ~first:"{ @[<v>" ~sep:"@; " ~last:"@] }"
       (fun fmt (guard,label) ->
-	fprintf fmt "%a IF %a" env.symbol.print label print_bdd guard)
+	fprintf fmt "%a IF @[%a@]" env.symbol.print label print_bdd guard)
       fmt
       lguardlabels
   end

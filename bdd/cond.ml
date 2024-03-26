@@ -24,7 +24,6 @@ type ('a,'b,'c,'d) t = {
     (** Number of indices dedicated to conditions *)
   mutable bddindex : int;
     (** Next free index in BDDs used by {!idb_of_cond}. *)
-  mutable bddincr : int;
   mutable condidb : ('c,int*bool) PDMappe.t;
     (** Two-way association between a condition and a pair of a
 	BDD index and a polarity *)
@@ -34,6 +33,9 @@ type ('a,'b,'c,'d) t = {
     (** Boolean formula indicating which logical combination known
 	as true could be exploited for simplification.  For
 	instance, [x>=1 => x>=0]. *)
+  (** Maximum BDD variables used by conditions; forbids automated enlargement in
+      none. *)
+  bddmax : int option;
 }
 
 (*  ********************************************************************** *)
@@ -57,6 +59,11 @@ let print (env:'b) fmt (cond:('a,'b,'c,'d) t) =
 
 let compare_idb = Env.compare_idb
 
+(* let setup_groups { cudd; bddindex0; bddsize } = *)
+(*   Cudd.Man.group cudd bddindex0 bddsize Cudd.Man.MTR_DEFAULT; *)
+(*   (\* Cudd.Man.group cudd 0 (bddindex0 + bddsize) Cudd.Man.MTR_FIXED *\) *)
+(*   () *)
+
 let make
     ~symbol
     ~(compare_cond: 'c -> 'c -> int)
@@ -65,13 +72,12 @@ let make
     ~(print_cond: 'b -> Format.formatter -> 'c -> unit)
     ?(bddindex0=100)
     ?(bddsize=300)
+    ?bddmax
     (cudd:'d Cudd.Man.t)
     :
     ('a,'b,'c,'d) t
     =
-  for i=(Cudd.Man.get_bddvar_nb cudd) to bddindex0 + bddsize - 1 do
-    ignore (Cudd.Bdd.ithvar cudd i)
-  done;
+  for i = bddindex0 to bddsize - 1 do ignore (Cudd.Bdd.ithvar cudd i) done;
   {
     symbol = symbol;
     compare_cond = compare_cond;
@@ -82,7 +88,7 @@ let make
     bddindex0 = bddindex0;
     bddsize = bddsize;
     bddindex = bddindex0;
-    bddincr = 1;
+    bddmax = bddmax;
     condidb = PDMappe.empty compare_cond compare_idb;
     supp = Cudd.Bdd.dtrue cudd;
     careset = Cudd.Bdd.dtrue cudd;
@@ -101,7 +107,7 @@ let permutation t =
     (begin fun cond (id,b) ->
       if b then begin
 	perm.(id) <- !index;
-	index := !index + t.bddincr;
+	incr index;
       end
     end)
     t.condidb
@@ -110,16 +116,16 @@ let permutation t =
 
 let permute_with t (perm:int array) : unit
     =
-  t.condidb <-
-    (PDMappe.fold
-      (begin fun cond (id,b) res ->
-	PDMappe.add cond (perm.(id),b) res
-      end)
-      t.condidb
-      (PDMappe.empty t.compare_cond compare_idb))
-  ;
+  t.condidb <- PDMappe.fold
+    (begin fun cond (id,b) res ->
+      PDMappe.add cond (perm.(id),b) res
+     end)
+    t.condidb
+    (PDMappe.empty t.compare_cond compare_idb);
   t.supp <- (Cudd.Bdd.permute t.supp perm);
   t.careset <- (Cudd.Bdd.permute t.careset perm);
+  (* NB: auto shrink... *)
+  t.bddindex <- PDMappe.fold (fun _ (id, _) -> max id) t.condidb (pred t.bddindex0) + 1;
   ()
 
 let normalize_with t : int array =
@@ -132,12 +138,9 @@ let reduce_with t supp =
   t.careset <- Cudd.Bdd.exist suppr t.careset;
   t.supp <- Cudd.Bdd.cofactor t.supp suppr;
   let suppr = Cudd.Bdd.list_of_support suppr in
-  List.iter
-    (begin fun id ->
-      t.condidb <- PDMappe.removey (id,true) t.condidb;
-      t.condidb <- PDMappe.removey (id,false) t.condidb;
-    end)
-    suppr
+  t.condidb <- List.fold_left
+    (fun acc id -> PDMappe.removey (id, true) (PDMappe.removey (id, false) acc))
+    t.condidb suppr
   ;
 (*
   let setidb =
@@ -174,7 +177,7 @@ let check_normalized (env:'b) (cond:('a,'b,'c,'d) t) : bool
 	    ;
 	    raise Exit
 	  end;
-	  index := !index + cond.bddincr;
+	  incr index;
 	end
       end)
       cond.condidb
@@ -182,6 +185,13 @@ let check_normalized (env:'b) (cond:('a,'b,'c,'d) t) : bool
     true
   with Exit ->
     false
+
+let extend_with (env: (('a, _, _, _, _) Env.O.t as 'b))
+    ({ cudd; bddindex0; bddsize } as cond: ('a, 'b, 'c, 'd) t) size =
+  cond.bddsize <- bddsize + size;
+  for i = bddindex0 + bddsize to bddindex0 + bddsize + size - 1
+  do ignore (Cudd.Bdd.ithvar cudd i) done;
+  ()
 
 (*  ********************************************************************** *)
 (** {3 Operations} *)
@@ -191,17 +201,26 @@ let cond_of_idb t idb = PDMappe.x_of_y idb t.condidb
 let idb_of_cond (env:'b) t cond : int*bool =
   try PDMappe.y_of_x cond t.condidb
   with Not_found ->
-    let ncond = t.negate_cond env cond in
-    let id = t.bddindex in
-    if id>=t.bddindex0+t.bddsize then raise Env.Bddindex;
-    let b = (t.compare_cond cond ncond) < 0 in
-    t.condidb <- PDMappe.add cond (id,b) t.condidb;
-    t.condidb <- PDMappe.add ncond (id,not b) t.condidb;
-    t.bddindex <- t.bddindex + t.bddincr;
-    let bdd = (Cudd.Bdd.ithvar t.cudd id) in
-    t.supp <- Cudd.Bdd.dand bdd t.supp;
-    if t.bddindex >= t.bddindex0+t.bddsize then raise Env.Bddindex;
-    (id,b)
+    let rec newcond cond =
+      try
+        let ncond = t.negate_cond env cond in
+        let id = t.bddindex in
+        if id>=t.bddindex0+t.bddsize then raise Exit;
+        let b = (t.compare_cond cond ncond) < 0 in
+        t.condidb <- PDMappe.add cond (id,b) t.condidb;
+        t.condidb <- PDMappe.add ncond (id,not b) t.condidb;
+        t.bddindex <- t.bddindex + 1;
+        let bdd = (Cudd.Bdd.ithvar t.cudd id) in
+        t.supp <- Cudd.Bdd.dand bdd t.supp;
+        if t.bddindex >= t.bddindex0+t.bddsize then raise Exit;
+        (id,b)
+      with Exit -> match t.bddmax with
+        | Some h when t.bddsize < h ->
+            extend_with env t (min h (t.bddsize * 2));
+            newcond cond
+        | _ -> raise Env.Bddindex
+    in
+    newcond cond
 
 let compute_careset
     (t:('a,'b,'c,'d) t)
@@ -293,12 +312,24 @@ let is_eq (cond1:('a,'b,'c,'d) t) (cond2:('a,'b,'c,'d) t) : bool =
       (cond1.bddindex - cond1.bddindex0 = cond2.bddindex - cond2.bddindex0) &&
       (cond1.condidb==cond2.condidb || (PDMappe.equaly cond1.condidb cond2.condidb))
 
+let permutation_of_offset (low:int) (length:int) (offset:int) : int array =
+  Array.init length (fun i -> if i >= low then i + offset else i)
+
 let shift (cond:('a,'b,'c,'d) t) (offset:int) : ('a,'b,'c,'d) t =
-  let perm = Env.permutation_of_offset cond.bddindex offset in
+  let perm = permutation_of_offset cond.bddindex0 cond.bddindex offset in
   let ncond = copy cond in
   ncond.bddindex0 <- ncond.bddindex0 + offset;
   permute_with ncond perm;
   ncond
+
+let shift_with (cond:('a,'b,'c,'d) t) (offset:int) : int array =
+  (* XXX: handle groups? *)
+  let perm = permutation_of_offset cond.bddindex0 cond.bddindex offset in
+  cond.bddindex0 <- cond.bddindex0 + offset;
+  cond.bddindex <- cond.bddindex + offset;
+  Array.iter (fun i -> ignore (Cudd.Bdd.ithvar cond.cudd i)) perm;
+  permute_with cond perm;
+  perm
 
 let lce (cond1:('a,'b,'c,'d) t) (cond2:('a,'b,'c,'d) t) : ('a,'b,'c,'d) t =
   if is_leq cond2 cond1 then
@@ -338,7 +369,7 @@ let lce (cond1:('a,'b,'c,'d) t) (cond2:('a,'b,'c,'d) t) : ('a,'b,'c,'d) t =
 	cond.condidb <- PDMappe.add ncond (cond.bddindex,false) cond.condidb;
 	let bdd = (Cudd.Bdd.ithvar cond.cudd cond.bddindex) in
 	cond.supp <- Cudd.Bdd.dand cond.supp bdd;
-	cond.bddindex <- cond.bddindex + cond.bddincr
+	cond.bddindex <- cond.bddindex + 1
       end)
       mapcondkid
     ;
@@ -359,7 +390,7 @@ let permutation12 (cond1:('a,'b,'c,'d) t) (cond2:('a,'b,'c,'d) t) : int array
 	  assert b1;
 	  perm.(id1) <- id1 + !offset
 	with Not_found ->
-	  offset := !offset + cond2.bddincr
+	  incr offset;
       end
     end)
     (PDMappe.mapx cond2.condidb)
@@ -379,12 +410,42 @@ let permutation21 (cond2:('a,'b,'c,'d) t) (cond1:('a,'b,'c,'d) t) : int array
 	  assert b1;
 	  perm.(id1 + !offset) <- id1
 	with Not_found ->
-	  offset := !offset + cond2.bddincr;
+	  incr offset;
       end
     end)
     (PDMappe.mapx cond2.condidb)
   ;
   perm
+
+(*  ********************************************************************** *)
+(** {3 Facility for transient computations} *)
+(*  ********************************************************************** *)
+
+(** Facility to save/restore the state of the condition environment, when some
+    computations create transient conditions that can safely be forgotten
+    afterwards. *)
+type ('a,'b,'c,'d) repo =
+    {
+      cs_bddindex: int;
+      cs_condidb: ('c,int*bool) PDMappe.t;
+      cs_supp: 'd Cudd.Bdd.t;
+      cs_careset: 'd Cudd.Bdd.t;
+    }
+
+let save: ('a,'b,'c,'d) t -> ('a,'b,'c,'d) repo = fun c ->
+  {
+    cs_bddindex = c.bddindex;
+    cs_condidb = c.condidb;
+    cs_supp = c.supp;
+    cs_careset = c.careset;
+  }
+
+let restore_with: ('a,'b,'c,'d) repo -> ('a,'b,'c,'d) t -> unit =
+  fun { cs_bddindex; cs_condidb; cs_supp; cs_careset } c ->
+    c.bddindex <- cs_bddindex;
+    c.condidb <- cs_condidb;
+    c.supp <- cs_supp;
+    c.careset <- cs_careset
 
 (*  ********************************************************************** *)
 (** {3 Level 2} *)

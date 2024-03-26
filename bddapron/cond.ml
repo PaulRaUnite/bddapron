@@ -27,14 +27,14 @@ module O = struct
   type ('a,'b) t = ('a, 'b, 'a cond, Cudd.Man.v) Bdd.Cond.t
   constraint 'b = ('a,'c,'d,'e) Env.O.t
 
-  let make ~symbol ?bddindex0 ?bddsize (cudd:Cudd.Man.vt) : ('a, 'b) t =
+  let make ~symbol ?bddindex0 ?bddsize ?bddmax (cudd:Cudd.Man.vt) : ('a, 'b) t =
     Bdd.Cond.make
       ~symbol
       ~compare_cond:(compare_cond symbol)
       ~negate_cond
       ~support_cond
       ~print_cond
-      ?bddindex0 ?bddsize cudd
+      ?bddindex0 ?bddsize ?bddmax cudd
 end
 
 type 'a t = ('a, 'a Env.t) O.t

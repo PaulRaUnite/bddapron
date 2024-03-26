@@ -14,6 +14,7 @@ type 'a global = {
   op_join : ('a leaf_u, 'a leaf_u, 'a leaf_u) Cudd.User.op2;
   op_meet : ('a leaf_u, 'a leaf_u, 'a leaf_u) Cudd.User.op2;
   op_exist : 'a leaf_u Cudd.User.exist;
+  op_forall : 'a leaf_u Cudd.User.exist;
 }
 
 type 'a man = {
@@ -91,3 +92,4 @@ val existand :
   'a man ->
   bottom:'a Apron.Abstract0.t Cudd.Mtbddc.unique ->
   supp:Cudd.Bdd.vt -> Cudd.Bdd.vt -> 'a t -> 'a t
+val forall : 'a man -> supp:Cudd.Bdd.vt -> 'a t -> 'a t

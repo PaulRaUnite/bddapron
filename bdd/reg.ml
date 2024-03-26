@@ -292,7 +292,7 @@ let min_size n =
     0
   else begin
     let sign = (n<0) in
-    let size = ref 1 and reg = ref 2 in
+    let size = ref 0 and reg = ref 1 in
     if not sign then
       while n >= !reg do reg := !reg lsl 1; incr size done
     else begin

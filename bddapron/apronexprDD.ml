@@ -60,7 +60,7 @@ let add env ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
 	  ~typ ~round (Cudd.Mtbdd.get e1) (Cudd.Mtbdd.get e2)))
     e1 e2
 
-let sub env ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
+let sub env ?typ ?round e1 e2 =
   Cudd.User.map_op2
     ~special:(fun dd1 dd2 ->
       if Cudd.Mtbdd.is_cst dd2 && is_zero env (Cudd.Mtbdd.dval dd2) then Some dd1
@@ -69,7 +69,7 @@ let sub env ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
     (fun e1 e2 ->
       Cudd.Mtbdd.unique env.ext.table
 	(Apronexpr.sub env.symbol
-	  ~typ ~round (Cudd.Mtbdd.get e1) (Cudd.Mtbdd.get e2)))
+	  ?typ ?round (Cudd.Mtbdd.get e1) (Cudd.Mtbdd.get e2)))
     e1 e2
 
 let mul env ?(typ=Apron.Texpr1.Real) ?(round=Apron.Texpr1.Rnd) e1 e2 =
@@ -258,6 +258,7 @@ let substitute_treeexpr
 	| Apronexpr.Tree.Mul -> mul
 	| Apronexpr.Tree.Div -> div
 	| Apronexpr.Tree.Mod -> gmod
+        | Apronexpr.Tree.Pow -> raise Exit
 	end
 	  env ~typ:t ~round:r res1 res2
   in
@@ -288,21 +289,15 @@ module Condition = struct
 	of_apronexpr env cond x
 
   let make env cond typ e =
-    let manager = Cudd.Mtbdd.manager e in
-    let guardleafs = Cudd.Mtbdd.guardleafs e in
-    let bdd =
-      Array.fold_left
-	(begin fun res (guard,e) ->
-	  let atom =
-	    let condition = Apronexpr.Condition.make (Env.typ_of_var env) typ e in
-	    of_condition env cond condition
-	  in
-	  Cudd.Bdd.dor res (Cudd.Bdd.dand guard atom)
-	end)
-	(Cudd.Bdd.dfalse manager)
-	guardleafs
-    in
-    bdd
+    Cudd.Mtbdd.fold_guardleaves
+      (fun g l e ->
+        let atom =
+          let condition = Apronexpr.Condition.make (Env.typ_of_var env) typ l in
+          of_condition env cond condition
+        in
+        Cudd.Bdd.dor e (Cudd.Bdd.dand g atom))
+      e
+      (Cudd.Bdd.dfalse (Cudd.Mtbdd.manager e))
 
   let supeq env cond expr = make env cond Apronexpr.Condition.SUPEQ expr
   let sup env cond expr = make env cond Apronexpr.Condition.SUP expr

@@ -22,6 +22,7 @@ module O : sig
     symbol:'a Bdd.Env.symbol ->
     ?bddindex0:int ->
     ?bddsize:int ->
+    ?bddmax:int ->
     Cudd.Man.vt -> ('a,'b) t
 end
 
@@ -31,6 +32,7 @@ val make :
   symbol:'a Bdd.Env.symbol ->
   ?bddindex0:int ->
   ?bddsize:int ->
+  ?bddmax:int ->
   Cudd.Man.vt -> 'a t
 
 val copy : 'a t -> 'a t

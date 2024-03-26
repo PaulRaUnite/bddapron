@@ -109,8 +109,27 @@ module O = struct
     | `Benum x -> Bdd.Enum.print_minterm (print_bdd env cond) env fmt x
     | `Apron x -> ApronexprDD.print (print_bdd env cond) env.symbol fmt x
 
+  let conditions_support' { cudd } cond le =
+    List.fold_left begin fun conds e ->
+      let esupp = match e with
+        | #Bdd.Expr0.t as e -> Bdd.Expr0.O.support_cond cudd e
+        | `Apron a -> Cudd.Mtbdd.support a
+      in
+      Cudd.Bdd.support_union conds esupp
+    end (Cudd.Bdd.dtrue cudd) le |> Cudd.Bdd.support_inter cond.supp
+
+  let conditions_support env cond e = conditions_support' env cond [e]
+
+  let fold_filter_conditions env cond le nsub handle_cond acc =
+    List.fold_left begin fun acc condid ->
+      let `Apron c = PDMappe.x_of_y (condid, true) cond.condidb in
+      let csupp = Cond.support_cond env (`Apron c) in
+      let csub = PMappe.interset nsub csupp in
+      if PMappe.is_empty csub then acc else handle_cond condid c csub acc
+    end acc (conditions_support' env cond le |> Cudd.Bdd.list_of_support)
+
   let compose_of_lvarexpr
-      env cond
+      env cond (le: 'a t list)
       (substitution:('a * 'a t) list)
       :
       Cudd.Bdd.vt array option * ('a, 'a t) PMappe.t
@@ -122,7 +141,6 @@ module O = struct
 	    env.Bdd.Env.symbol.Bdd.Env.print var
 	    (print env cond) expr))
       substitution;
-    let change = ref false in
     (* we first look at Boolean variables/conditions *)
     let (bsub,osub) =
       List.fold_left
@@ -137,29 +155,21 @@ module O = struct
 	([],(PMappe.empty env.symbol.compare))
 	substitution
     in
-    if bsub<>[] then change := true;
+    let mk_tab () = Bdd.Expr0.O.composition_of_lvarexpr env bsub in
+    let otab = if bsub<>[] then Some (mk_tab ()) else None in
     (* we initialize the substitution table *)
-    let tab = Bdd.Expr0.O.composition_of_lvarexpr env bsub in
-    if not (PMappe.is_empty osub) then begin
-      (* we now take care of other conditions *)
-      PDMappe.iter
-	(begin fun condition (id,b) ->
-	  if b then begin
-	    let supp = Cond.support_cond env condition in
-	    let substitution = PMappe.interset osub supp in
-	    if not (PMappe.is_empty substitution) then begin
-	      change := true;
-	      let bdd = match condition with
-		| `Apron x ->
-		    ApronexprDD.Condition.substitute env cond x substitution
-	      in
-	      tab.(id) <- bdd
-	    end
-	  end
-	end)
-	cond.Bdd.Cond.condidb
-    end;
-    ((if !change then Some tab else None), osub)
+    let otab =
+      if PMappe.is_empty osub then otab else
+        (* we now take care of other conditions *)
+        fold_filter_conditions env cond le osub
+          (fun condid c csub otab ->
+            let r = ApronexprDD.Condition.substitute env cond c csub in
+            let tab = match otab with None -> mk_tab () | Some tab -> tab in
+            tab.(condid) <- r;
+            Some tab)
+          otab
+    in
+    (otab, osub)
 
   let substitute_list
       ?memo
@@ -169,7 +179,7 @@ module O = struct
     if substitution = [] || le=[] then
       le
     else begin
-      let (otab,sub) = compose_of_lvarexpr env cond substitution in
+      let (otab,sub) = compose_of_lvarexpr env cond le substitution in
       let (ohash,memo) =
 	if otab<>None && memo=None then
 	  let hash = Cudd.Hash.create 1 in
@@ -204,21 +214,17 @@ module O = struct
 	    | `Apron expr ->
 		let cudd = env.cudd in
 		let default = Cudd.Mtbdd.cst_u cudd (Cudd.Mtbdd.pick_leaf_u expr) in
-		let leaves_u = Cudd.Mtbdd.leaves_u expr in
-		let res = ref default in
-		Array.iter
-		  (begin fun leaf_u ->
-		    let guard = Cudd.Mtbdd.guard_of_leaf_u expr leaf_u in
-		    let apronexpr = Cudd.Mtbdd.get leaf_u in
-		    let nguard = match otab with
-		      | None -> guard
-		      | Some(tab) -> Cudd.Bdd.vectorcompose ?memo tab guard
-		    in
-		    let nexpr = ApronexprDD.substitute env apronexpr sub in
-		    res := Cudd.Mtbdd.ite nguard nexpr !res
-		  end)
-		  leaves_u;
-		`Apron !res
+                let res' = Cudd.Mtbdd.fold_guardleaves (fun guard apronexpr res ->
+		  let nguard = match otab with
+		    | None -> guard
+		    | Some(tab) -> Cudd.Bdd.vectorcompose ?memo tab guard
+		  in
+		  let nexpr = ApronexprDD.substitute env apronexpr sub in
+		  Cudd.Mtbdd.ite nguard nexpr res)
+                  expr
+                  default
+                in
+		`Apron res'
 	    end)
 	    le
 	end
@@ -251,11 +257,56 @@ module O = struct
 
   let substitute_by_var_list
       ?memo
-      env cond
+      ({ cudd; symbol } as env) cond
       le (substitution:('a * 'a) list)
       =
-    substitute_list ?memo env cond le
-      (List.map (fun (v1,v2) -> (v1,var env cond v2)) substitution)
+
+    (* Handle finite and numerical variables differently *)
+    let bsub, nsub = List.partition
+      (fun (v, _) ->
+        match Env.typ_of_var env v with #Bdd.Env.typ -> true | _ -> false)
+      substitution
+    in
+
+    (* Substituting finite variables only entails permutations *)
+    let mk_perms () = Bdd.Expr0.O.permutation_of_rename env bsub in
+    let operms = if bsub <> [] then Some (mk_perms ()) else None in
+
+    (* Basic bookkeeping for numericals... *)
+    let nsub = List.fold_left (fun nsub (v, v') -> PMappe.add v v' nsub)
+      (PMappe.empty symbol.compare) nsub in
+    let num_sub = not (PMappe.is_empty nsub) in
+
+    let operms = if not num_sub then operms else
+        (* substitute in conditions and update permutations in `perms'
+           accordingly *)
+        fold_filter_conditions env cond le nsub
+          (fun condid (typ, e) csub operms ->
+            let c' = typ, Apronexpr.substitute_by_var symbol e csub in
+            let dd = ApronexprDD.Condition.of_apronexpr env cond c' in
+            let perms = match operms with None -> mk_perms () | Some p -> p in
+            perms.(condid) <- Cudd.Bdd.topvar dd;
+            Some perms)
+          operms
+    in
+
+    (* Actually perform the substitutions *)
+    List.map begin function
+      | #Bdd.Expr0.t as e ->
+          ((match operms with
+            | None -> e
+            | Some perms -> Bdd.Expr0.O.permute ?memo e perms) :> 'a t)
+      | `Apron a ->
+          let open Cudd.Mtbdd in
+          let a = match operms with
+            | None -> a
+            | Some perms -> permute ?memo a perms in
+          `Apron
+            (if not num_sub then a else fold_guardleaves
+                (fun g n -> let n' = Apronexpr.substitute_by_var symbol n nsub in
+                         ite g (ApronexprDD.of_apronexpr env n'))
+                a (cst_u cudd (pick_leaf_u a)))
+    end le
 
   let substitute_by_var
       ?memo
@@ -553,6 +604,8 @@ module O = struct
     | `Benum x -> Benum.print env cond fmt x
     | `Apron x -> Apron.print env cond fmt x
 
+  (* NB: let apply_change e change = *)
+
 end
 
 (*  ********************************************************************** *)
@@ -574,6 +627,8 @@ let substitute_list = O.substitute_list
 let support = O.support
 let eq = O.eq
 let support_cond = O.support_cond
+let conditions_support' = O.conditions_support'
+let conditions_support = O.conditions_support
 let print = O.print
 let normalize = O.normalize
 

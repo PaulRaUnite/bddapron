@@ -125,7 +125,8 @@ let precedence_of_binop = function
   | `Apron(op,_,_) ->
       begin match op with
       | Apron.Texpr1.Add | Apron.Texpr1.Sub -> 6
-      | Apron.Texpr1.Mul | Apron.Texpr1.Div | Apron.Texpr1.Mod -> 7
+      | Apron.Texpr1.Mul | Apron.Texpr1.Div
+      | Apron.Texpr1.Mod | Apron.Texpr1.Pow -> 7
       end
 let precedence_of_expr = function
   | `Cst _
@@ -327,7 +328,8 @@ let apply_binop
 	    | Apron.Texpr1.Sub -> Expr0.Bint.sub
 	    | Apron.Texpr1.Mul -> Expr0.Bint.mul
 	    | Apron.Texpr1.Div
-	    | Apron.Texpr1.Mod ->
+	    | Apron.Texpr1.Mod
+            | Apron.Texpr1.Pow ->
 		error
 		  "operation %a not permitted on bounded integer expressions"
 		  Apron.Texpr0.print_binop op
@@ -343,6 +345,10 @@ let apply_binop
 	    | Apron.Texpr1.Mul -> Expr0.Apron.mul
 	    | Apron.Texpr1.Div -> Expr0.Apron.div
 	    | Apron.Texpr1.Mod -> Expr0.Apron.gmod
+            | Apron.Texpr1.Pow ->
+		error
+		  "unsupported operation %a on real expressions"
+		  Apron.Texpr0.print_binop op
 	  in
 	  let e = fop env cond ~typ ~round e1 e2 in
 	  Expr0.Apron.to_expr e
@@ -353,12 +359,12 @@ let apply_binop
 	    (Env.print_typ env.symbol.print) typexpr1
       end
 
-let rec to_expr0 (env:'a Env.t) (cond:'a Cond.t) (expr:'a expr) : 'a Expr0.t
+let rec to_expr0 (env:'a Env.t) (cond:'a Cond.t) (expr:string expr) : 'a Expr0.t
     =
   try
     let res = match expr with
       | `Cst cst -> cst_to_expr0 env cond cst
-      | `Ref var ->
+      | `Ref var -> let var = env.symbol.unmarshal var in
 	  if not (Env.mem_var env var) then
 	    (error
 	      "unknown label/variable %a" env.symbol.print var)
@@ -437,7 +443,7 @@ let rec to_expr0 (env:'a Env.t) (cond:'a Cond.t) (expr:'a expr) : 'a Expr0.t
     res
   with Error(s) ->
     error "@[<v>%s@ in expression@   %a@]"
-      s (print_expr env.symbol.print) expr
+      s (print_expr pp_print_string) expr
 
 let to_expr1 env cond expr =
   Env.make_value env (to_expr0 env cond expr)

@@ -33,6 +33,7 @@ type ('a,'b,'c,'d) man = {
   assign_lexpr : ?relational:bool -> ?nodependency:bool -> 'c ->  'a Env.t -> 'a Cond.t -> 'd -> 'a list -> 'a Expr0.t list -> 'd option -> 'd;
   substitute_lexpr : 'c -> 'a Env.t -> 'a Cond.t -> 'd -> 'a list -> 'a Expr0.t list -> 'd option -> 'd;
   forget_list : 'c -> 'a Env.t -> 'd -> 'a list -> 'd;
+  forall_bool_list : 'c -> 'a Env.t -> 'd -> 'a list -> 'd;
   widening : 'c -> 'd -> 'd -> 'd;
   widening_threshold : 'c -> 'd -> 'd -> Apron.Lincons0.t array -> 'd;
   apply_change :  bottom:'d -> 'c -> 'd -> Env.change -> 'd;
@@ -68,6 +69,7 @@ let meet_condition man = man.meet_condition man.man
 let assign_lexpr ?relational ?nodependency man = man.assign_lexpr ?relational ?nodependency man.man
 let substitute_lexpr man = man.substitute_lexpr man.man
 let forget_list man = man.forget_list man.man
+let forall_bool_list man = man.forall_bool_list man.man
 let widening man = man.widening man.man
 let widening_threshold man = man.widening_threshold man.man
 let apply_change ~bottom man = man.apply_change ~bottom man.man
@@ -107,6 +109,7 @@ let mtbdd_of_mtbdddomain (man:('a,'b) Mtbdddomain0.man) : ('a,'b) mtbdd =
     assign_lexpr = Mtbdddomain0.assign_lexpr;
     substitute_lexpr = Mtbdddomain0.substitute_lexpr;
     forget_list = Mtbdddomain0.forget_list;
+    forall_bool_list = Mtbdddomain0.forall_bool_list;
     widening = Mtbdddomain0.widening;
     widening_threshold = Mtbdddomain0.widening_threshold;
     apply_change = Mtbdddomain0.apply_change;
@@ -170,6 +173,7 @@ let bdd_of_bdddomain (man:('a,'b) Bdddomain0.man) : ('a,'b) bdd =
     assign_lexpr = Bdddomain0.assign_lexpr;
     substitute_lexpr = Bdddomain0.substitute_lexpr;
     forget_list = Bdddomain0.forget_list;
+    forall_bool_list = Bdddomain0.forall_bool_list;
     widening = Bdddomain0.widening;
     widening_threshold = Bdddomain0.widening_threshold;
     apply_change = Bdddomain0.apply_change;

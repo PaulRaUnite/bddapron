@@ -248,6 +248,18 @@ module O = struct
       end
     end
 
+  let forall_bool_list (man:('a,'b) man) env (t:'b t) (lvar:'a list) =
+    if lvar=[] then t
+    else begin
+      let (supp,tadim) = Common.lvar_split env lvar in
+      if tadim <> [| |] then
+        failwith "Bddapron.mt.forall_bool_list: numerical variables in \
+                  universal quantification"
+      else
+        if Cudd.Bdd.is_true supp then t
+        else ApronDD.forall man ~supp t
+    end
+
   let apply_change ~bottom man t change =
     if
       change.cbdd.intro = None &&
@@ -321,6 +333,7 @@ let meet_condition = O.meet_condition
 let assign_lexpr = O.assign_lexpr
 let substitute_lexpr = O.substitute_lexpr
 let forget_list = O.forget_list
+let forall_bool_list = O.forall_bool_list
 let widening = O.widening
 let widening_threshold = O.widening_threshold
 let apply_change = O.apply_change

@@ -238,6 +238,9 @@ val support_cond : Cudd.Man.vt -> 'a t -> Cudd.Bdd.vt
     (** Return the support of an expression as a conjunction of the BDD
 	identifiers involved in the expression *)
 
+val conditions_support: 'a Env.t -> 'a Cond.t -> 'a t -> Cudd.Bdd.vt
+val conditions_support': 'a Env.t -> 'a Cond.t -> 'a t list -> Cudd.Bdd.vt
+
 (** Printing functions *)
 val print : 'a Env.t -> 'a Cond.t -> Format.formatter -> [<'a t] -> unit
 
@@ -436,6 +439,9 @@ module O : sig
     (** Return the support of an expression as a conjunction of the BDD
 	identifiers involved in the expression *)
 
+  val conditions_support: 'b -> ('a, 'b) Cond.O.t -> 'a t -> Cudd.Bdd.vt
+  val conditions_support': 'b -> ('a, 'b) Cond.O.t -> 'a t list -> Cudd.Bdd.vt
+
   (** Printing functions *)
 
   val print : 'b -> ('a,'b) Cond.O.t -> Format.formatter -> [<'a t] -> unit
@@ -447,6 +453,6 @@ module O : sig
     ('a,'b) Cond.O.t * 'a t list
 
   val compose_of_lvarexpr :
-    'b -> ('a,'b) Cond.O.t -> ('a * 'a t) list -> Cudd.Bdd.vt array option * ('a, 'a t) PMappe.t
+    'b -> ('a,'b) Cond.O.t -> 'a t list -> ('a * 'a t) list -> Cudd.Bdd.vt array option * ('a, 'a t) PMappe.t
 
 end

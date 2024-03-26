@@ -185,7 +185,7 @@ val add_typ_with : ('a,'b,'c,'d) O.t -> 'a -> 'c -> unit
     (** Declaration of a new type *)
 
 val add_vars_with :
-  ('a,'b,'c,'d) O.t -> ('a * 'b) list ->
+  ('a,'b,'c,'d) O.t -> ?booking_factor:int -> ?packing:Bdd.Env.packing -> ('a * 'b) list ->
   int array option
     (** Add the set of variables, possibly normalize the
 	environment and return the applied permutation (that

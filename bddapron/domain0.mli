@@ -37,6 +37,7 @@ type ('a,'b,'c,'d) man = {
   assign_lexpr : ?relational:bool -> ?nodependency:bool -> 'c ->  'a Env.t -> 'a Cond.t -> 'd -> 'a list -> 'a Expr0.t list -> 'd option -> 'd;
   substitute_lexpr : 'c -> 'a Env.t -> 'a Cond.t -> 'd -> 'a list -> 'a Expr0.t list -> 'd option -> 'd;
   forget_list : 'c -> 'a Env.t -> 'd -> 'a list -> 'd;
+  forall_bool_list : 'c -> 'a Env.t -> 'd -> 'a list -> 'd;
   widening : 'c -> 'd -> 'd -> 'd;
   widening_threshold : 'c -> 'd -> 'd -> Apron.Lincons0.t array -> 'd;
   apply_change :  bottom:'d -> 'c -> 'd -> Env.change -> 'd;
@@ -88,6 +89,7 @@ val substitute_lexpr :
   ('a,'b,'c,'d) man ->
   'a Env.t -> 'a Cond.t -> 'd t -> 'a list -> 'a Expr0.t list -> 'd t option -> 'd t
 val forget_list : ('a,'b,'c,'d) man -> 'a Env.t -> 'd t -> 'a list -> 'd t
+val forall_bool_list : ('a,'b,'c,'d) man -> 'a Env.t -> 'd t -> 'a list -> 'd t
 val widening : ('a,'b,'c,'d) man -> 'd t -> 'd t -> 'd t
 val widening_threshold : ('a,'b,'c,'d) man -> 'd t -> 'd t -> Apron.Lincons0.t array -> 'd t
 val apply_change : bottom:'d t -> ('a,'b,'c,'d) man -> 'd t -> Env.change -> 'd t

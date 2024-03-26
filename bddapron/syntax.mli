@@ -65,15 +65,15 @@ val print_expr :
 exception Error of string
   (** Exception raised in case of typing error *)
 
-val to_expr0 : 'a Env.t -> 'a Cond.t -> 'a expr -> 'a Expr0.t
-val to_expr1 : 'a Env.t -> 'a Cond.t -> 'a expr -> 'a Expr1.t
-val to_listexpr1 : 'a Env.t -> 'a Cond.t -> 'a expr list -> 'a Expr1.List.t
+val to_expr0 : 'a Env.t -> 'a Cond.t -> string expr -> 'a Expr0.t
+val to_expr1 : 'a Env.t -> 'a Cond.t -> string expr -> 'a Expr1.t
+val to_listexpr1 : 'a Env.t -> 'a Cond.t -> string expr list -> 'a Expr1.List.t
 val to_listexpr2 :
   ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
-  'a Env.t -> 'a Cond.t -> 'a expr list -> 'a Expr2.List.t
+  'a Env.t -> 'a Cond.t -> string expr list -> 'a Expr2.List.t
 val to_boolexpr2 :
   ?normalize:bool -> ?reduce:bool -> ?careset:bool ->
-  'a Env.t -> 'a Cond.t -> 'a expr -> 'a Expr2.Bool.t
+  'a Env.t -> 'a Cond.t -> string expr -> 'a Expr2.Bool.t
 
 (*  ********************************************************************** *)
 (** {3 Internal functions} *)

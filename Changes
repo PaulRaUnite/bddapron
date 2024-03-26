@@ -1,3 +1,8 @@
+-------------
+BDDAPRON 2.4.0:
+-------------
+  * builds with dune
+  * fix compiler version by using updated camllib 
 
 -------------
 BDDAPRON 2.2.0:
