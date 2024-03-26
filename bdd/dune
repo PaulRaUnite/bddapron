@@ -1,7 +1,7 @@
 (library
  (name bdd)
  (public_name bddapron.bdd)
- (libraries cudd camllib)
+ (libraries cudd camllib stdlib-shims)
  (modules
   cond
   decompose

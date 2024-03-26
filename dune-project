@@ -17,6 +17,7 @@
    (>= 20151015))
   dune
   camllib
+  stdlib-shims
   (mlcuddidl
    (>= 2.3.0))
    mlgmpidl

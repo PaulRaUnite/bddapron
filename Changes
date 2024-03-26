@@ -3,6 +3,7 @@ BDDAPRON 2.4.0:
 -------------
   * builds with dune
   * fix compiler version by using updated camllib 
+  * added stdlib-shims dependency
 
 -------------
 BDDAPRON 2.2.0:

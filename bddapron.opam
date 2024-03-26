@@ -9,6 +9,7 @@ depends: [
   "apron" {>= "20151015"}
   "dune" {>= "3.6"}
   "camllib"
+  "stdlib-shims"
   "mlcuddidl" {>= "2.3.0"}
   "mlgmpidl"
   "odoc" {with-doc}
