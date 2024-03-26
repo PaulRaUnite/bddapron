@@ -2,8 +2,7 @@
 BDDAPRON 2.4.0:
 -------------
   * builds with dune
-  * fix compiler version by using updated camllib 
-  * added stdlib-shims dependency
+  * fix to compiler version by using updated camllib, removed num and stdlib-shims library for Pervasives
 
 -------------
 BDDAPRON 2.2.0:

@@ -3,10 +3,10 @@
 (generate_opam_files true)
 
 (name bddapron)
+(version 2.4.0)
 
 (package
  (name bddapron)
- (version 2.4.0)
  (authors "Bertrand Jeannet")
  (maintainers "Nicolas Berthier <m@nberth.space>")
  (synopsis "Logico-numerical domain(s) based on BDDs and APRON")
@@ -18,6 +18,7 @@
   dune
   camllib
   stdlib-shims
+  num
   (mlcuddidl
    (>= 2.3.0))
    mlgmpidl
