@@ -3,7 +3,7 @@
 (generate_opam_files true)
 
 (name bddapron)
-(version 2.4.0)
+(version 2.5.0)
 
 (package
  (name bddapron)
@@ -12,13 +12,11 @@
  (synopsis "Logico-numerical domain(s) based on BDDs and APRON")
  (depends
   (ocaml
-   (>= 4.03.0))
+   (>= 4.08.0))
   (apron
    (>= 20151015))
   dune
   camllib
-  stdlib-shims
-  num
   (mlcuddidl
    (>= 2.3.0))
    mlgmpidl

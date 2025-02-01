@@ -382,7 +382,7 @@ module O = struct
 	canonicalize man t1;
 	canonicalize man t2;
 	(List.length t1.list) = (List.length t2.list) && begin
-	  let cmp_elt elt1 elt2 = Pervasives.compare elt1.guard elt2.guard in
+	  let cmp_elt elt1 elt2 = Stdlib.compare elt1.guard elt2.guard in
 	  let list1 = List.fast_sort cmp_elt t1.list in
 	  let list2 = List.fast_sort cmp_elt t2.list in
 	  begin try
@@ -748,8 +748,8 @@ module O = struct
   (** {3 Assignement/Substitution} *)
   (*  ******************************************************************** *)
 
-(* aaffectation: ca commence à être bon
-   substitution, par substitution des variables booleennes par leur expression (ce qui introduit des contraintes, puis parcours: à voir *)
+(* aaffectation: ca commence ï¿½ ï¿½tre bon
+   substitution, par substitution des variables booleennes par leur expression (ce qui introduit des contraintes, puis parcours: ï¿½ voir *)
 
   let descend_texpr ~merge ~maxdepth ~asssub apron env cond org lvar lexpr dest =
     let texpr = Array.of_list lexpr in

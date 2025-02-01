@@ -358,8 +358,8 @@ let lce (cond1:('a,'b,'c,'d) t) (cond2:('a,'b,'c,'d) t) : ('a,'b,'c,'d) t =
       map12
     in
     let cond = copy cond1 in
-    cond.bddindex0 <- Pervasives.max cond1.bddindex0 cond2.bddindex0;
-    cond.bddsize <- Pervasives.max cond1.bddsize cond2.bddsize;
+    cond.bddindex0 <- Stdlib.max cond1.bddindex0 cond2.bddindex0;
+    cond.bddsize <- Stdlib.max cond1.bddsize cond2.bddsize;
     clear cond;
     PMappe.iter
       (begin fun pcond (k,id) ->

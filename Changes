@@ -1,4 +1,9 @@
 -------------
+BDDAPRON 2.5.0:
+-------------
+  * compiles with OCaml 5
+
+-------------
 BDDAPRON 2.4.0:
 -------------
   * builds with dune

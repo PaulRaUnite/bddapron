@@ -212,7 +212,7 @@ let marshal s = string_remove_null (Marshal.to_string s [Marshal.No_sharing])
 let unmarshal s = Marshal.from_string (string_add_null s) 0
 
 let make_symbol
-    ?(compare=Pervasives.compare)
+    ?(compare=Stdlib.compare)
     ?(marshal=marshal)
     ?(unmarshal=unmarshal)
     print
@@ -347,7 +347,7 @@ let print_order env (fmt:Format.formatter) : unit
 	(var,level)
       end)
   in
-  Array.sort (fun (v1,l1) (v2,l2) -> Pervasives.compare l1 l2) tab;
+  Array.sort (fun (v1,l1) (v2,l2) -> Stdlib.compare l1 l2) tab;
   Print.array
     ~first:"@[<v>"
     ~sep:"@ "
@@ -866,13 +866,13 @@ let iter_ordered (env:('a,'b,'c,'d,'e) O.t) (f:'a -> int array -> unit)
 
 (* 2 cas pour lesquels not (e1 = e2):
 
-   a) l'ens des variables n'est pas égal
+   a) l'ens des variables n'est pas ï¿½gal
    ou
-   b) bddincr ou bddindex0 est différent
+   b) bddincr ou bddindex0 est diffï¿½rent
 
-   Peut-être faut-il distinguer c'est deux cas ?
+   Peut-ï¿½tre faut-il distinguer c'est deux cas ?
 
-   Idem pour l'égalité
+   Idem pour l'ï¿½galitï¿½
 *)
 
 let is_leq env1 env2 : bool =
@@ -952,8 +952,8 @@ let lce env1 env2 : ('a,'b,'c,'d,'e) O.t =
     let env = copy env1 in
     env.typdef <- typdef;
     env.vartyp <- labeltyp;
-    env.bddindex0 <- Pervasives.max env1.bddindex0 env2.bddindex0;
-    env.bddsize <- Pervasives.max env1.bddsize env2.bddsize;
+    env.bddindex0 <- Stdlib.max env1.bddindex0 env2.bddindex0;
+    env.bddsize <- Stdlib.max env1.bddsize env2.bddsize;
     env.bddindex <- env.bddindex0;
     env.idcondvar <- PMappe.empty (-);
     env.vartid <- PMappe.empty env1.symbol.compare;
